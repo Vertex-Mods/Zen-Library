@@ -1,2 +1,3 @@
 # Zen-Haven
 A code dump of Copilot code
+**THIS WAS CODED WITH AI< I JUST HAVE IDEAS AND PATIENCE. ANYTHING IS POSSIBLE**
