@@ -120,12 +120,18 @@
         // Handle haven container attributes
         const havenContainer = document.getElementById("zen-haven-container");
         if (havenContainer) {
+          // Remove all existing content first
+          havenContainer.innerHTML = '';
+          
+          // Remove all haven- attributes
           const attrs = havenContainer.getAttributeNames();
           attrs.forEach((attr) => {
             if (attr.startsWith("haven-")) {
               havenContainer.removeAttribute(attr);
             }
           });
+          
+          // Set new attribute for current view
           const attrName = `haven-${config.command}`;
           havenContainer.setAttribute(attrName, "");
         }
@@ -244,20 +250,127 @@
                     `.zen-workspace-tabs-section[zen-workspace-id="${workspace.getAttribute('zen-workspace-id')}"]`
                   );
                   
-                  // For each section, copy its internal content exactly
+                  // Replace the sections.forEach section with:
                   sections.forEach(section => {
-                    // Copy all child nodes directly into content div
-                    Array.from(section.childNodes).forEach(child => {
-                      const clone = child.cloneNode(true);
-                      contentDiv.appendChild(clone);
+                    const root = section.shadowRoot || section;
+                    
+                    // Create wrapper with same class
+                    const sectionWrapper = document.createElement('div');
+                    sectionWrapper.className = 'haven-workspace-section';
+
+                    // Copy computed styles from original section
+                    const computedStyle = window.getComputedStyle(section);
+                    const cssText = Array.from(computedStyle).reduce((str, property) => {
+                      return `${str}${property}:${computedStyle.getPropertyValue(property)};`;
+                    }, '');
+                    sectionWrapper.style.cssText = cssText;
+
+                    // Clone tab groups with their styles
+                    const tabGroups = root.querySelectorAll('.zen-tab-group');
+                    tabGroups.forEach(group => {
+                      const groupClone = group.cloneNode(true);
+                      // Copy computed styles from original group
+                      const groupStyle = window.getComputedStyle(group);
+                      const groupCssText = Array.from(groupStyle).reduce((str, property) => {
+                        return `${str}${property}:${groupStyle.getPropertyValue(property)};`;
+                      }, '');
+                      groupClone.style.cssText = groupCssText;
+                      sectionWrapper.appendChild(groupClone);
                     });
+
+                    // Clone remaining children with their styles 
+                    Array.from(root.children).forEach(child => {
+                      if (!child.classList.contains('zen-tab-group')) {
+                        const clone = child.cloneNode(true);
+                        // Copy computed styles from original child
+                        const childStyle = window.getComputedStyle(child);
+                        const childCssText = Array.from(childStyle).reduce((str, property) => {
+                          return `${str}${property}:${childStyle.getPropertyValue(property)};`;
+                        }, '');
+                        clone.style.cssText = childCssText;
+                        sectionWrapper.appendChild(clone);
+                      }
+                    });
+                    
+                    contentDiv.appendChild(sectionWrapper);
                   });
-                  
+
                   // Assemble workspace
                   workspaceDiv.appendChild(contentDiv);
                   sidebarContainer.appendChild(workspaceDiv);
                 });
               }
+            }
+          }
+
+          if (mutation.type === "attributes" && mutation.attributeName === "haven-downloads") {
+            console.log("[ZenHaven] Downloads observer triggered");
+            
+            // Clear existing download divs
+            const existingDownloads = sidebarContainer.querySelectorAll('.haven-download');
+            existingDownloads.forEach(dl => dl.remove());
+
+            // Create new downloads container if attribute is present
+            if (sidebarContainer.hasAttribute("haven-downloads")) {
+              const downloadsContainer = document.createElement("div");
+              downloadsContainer.className = "haven-downloads";
+              
+              try {
+                // Import Downloads module directly
+                const { Downloads } = ChromeUtils.importESModule("resource://gre/modules/Downloads.sys.mjs");
+                
+                // Get all downloads using the Downloads.getList API
+                Downloads.getList(Downloads.ALL).then(async list => {
+                  try {
+                    const downloads = await list.getAll();
+                    downloads.forEach(download => {
+                      // Create download item element
+                      const downloadItem = document.createElement("div"); 
+                      downloadItem.className = "haven-download-item";
+                      
+                      // Create download info
+                      const downloadInfo = document.createElement("div");
+                      downloadInfo.className = "download-info";
+                      
+                      // Filename
+                      const filename = document.createElement("div");
+                      filename.className = "download-filename";
+                      filename.textContent = download.target?.path?.split('\\').pop() || 
+                                           download.source.url.split('/').pop();
+                      
+                      // Progress
+                      const progress = document.createElement("div");
+                      progress.className = "download-progress";
+                      if (download.hasProgress) {
+                        progress.style.width = `${download.progress * 100}%`;
+                      }
+                      
+                      // Status
+                      const status = document.createElement("div");
+                      status.className = "download-status";
+                      status.textContent = download.succeeded ? "Complete" : 
+                                         download.canceled ? "Cancelled" :
+                                         download.error ? "Error" : 
+                                         download.stopped ? "Stopped" : "In Progress";
+                      
+                      // Assemble download item
+                      downloadInfo.appendChild(filename);
+                      downloadInfo.appendChild(status);
+                      downloadItem.appendChild(downloadInfo);
+                      downloadItem.appendChild(progress);
+                      downloadsContainer.appendChild(downloadItem);
+                    });
+                  } catch (err) {
+                    console.error("[ZenHaven] Error getting downloads list:", err);
+                  }
+                }).catch(err => {
+                  console.error("[ZenHaven] Error getting downloads:", err);
+                });
+              } catch (err) {
+                console.error("[ZenHaven] Error importing Downloads module:", err);
+              }
+              
+              sidebarContainer.appendChild(downloadsContainer);
             }
           }
         });
@@ -268,6 +381,61 @@
       // Add styles for workspaces
       const workspaceStyles = document.createElement("style");
       workspaceStyles.textContent = `
+        :root:has(#navigator-toolbox[haven]) {
+          #zen-haven-container {
+            display: flex !important;
+            flex-direction: row !important;
+            align-items: center;
+            overflow-x: scroll;
+            overflow-y: hidden;
+            
+            .haven-workspace {
+              height: 85% !important;
+              min-width: 200px;
+              background-color: var(--zen-primary-color);
+              margin-left: 30px;
+              margin-right: 30px;
+              border-radius: 8px;
+              border: 2px solid var(--zen-colors-border);
+              display: flex;
+              flex-direction: column;
+              padding: 0 !important;
+              
+              .haven-workspace-header {
+                margin: 2px !important;
+                
+                .workspace-icon {
+                  font-size: 16px;
+                }
+                
+                .workspace-title {
+                  font-size: 16px !important;
+                  margin-right: 10px !important;
+                }
+              }
+              
+              .haven-workspace-content {
+                margin: 0 !important;
+                padding: 0 !important;
+                display: flex !important;
+                align-items: center !important;
+                height: 100% !important;
+                width: 100% !important;
+                overflow: hidden !important;
+                
+                .haven-workspace-section {
+                  display: flex !important;
+                  position: relative !important;
+                  padding: 0 !important;
+                  margin: 0 !important;
+                  padding-inline: 2px !important;
+                  transform: translateX(0) !important;
+                }
+              }
+            }
+          }
+        }
+
         .haven-workspace {
           width: 100%;
           height: 100%;
