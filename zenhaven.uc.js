@@ -232,12 +232,20 @@
             flex-direction: column;
         `;
 
-      // Insert directly after the splitter
-      sidebarSplitter.parentNode.insertBefore(
-        sidebarContainer,
-        sidebarSplitter.nextSibling
-      );
-      console.log("[ZenHaven] Sidebar container added after splitter");
+      // Find the tabbox and inject before it
+      const tabbox = document.getElementById("tabbrowser-tabbox");
+      if (tabbox) {
+        // Insert before the tabbox
+        tabbox.parentNode.insertBefore(sidebarContainer, tabbox);
+        console.log("[ZenHaven] Sidebar container added before tabbrowser-tabbox");
+      } else {
+        // Fallback to original placement after splitter
+        sidebarSplitter.parentNode.insertBefore(
+          sidebarContainer,
+          sidebarSplitter.nextSibling
+        );
+        console.log("[ZenHaven] Tabbox not found, sidebar container added after splitter");
+      }
 
       // Create workspace observer
       const workspaceObserver = new MutationObserver((mutations) => {
@@ -1079,8 +1087,11 @@
                 });
           
                 return item;
+                
               }
           
+              
+
               const style = document.createElement("style");
               style.textContent = `
                 .haven-history {
@@ -1297,7 +1308,7 @@
     customStyles.textContent += `
       :root:has(#navigator-toolbox[haven]) {
         #custom-toolbar {
-          width: 100%;
+          width: 15vw;
           height: 100%;
           display: flex;
           flex-direction: column;
