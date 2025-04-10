@@ -373,6 +373,259 @@
               sidebarContainer.appendChild(downloadsContainer);
             }
           }
+
+          if (mutation.type === "attributes" && mutation.attributeName === "haven-history") {
+            console.log("[ZenHaven] History observer triggered");
+            
+            // Clear existing history items
+            const existingHistory = sidebarContainer.querySelectorAll('.haven-history-item');
+            existingHistory.forEach(item => item.remove());
+
+            // Create new history container if attribute is present 
+            if (sidebarContainer.hasAttribute("haven-history")) {
+              const historyContainer = document.createElement("div");
+              historyContainer.className = "haven-history";
+
+              // Get history from last 7 days
+              const endDate = new Date();
+              const startDate = new Date();
+              startDate.setDate(startDate.getDate() - 7);
+
+              // Create history list container
+              const historyList = document.createElement("div");
+              historyList.className = "haven-history-list";
+
+              function createHistorySection(title, startDays, endDays, expanded = false) {
+                const section = document.createElement("div");
+                section.className = "history-section";
+
+                const header = document.createElement("div");
+                header.className = "history-section-header";
+                header.innerHTML = `
+                  <span class="section-toggle">${expanded ? '▼' : '▶'}</span>
+                  <span class="section-title">${title}</span>
+                `;
+
+                const content = document.createElement("div");
+                content.className = "history-section-content";
+                content.style.display = expanded ? "block" : "none";
+
+                header.addEventListener("click", () => {
+                  const isExpanded = content.style.display === "block";
+                  content.style.display = isExpanded ? "none" : "block";
+                  header.querySelector(".section-toggle").textContent = isExpanded ? "▶" : "▼";
+                });
+
+                section.appendChild(header);
+                section.appendChild(content);
+
+                // Calculate date range for this section
+                const endDate = new Date();
+                const startDate = new Date();
+                startDate.setDate(endDate.getDate() - startDays);
+                endDate.setDate(endDate.getDate() - endDays);
+
+                return { section, content, startDate, endDate };
+              }
+
+              try {
+                const { PlacesUtils } = ChromeUtils.importESModule(
+                  "resource://gre/modules/PlacesUtils.sys.mjs"
+                );
+
+                const sections = [
+                  { title: "Last 24 Hours", start: 1, end: 0, expanded: true },
+                  { title: "2 Days Ago", start: 2, end: 2 }, // Single day
+                  { title: "3 Days Ago", start: 3, end: 3 }, // Single day
+                  { title: "Last Week", start: 7, end: 3, hasSubSections: true }, // Date range
+                  { title: "Last 30 Days", start: 30, end: 7, hasSubSections: true } // Date range with subsections
+                ];
+
+                sections.forEach(({ title, start, end, expanded, hasSubSections }) => {
+                  const { section, content, startDate, endDate } = createHistorySection(title, start, end, expanded);
+                  historyList.appendChild(section);
+
+                  let query = PlacesUtils.history.getNewQuery();
+                  query.beginTimeReference = query.TIME_RELATIVE_EPOCH;
+                  query.beginTime = startDate.getTime() * 1000;
+                  query.endTime = endDate.getTime() * 1000;
+                  query.endTimeReference = query.TIME_RELATIVE_EPOCH;
+
+                  let options = PlacesUtils.history.getNewQueryOptions();
+                  options.sortingMode = options.SORT_BY_DATE_DESCENDING;
+                  options.resultType = options.RESULTS_AS_VISIT;
+                  options.includeHidden = false;
+
+                  let result = PlacesUtils.history.executeQuery(query, options);
+                  let root = result.root;
+                  root.containerOpen = true;
+
+                  // Group items by date for sections that need subsections
+                  if (hasSubSections) {
+                    const dayGroups = new Map();
+                    
+                    for (let i = 0; i < root.childCount; i++) {
+                      let node = root.getChild(i);
+                      const date = new Date(node.time / 1000);
+                      const dayKey = date.toLocaleDateString();
+                      
+                      if (!dayGroups.has(dayKey)) {
+                        dayGroups.set(dayKey, []);
+                      }
+                      dayGroups.get(dayKey).push(node);
+                    }
+
+                    // Create subsections for each day
+                    dayGroups.forEach((nodes, dayKey) => {
+                      const daySection = createHistorySection(dayKey, 0, 0);
+                      content.appendChild(daySection.section);
+                      
+                      nodes.forEach(node => {
+                        const historyItem = createHistoryItem(node);
+                        daySection.content.appendChild(historyItem);
+                      });
+                    });
+                  } else {
+                    // No subsections needed, just add items directly
+                    for (let i = 0; i < root.childCount; i++) {
+                      let node = root.getChild(i);
+                      const historyItem = createHistoryItem(node);
+                      content.appendChild(historyItem);
+                    }
+                  }
+
+                  root.containerOpen = false;
+                });
+
+                // Replace the historyStyles section with:
+                const historyStyles = document.createElement("style");
+                historyStyles.textContent = `
+                  .haven-history {
+                    padding-inline: 12px;
+                    height: 100%;
+                    width: 100%;
+                    overflow-y: auto;
+                    padding: 16px;
+                    background: var(--zen-background);
+                  }
+
+                  .haven-history-list {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 12px;
+                  }
+
+                  .history-section {
+                    background: none !important;
+                  }
+
+                  .history-section .history-section-header {
+                    background: none !important;
+                    border-radius: 8px;
+                    border: none !important;
+                    font-size: 16px;
+                    padding: 12px;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                  }
+
+                  .history-section .history-section-header:hover {
+                    background: var(--toolbarbutton-hover-background) !important;
+                    transition: background-color 0.3s ease !important;
+                  }
+
+                  .section-toggle {
+                    color: var(--toolbar-color);
+                    font-family: monospace;
+                    font-size: 12px;
+                    width: 16px;
+                    text-align: center;
+                  }
+
+                  .section-title {
+                    font-weight: 500;
+                    color: var(--toolbar-color);
+                  }
+
+                  .history-section-content {
+                    padding: 8px 16px;
+                  }
+
+                  .haven-history-item {
+                    padding: 8px;
+                    margin: 4px 0;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    transition: background-color 0.2s ease;
+                  }
+
+                  .haven-history-item:hover {
+                    background-color: var(--toolbarbutton-hover-background);
+                  }
+
+                  .history-item-content {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 4px;
+                  }
+
+                  .history-title {
+                    font-weight: 500;
+                    color: var(--toolbar-color);
+                  }
+
+                  .history-date {
+                    font-size: 0.9em;
+                    color: var(--toolbar-color);
+                    opacity: 0.8;
+                  }
+
+                  #zen-haven-container[haven-history] {
+                    display: flex;
+                    flex-direction: column;
+                    overflow: hidden;
+                  }
+                `;
+                document.head.appendChild(historyStyles);
+
+              } catch (err) {
+                console.error("[ZenHaven] Error accessing history:", err);
+              }
+
+              function createHistoryItem(node) {
+                const historyItem = document.createElement("div");
+                historyItem.className = "haven-history-item";
+
+                const itemContent = document.createElement("div");
+                itemContent.className = "history-item-content";
+
+                const title = document.createElement("div");
+                title.className = "history-title";
+                title.textContent = node.title || node.uri;
+
+                const date = document.createElement("div");
+                date.className = "history-date";
+                date.textContent = new Date(node.time / 1000).toLocaleString();
+
+                itemContent.appendChild(title);
+                itemContent.appendChild(date);
+                historyItem.appendChild(itemContent);
+
+                historyItem.addEventListener("click", () => {
+                  gBrowser.selectedTab = gBrowser.addTab(node.uri, {
+                    triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal()
+                  });
+                });
+
+                return historyItem;
+              }
+
+              historyContainer.appendChild(historyList);
+              sidebarContainer.appendChild(historyContainer);
+            }
+          }
         });
       });
 
