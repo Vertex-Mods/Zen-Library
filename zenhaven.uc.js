@@ -347,8 +347,7 @@
                   const sections = document.querySelectorAll(
                     `.zen-workspace-tabs-section[zen-workspace-id="${workspace.getAttribute('zen-workspace-id')}"]`
                   );
-                  
-                  // Replace the sections.forEach section with:
+
                   sections.forEach(section => {
                     const root = section.shadowRoot || section;
                     
@@ -363,8 +362,10 @@
                     }, '');
                     sectionWrapper.style.cssText = cssText;
 
+                    // Move tab groups query inside the loop where root is defined
+                    const tabGroups = root.querySelectorAll('tab-group');
+                    
                     // Clone tab groups with their styles
-                    const tabGroups = root.querySelectorAll('.zen-tab-group');
                     tabGroups.forEach(group => {
                       const groupClone = group.cloneNode(true);
                       // Copy computed styles from original group
@@ -404,7 +405,7 @@
           if (mutation.type === "attributes" && mutation.attributeName === "haven-downloads") {
             const sidebarContainer = document.getElementById("zen-haven-container"); // Assuming sidebarContainer is defined elsewhere, added for context
 
-            // --- Clear existing ---
+            // --- Clear existing --- 
             const existingDownloadsContent = sidebarContainer.querySelector('.haven-downloads-view');
             if (existingDownloadsContent) {
               existingDownloadsContent.remove();
@@ -677,7 +678,7 @@
               .haven-downloads-view {
                   display: flex;
                   flex-direction: column;
-                  height: 100%;
+                  height: 90vh;
                   width: 100%;
                   padding: 20px 32px 20px 40px;
                   box-sizing: border-box;
@@ -1198,6 +1199,10 @@
             align-items: center;
             overflow-x: scroll;
             overflow-y: hidden;
+              box-shadow:
+                inset 10px 0 20px rgba(0, 0, 0, 0.5),  /* left */
+                inset 0 0 20px rgba(0, 0, 0, 0.5),  /* bottom */
+                inset 0 0 20px rgba(0, 0, 0, 0.5);   /* top */
             
             .haven-workspace {
               height: 85% !important;
