@@ -9,6 +9,19 @@
   let toolboxObserver; // Declare at top level
   console.log("[ZenHaven] Script loaded");
 
+  function getGradientCSS(theme) {
+    if (!theme || theme.type !== "gradient" || !theme.gradientColors?.length) return "transparent";
+  
+    const angle = Math.round(theme.rotation || 0);
+    const stops = theme.gradientColors.map(({ c }) => {
+      const [r, g, b] = c;
+      return `rgb(${r}, ${g}, ${b})`;
+    }).join(", ");
+  
+    return `linear-gradient(${angle}deg, ${stops})`;
+  }
+  
+
   function setupCustomUI() {
     console.log("[ZenHaven] Setting up UI...");
     const toolbox = document.getElementById("navigator-toolbox");
@@ -120,6 +133,16 @@
         // Handle haven container attributes
         const havenContainer = document.getElementById("zen-haven-container");
         if (havenContainer) {
+          const currentAttr = `haven-${config.command}`;
+          const hasCurrentAttr = havenContainer.hasAttribute(currentAttr);
+          
+          // If clicking same button and container is visible, hide it
+          if (hasCurrentAttr && havenContainer.style.display !== "none") {
+            havenContainer.style.display = "none";
+            havenContainer.removeAttribute(currentAttr);
+            return;
+          }
+          
           // Remove all existing content first
           havenContainer.innerHTML = '';
           
@@ -131,9 +154,9 @@
             }
           });
           
-          // Set new attribute for current view
-          const attrName = `haven-${config.command}`;
-          havenContainer.setAttribute(attrName, "");
+          // Set new attribute for current view and ensure visibility
+          havenContainer.setAttribute(currentAttr, "");
+          havenContainer.style.display = "flex";
         }
 
         // Trigger original button click
@@ -205,7 +228,7 @@
             height: 100%;
             width: 60vw;
             position: relative;
-            display: flex;
+            display: none;
             flex-direction: column;
         `;
 
@@ -222,12 +245,64 @@
           if (mutation.type === "attributes" && mutation.attributeName === "haven-workspaces") {
             console.log("[ZenHaven] Workspace observer triggered");
             
-            // Clear existing workspace divs
-            const existingWorkspaces = sidebarContainer.querySelectorAll('[workspace-id]');
-            existingWorkspaces.forEach(ws => ws.remove());
+            // Toggle behavior - if workspaces are already shown, hide them
+            const existingWorkspaces = sidebarContainer.querySelectorAll('.haven-workspace');
+            if (existingWorkspaces.length > 0) {
+              existingWorkspaces.forEach(ws => ws.remove());
+              sidebarContainer.removeAttribute("haven-workspaces");
+              return;
+            }
+          
+            // Add styles for workspace button
+            const workspaceStyles = document.createElement("style");
+            workspaceStyles.textContent = `
+              .haven-workspace-add-button {
+                position: fixed;
+                right: 16px;
+                top: 16px;
+                width: 32px;
+                height: 32px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background: var(--toolbar-bgcolor);
+                border-radius: 6px;
+                cursor: pointer;
+                transition: background 0.2s;
+              }
+              .haven-workspace-add-button:hover {
+                background: var(--toolbar-hover-bgcolor);
+              }
+              .haven-workspace-add-button svg {
+                color: var(--toolbar-color);
+              }
+            `;
+            document.head.appendChild(workspaceStyles);
 
             // Create new workspace divs if attribute is present
             if (sidebarContainer.hasAttribute("haven-workspaces")) {
+              // Create add workspace button
+              const addWorkspaceButton = document.createElement("div");
+              addWorkspaceButton.className = "haven-workspace-add-button";
+              addWorkspaceButton.innerHTML = `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M8 3V13M3 8H13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>`;
+              addWorkspaceButton.addEventListener("click", () => {
+                try {
+                  if (typeof ZenWorkspaces === "undefined") {
+                    throw new Error("ZenWorkspaces is not defined");
+                  }
+                  if (typeof ZenWorkspaces.openSaveDialog !== "function") {
+                    throw new Error("openSaveDialog function is not available");
+                  }
+                  console.log("[ZenHaven] Attempting to open workspace save dialog...");
+                  ZenWorkspaces.openSaveDialog();
+                } catch (error) {
+                  console.error("[ZenHaven] Error opening workspace dialog:", error);
+                }
+              });
+              sidebarContainer.appendChild(addWorkspaceButton);
+
               const workspacesButton = document.getElementById("zen-workspaces-button");
               if (workspacesButton) {
                 console.log("[ZenHaven] Found workspace button:", workspacesButton);
@@ -240,6 +315,21 @@
                   // Create base workspace div
                   const workspaceDiv = document.createElement("div");
                   workspaceDiv.className = "haven-workspace";
+
+                  // Get the workspace object using the UUID from the element
+                  const uuid = workspace.getAttribute("zen-workspace-id");
+                  ZenWorkspacesStorage.getWorkspaces().then((allWorkspaces) => {
+                    const data = allWorkspaces.find(ws => ws.uuid === uuid);
+                    if (data?.theme?.type === "gradient" && data.theme.gradientColors?.length) {
+                      workspaceDiv.style.background = getGradientCSS(data.theme);
+                      workspaceDiv.style.opacity = data.theme.opacity ?? 1;
+                    } else {
+                      // Fallback: use a solid neutral background
+                      workspaceDiv.style.background = "var(--zen-colors-border)";
+                      workspaceDiv.style.opacity = 1;
+                    }
+                  });
+
                   
                   // Create content container
                   const contentDiv = document.createElement("div");
@@ -841,256 +931,247 @@
 
           if (mutation.type === "attributes" && mutation.attributeName === "haven-history") {
             console.log("[ZenHaven] History observer triggered");
-            
-            // Clear existing history items
-            const existingHistory = sidebarContainer.querySelectorAll('.haven-history-item');
-            existingHistory.forEach(item => item.remove());
-
-            // Create new history container if attribute is present 
+          
+            const existingHistory = sidebarContainer.querySelectorAll(".haven-history");
+            existingHistory.forEach((el) => el.remove());
+          
             if (sidebarContainer.hasAttribute("haven-history")) {
               const historyContainer = document.createElement("div");
               historyContainer.className = "haven-history";
-
-              // Get history from last 7 days
-              const endDate = new Date();
+              sidebarContainer.appendChild(historyContainer);
+          
+              const { PlacesUtils } = ChromeUtils.importESModule("resource://gre/modules/PlacesUtils.sys.mjs");
+              const SESSION_TIMEOUT_MINUTES = 30;
+          
               const startDate = new Date();
               startDate.setDate(startDate.getDate() - 7);
-
-              // Create history list container
-              const historyList = document.createElement("div");
-              historyList.className = "haven-history-list";
-
-              function createHistorySection(title, startDays, endDays, expanded = false) {
-                const section = document.createElement("div");
-                section.className = "history-section";
-
+          
+              const query = PlacesUtils.history.getNewQuery();
+              query.beginTimeReference = query.TIME_RELATIVE_EPOCH;
+              query.beginTime = startDate.getTime() * 1000;
+              query.endTime = Date.now() * 1000;
+              query.endTimeReference = query.TIME_RELATIVE_EPOCH;
+          
+              const options = PlacesUtils.history.getNewQueryOptions();
+              options.sortingMode = options.SORT_BY_DATE_DESCENDING;
+              options.resultType = options.RESULTS_AS_VISIT;
+              options.includeHidden = false;
+          
+              const result = PlacesUtils.history.executeQuery(query, options);
+              const root = result.root;
+              root.containerOpen = true;
+          
+              const visitsByDate = new Map();
+          
+              for (let i = 0; i < root.childCount; i++) {
+                const node = root.getChild(i);
+                const visitTime = new Date(node.time / 1000);
+                const dayKey = visitTime.toLocaleDateString(undefined, {
+                  weekday: "long",
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric"
+                });
+          
+                if (!visitsByDate.has(dayKey)) visitsByDate.set(dayKey, []);
+                visitsByDate.get(dayKey).push({ node, time: visitTime });
+              }
+          
+              root.containerOpen = false;
+          
+              visitsByDate.forEach((visits, dayKey, index) => {
+                const daySection = createCollapsible("📅 " + dayKey, false, "day-section");
+                historyContainer.appendChild(daySection.wrapper);
+          
+                // Group by session within the day
+                const sessions = [];
+                let currentSession = [];
+                let lastTime = null;
+          
+                visits.forEach(({ node, time }) => {
+                  if (lastTime) {
+                    const gap = (lastTime - time) / (1000 * 60);
+                    if (gap > SESSION_TIMEOUT_MINUTES) {
+                      if (currentSession.length > 0) {
+                        sessions.push(currentSession);
+                        currentSession = [];
+                      }
+                    }
+                  }
+                  currentSession.push({ node, time });
+                  lastTime = time;
+                });
+          
+                if (currentSession.length > 0) sessions.push(currentSession);
+          
+                sessions.forEach((session, idx) => {
+                  const sessionStart = session[session.length - 1].time;
+                  const sessionEnd = session[0].time;
+          
+                  const timeRange = `${sessionStart.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} – ${sessionEnd.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
+                  const sessionTitle = `🕓 Session ${idx + 1} • ${timeRange}`;
+          
+                  const sessionSection = createCollapsible(sessionTitle, false, "session-section");
+                  daySection.content.appendChild(sessionSection.wrapper);
+          
+                  session.forEach(({ node }) => {
+                    const item = createHistoryItem(node);
+                    sessionSection.content.appendChild(item);
+                  });
+                });
+              });
+          
+              function createCollapsible(title, expanded = false, className = "") {
+                const wrapper = document.createElement("div");
+                wrapper.className = className;
+          
                 const header = document.createElement("div");
-                header.className = "history-section-header";
+                header.className = "collapsible-header";
                 header.innerHTML = `
-                  <span class="section-toggle">${expanded ? '▼' : '▶'}</span>
+                  <span class="section-toggle">${expanded ? "▼" : "▶"}</span>
                   <span class="section-title">${title}</span>
                 `;
-
+          
                 const content = document.createElement("div");
-                content.className = "history-section-content";
+                content.className = "collapsible-content";
                 content.style.display = expanded ? "block" : "none";
-
+          
                 header.addEventListener("click", () => {
-                  const isExpanded = content.style.display === "block";
-                  content.style.display = isExpanded ? "none" : "block";
-                  header.querySelector(".section-toggle").textContent = isExpanded ? "▶" : "▼";
+                  const isOpen = content.style.display === "block";
+                  content.style.display = isOpen ? "none" : "block";
+                  header.querySelector(".section-toggle").textContent = isOpen ? "▶" : "▼";
                 });
-
-                section.appendChild(header);
-                section.appendChild(content);
-
-                // Calculate date range for this section
-                const endDate = new Date();
-                const startDate = new Date();
-                startDate.setDate(endDate.getDate() - startDays);
-                endDate.setDate(endDate.getDate() - endDays);
-
-                return { section, content, startDate, endDate };
+          
+                wrapper.appendChild(header);
+                wrapper.appendChild(content);
+                return { wrapper, content };
               }
-
-              try {
-                const { PlacesUtils } = ChromeUtils.importESModule(
-                  "resource://gre/modules/PlacesUtils.sys.mjs"
-                );
-
-                const sections = [
-                  { title: "Last 24 Hours", start: 1, end: 0, expanded: true },
-                  { title: "2 Days Ago", start: 2, end: 2 }, // Single day
-                  { title: "3 Days Ago", start: 3, end: 3 }, // Single day
-                  { title: "Last Week", start: 7, end: 3, hasSubSections: true }, // Date range
-                  { title: "Last 30 Days", start: 30, end: 7, hasSubSections: true } // Date range with subsections
-                ];
-
-                sections.forEach(({ title, start, end, expanded, hasSubSections }) => {
-                  const { section, content, startDate, endDate } = createHistorySection(title, start, end, expanded);
-                  historyList.appendChild(section);
-
-                  let query = PlacesUtils.history.getNewQuery();
-                  query.beginTimeReference = query.TIME_RELATIVE_EPOCH;
-                  query.beginTime = startDate.getTime() * 1000;
-                  query.endTime = endDate.getTime() * 1000;
-                  query.endTimeReference = query.TIME_RELATIVE_EPOCH;
-
-                  let options = PlacesUtils.history.getNewQueryOptions();
-                  options.sortingMode = options.SORT_BY_DATE_DESCENDING;
-                  options.resultType = options.RESULTS_AS_VISIT;
-                  options.includeHidden = false;
-
-                  let result = PlacesUtils.history.executeQuery(query, options);
-                  let root = result.root;
-                  root.containerOpen = true;
-
-                  // Group items by date for sections that need subsections
-                  if (hasSubSections) {
-                    const dayGroups = new Map();
-                    
-                    for (let i = 0; i < root.childCount; i++) {
-                      let node = root.getChild(i);
-                      const date = new Date(node.time / 1000);
-                      const dayKey = date.toLocaleDateString();
-                      
-                      if (!dayGroups.has(dayKey)) {
-                        dayGroups.set(dayKey, []);
-                      }
-                      dayGroups.get(dayKey).push(node);
-                    }
-
-                    // Create subsections for each day
-                    dayGroups.forEach((nodes, dayKey) => {
-                      const daySection = createHistorySection(dayKey, 0, 0);
-                      content.appendChild(daySection.section);
-                      
-                      nodes.forEach(node => {
-                        const historyItem = createHistoryItem(node);
-                        daySection.content.appendChild(historyItem);
-                      });
-                    });
-                  } else {
-                    // No subsections needed, just add items directly
-                    for (let i = 0; i < root.childCount; i++) {
-                      let node = root.getChild(i);
-                      const historyItem = createHistoryItem(node);
-                      content.appendChild(historyItem);
-                    }
-                  }
-
-                  root.containerOpen = false;
-                });
-
-                // Replace the historyStyles section with:
-                const historyStyles = document.createElement("style");
-                historyStyles.textContent = `
-                  .haven-history {
-                    padding-inline: 12px;
-                    height: 100%;
-                    width: 100%;
-                    overflow-y: auto;
-                    padding: 16px;
-                    background: var(--zen-background);
-                  }
-
-                  .haven-history-list {
-                    display: flex;
-                    flex-direction: column;
-                    gap: 12px;
-                  }
-
-                  .history-section {
-                    background: none !important;
-                  }
-
-                  .history-section .history-section-header {
-                    background: none !important;
-                    border-radius: 8px;
-                    border: none !important;
-                    font-size: 16px;
-                    padding: 12px;
-                    cursor: pointer;
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
-                  }
-
-                  .history-section .history-section-header:hover {
-                    background: var(--toolbarbutton-hover-background) !important;
-                    transition: background-color 0.3s ease !important;
-                  }
-
-                  .section-toggle {
-                    color: var(--toolbar-color);
-                    font-family: monospace;
-                    font-size: 12px;
-                    width: 16px;
-                    text-align: center;
-                  }
-
-                  .section-title {
-                    font-weight: 500;
-                    color: var(--toolbar-color);
-                  }
-
-                  .history-section-content {
-                    padding: 8px 16px;
-                  }
-
-                  .haven-history-item {
-                    padding: 8px;
-                    margin: 4px 0;
-                    border-radius: 4px;
-                    cursor: pointer;
-                    transition: background-color 0.2s ease;
-                  }
-
-                  .haven-history-item:hover {
-                    background-color: var(--toolbarbutton-hover-background);
-                  }
-
-                  .history-item-content {
-                    display: flex;
-                    flex-direction: column;
-                    gap: 4px;
-                  }
-
-                  .history-title {
-                    font-weight: 500;
-                    color: var(--toolbar-color);
-                  }
-
-                  .history-date {
-                    font-size: 0.9em;
-                    color: var(--toolbar-color);
-                    opacity: 0.8;
-                  }
-
-                  #zen-haven-container[haven-history] {
-                    display: flex;
-                    flex-direction: column;
-                    overflow: hidden;
-                  }
-                `;
-                document.head.appendChild(historyStyles);
-
-              } catch (err) {
-                console.error("[ZenHaven] Error accessing history:", err);
-              }
-
+          
               function createHistoryItem(node) {
-                const historyItem = document.createElement("div");
-                historyItem.className = "haven-history-item";
-
-                const itemContent = document.createElement("div");
-                itemContent.className = "history-item-content";
-
+                const item = document.createElement("div");
+                item.className = "haven-history-item";
+          
+                const favicon = document.createElement("img");
+                favicon.className = "history-icon";
+                favicon.src = "https://www.google.com/s2/favicons?sz=32&domain_url=" + encodeURIComponent(node.uri);
+          
+                const content = document.createElement("div");
+                content.className = "history-item-content";
+          
                 const title = document.createElement("div");
                 title.className = "history-title";
                 title.textContent = node.title || node.uri;
-
-                const date = document.createElement("div");
-                date.className = "history-date";
-                date.textContent = new Date(node.time / 1000).toLocaleString();
-
-                itemContent.appendChild(title);
-                itemContent.appendChild(date);
-                historyItem.appendChild(itemContent);
-
-                historyItem.addEventListener("click", () => {
+          
+                const time = document.createElement("div");
+                time.className = "history-time";
+                time.textContent = new Date(node.time / 1000).toLocaleTimeString();
+          
+                content.appendChild(title);
+                content.appendChild(time);
+          
+                item.appendChild(favicon);
+                item.appendChild(content);
+          
+                item.addEventListener("click", () => {
                   gBrowser.selectedTab = gBrowser.addTab(node.uri, {
                     triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal()
                   });
                 });
-
-                return historyItem;
+          
+                return item;
               }
-
-              historyContainer.appendChild(historyList);
-              sidebarContainer.appendChild(historyContainer);
+          
+              const style = document.createElement("style");
+              style.textContent = `
+                .haven-history {
+                  padding: 16px;
+                  height: 90vh;
+                  width: 50vw;
+                  overflow-y: auto;
+                  background: var(--zen-background);
+                }
+          
+                .day-section, .session-section {
+                  margin-bottom: 12px;
+                }
+          
+                .collapsible-header {
+                  background: var(--zen-themed-toolbar-bg);
+                  border-radius: 6px;
+                  padding: 12px;
+                  display: flex;
+                  align-items: center;
+                  gap: 8px;
+                  cursor: pointer;
+                }
+          
+                .collapsible-header:hover {
+                  background: var(--toolbarbutton-hover-background);
+                }
+          
+                .section-toggle {
+                  font-family: monospace;
+                  font-size: 12px;
+                  width: 16px;
+                  text-align: center;
+                  color: var(--toolbar-color);
+                }
+          
+                .section-title {
+                  font-weight: 600;
+                  color: var(--toolbar-color);
+                }
+          
+                .collapsible-content {
+                  padding: 8px 12px;
+                  display: flex;
+                  flex-direction: column;
+                  gap: 8px;
+                }
+          
+                .haven-history-item {
+                  display: flex;
+                  align-items: center;
+                  gap: 12px;
+                  padding: 8px;
+                  border-radius: 4px;
+                  transition: background-color 0.2s;
+                  cursor: pointer;
+                }
+          
+                .haven-history-item:hover {
+                  background-color: var(--toolbarbutton-hover-background);
+                }
+          
+                .history-icon {
+                  width: 32px;
+                  height: 32px;
+                  border-radius: 50%;
+                  background: var(--zen-colors-border);
+                }
+          
+                .history-item-content {
+                  display: flex;
+                  flex-direction: column;
+                  gap: 2px;
+                }
+          
+                .history-title {
+                  font-weight: 500;
+                  color: var(--toolbar-color);
+                }
+          
+                .history-time {
+                  font-size: 0.85em;
+                  color: var(--toolbar-color);
+                  opacity: 0.75;
+                }
+              `;
+              document.head.appendChild(style);
             }
           }
+          
+
         });
       });
 
@@ -1109,7 +1190,7 @@
             
             .haven-workspace {
               height: 85% !important;
-              min-width: 200px;
+              min-width: 20%;
               background-color: var(--zen-primary-color);
               margin-left: 30px;
               margin-right: 30px;
@@ -1117,7 +1198,16 @@
               border: 2px solid var(--zen-colors-border);
               display: flex;
               flex-direction: column;
-              padding: 0 !important;
+              align-items: center;
+              padding: 10px !important;
+
+              .tab-reset-pin-button {
+                display: none;
+              }
+
+              .tab-icon-image {
+                margin-right: 10px;
+              }
               
               .haven-workspace-header {
                 margin: 2px !important;
@@ -1134,17 +1224,18 @@
               
               .haven-workspace-content {
                 margin: 0 !important;
-                padding: 0 !important;
+                padding: 10px !important;
                 display: flex !important;
                 align-items: center !important;
-                height: 100% !important;
+                height: fit-content !important;
                 width: 100% !important;
                 overflow: hidden !important;
+                align-items: flex-start;
                 
                 .haven-workspace-section {
                   display: flex !important;
                   position: relative !important;
-                  padding: 0 !important;
+                  min-height: 70px !important;
                   margin: 0 !important;
                   padding-inline: 2px !important;
                   transform: translateX(0) !important;
@@ -1155,7 +1246,7 @@
         }
 
         .haven-workspace {
-          width: 100%;
+          width: 20%;
           height: 100%;
           display: none;
           padding: 16px;
@@ -1205,13 +1296,6 @@
     const customStyles = document.createElement("style");
     customStyles.textContent += `
       :root:has(#navigator-toolbox[haven]) {
-        #navigator-toolbox {
-          padding: 0 !important;
-          box-shadow: 10px 0 10px rgba(0, 0, 0, 0.3);
-          border-radius: 0 12px 12px 0 !important;
-          width: min-content !important;
-        }
-
         #custom-toolbar {
           width: 100%;
           height: 100%;
