@@ -15,7 +15,9 @@ Tab history support that allows for easy navigation: Anoms12
   * Easy way to delete history
 * Native password manager
   * Use Firefox backend, give Zen feeling
-* Bookmark integration   
+* Bookmark integration
+* Notes
+   * Built from the ground up
 * A _special_ feature that makes Haven stand out: ???
 * More native UI: Anoms12
 * Zen-like animations: logic
