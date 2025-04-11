@@ -419,7 +419,7 @@
               const downloadsViewContainer = document.createElement("div");
               downloadsViewContainer.className = "haven-downloads-view";
 
-              // --- Search Bar ---
+              // --- Search Bar --- 
               const searchBar = document.createElement("div");
               searchBar.className = "haven-downloads-searchbar";
               const searchInput = document.createElement("input");
@@ -428,17 +428,17 @@
               searchBar.appendChild(searchInput);
               downloadsViewContainer.appendChild(searchBar);
 
-              // --- List Area ---
+              // --- List Area --- 
               const downloadsListArea = document.createElement("div");
               downloadsListArea.className = "haven-downloads-list-area";
               downloadsListArea.textContent = "Loading download history...";
               downloadsListArea.style.color = 'var(--toolbar-color, white)'; // Use theme variable
               downloadsViewContainer.appendChild(downloadsListArea);
 
-              // --- Append container ---
+              // --- Append container --- 
               sidebarContainer.appendChild(downloadsViewContainer);
 
-              // --- Execute Direct SQL Query and Build UI ---
+              // --- Execute Direct SQL Query and Build UI --- 
               let dbConnection = null,
                 statement = null,
                 downloadItems = [];
@@ -488,7 +488,7 @@
                   }
                 }
 
-                // --- UI Building ---
+                // --- UI Building --- 
                 downloadsListArea.textContent = ''; // Clear "Loading..."
 
                 if (downloadItems.length === 0) {
@@ -586,8 +586,6 @@
                     let itemsAdded = false;
                     downloadsForDate.forEach((download) => {
                       const category = getDownloadCategory(download.filename);
-                      const state = "Complete"; // Assuming completion based on history entry
-
                       try {
                         const safeFilenameForAttr = escapeForHTMLAttr(download.filename);
                         const safeSourceUrlForAttr = escapeForHTMLAttr(download.url);
@@ -598,23 +596,61 @@
                         let targetElement;
                         let itemElement;
 
+                        // Create click handler
+                        const handleItemClick = (event) => {
+                          event.preventDefault();
+                          try {
+                            // Convert file URI to path with proper handling for Windows
+                            let filePath = download.fileUri.replace('file:///', '');
+                            filePath = decodeURIComponent(filePath);
+                            
+                            // Convert forward slashes to backslashes for Windows
+                            filePath = filePath.replace(/\//g, '\\');
+                            
+                            // Create an nsIFile instance
+                            let file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
+                            
+                            // Handle Windows drive letters properly
+                            if (filePath.match(/^[A-Za-z]:\\/)) {
+                              file.initWithPath(filePath);
+                            } else {
+                              file.initWithPath(`C:\\${filePath}`); // Add drive letter if missing
+                            }
+                            
+                            if (file.exists()) {
+                              try {
+                                file.launch();
+                              } catch (launchError) {
+                                console.error('[ZenHaven] Error launching file:', launchError);
+                                alert(`Error opening file: ${download.filename}`);
+                              }
+                            } else {
+                              console.error(`[ZenHaven] File not found: ${filePath}`);
+                              alert(`File not found: ${download.filename}`);
+                            }
+                          } catch (err) {
+                            console.error('[ZenHaven] Error opening file:', err);
+                            alert(`Error accessing file: ${download.filename}`);
+                          }
+                        };
+
                         if (category === 'files') {
                           itemElement = document.createElement("div");
                           itemElement.className = "haven-download-file-item";
-                          itemElement.innerHTML = `<div class="file-icon"></div><div class="file-details"><div class="file-name" title="${titleAttr}">${displayFilename}</div><div class="file-status">${state}</div></div>`;
+                          itemElement.innerHTML = `<div class="file-icon"></div><div class="file-details"><div class="file-name" title="${titleAttr}">${displayFilename}</div><div class="file-status">Complete</div></div>`;
+                          itemElement.addEventListener('click', handleItemClick);
                           targetElement = filesList;
                         } else if (category === 'media') {
                           itemElement = document.createElement("div");
                           itemElement.className = "haven-download-media-item";
                           itemElement.title = titleAttr;
-                          // Optionally add background image preview for media if feasible
-                          // itemElement.style.backgroundImage = `url('${escapeForHTMLAttr(download.fileUri)}')`; // Requires careful handling/security
+                          itemElement.addEventListener('click', handleItemClick);
                           targetElement = mediaGrid;
                         } else if (category === 'documents') {
                           itemElement = document.createElement("div");
                           itemElement.className = "haven-download-document-item";
                           itemElement.title = titleAttr;
-                          // Optionally add a document icon/preview
+                          itemElement.addEventListener('click', handleItemClick);
                           targetElement = documentsGrid;
                         }
 
@@ -662,7 +698,7 @@
                 }
               }
 
-              // --- CSS Styles ---
+              // --- CSS Styles --- 
               const downloadsStyles = document.createElement("style");
               downloadsStyles.id = "haven-downloads-styles";
               downloadsStyles.textContent = `
@@ -782,6 +818,9 @@
               }
 
               .haven-downloads-date-content[style*="display: none"] {
+                  max-height: 0;
+                  padding-top: 0;
+                  padding-bottom: 0;
                   max-height: 0;
                   padding-top: 0;
                   padding-bottom: 0;
