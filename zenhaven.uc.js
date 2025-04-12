@@ -11,16 +11,16 @@
 
   function getGradientCSS(theme) {
     if (!theme || theme.type !== "gradient" || !theme.gradientColors?.length) return "transparent";
-  
+
     const angle = Math.round(theme.rotation || 0);
     const stops = theme.gradientColors.map(({ c }) => {
       const [r, g, b] = c;
       return `rgb(${r}, ${g}, ${b})`;
     }).join(", ");
-  
+
     return `linear-gradient(${angle}deg, ${stops})`;
   }
-  
+
 
   function setupCustomUI() {
     console.log("[ZenHaven] Setting up UI...");
@@ -135,17 +135,17 @@
         if (havenContainer) {
           const currentAttr = `haven-${config.command}`;
           const hasCurrentAttr = havenContainer.hasAttribute(currentAttr);
-          
+
           // If clicking same button and container is visible, hide it
           if (hasCurrentAttr && havenContainer.style.display !== "none") {
             havenContainer.style.display = "none";
             havenContainer.removeAttribute(currentAttr);
             return;
           }
-          
+
           // Remove all existing content first
           havenContainer.innerHTML = '';
-          
+
           // Remove all haven- attributes
           const attrs = havenContainer.getAttributeNames();
           attrs.forEach((attr) => {
@@ -153,7 +153,7 @@
               havenContainer.removeAttribute(attr);
             }
           });
-          
+
           // Set new attribute for current view and ensure visibility
           havenContainer.setAttribute(currentAttr, "");
           havenContainer.style.display = "flex";
@@ -184,21 +184,21 @@
     // Handle bottom buttons
     const sidebarBottomButtons = document.getElementById("zen-sidebar-bottom-buttons");
     const workspacesButton = sidebarBottomButtons?.querySelector("#zen-workspaces-button");
-    
+
     if (sidebarBottomButtons && workspacesButton) {
-        // Count workspaces and store in variable
-        const workspaceCount = workspacesButton.children.length;
-        console.log(`[ZenHaven] Found ${workspaceCount} workspaces`);
-        
-        // Move the original buttons to our container
-        customContainer.appendChild(sidebarBottomButtons);
-        
-        // Hide workspace button
-        workspacesButton.style.display = "none";
-        
-        // Add CSS to style the bottom buttons
-        const customStyles = document.createElement("style");
-        customStyles.textContent = `
+      // Count workspaces and store in variable
+      const workspaceCount = workspacesButton.children.length;
+      console.log(`[ZenHaven] Found ${workspaceCount} workspaces`);
+
+      // Move the original buttons to our container
+      customContainer.appendChild(sidebarBottomButtons);
+
+      // Hide workspace button
+      workspacesButton.style.display = "none";
+
+      // Add CSS to style the bottom buttons
+      const customStyles = document.createElement("style");
+      customStyles.textContent = `
             #zen-sidebar-bottom-buttons {
                 display: flex !important;
                 justify-content: space-between;
@@ -216,7 +216,7 @@
                 -moz-appearance: none !important;
             }
         `;
-        document.head.appendChild(customStyles);
+      document.head.appendChild(customStyles);
     }
 
     // Create sidebar container
@@ -232,19 +232,27 @@
             flex-direction: column;
         `;
 
-      // Insert directly after the splitter
-      sidebarSplitter.parentNode.insertBefore(
-        sidebarContainer,
-        sidebarSplitter.nextSibling
-      );
-      console.log("[ZenHaven] Sidebar container added after splitter");
+      // Find the tabbox and inject before it
+      const tabbox = document.getElementById("tabbrowser-tabbox");
+      if (tabbox) {
+        // Insert before the tabbox
+        tabbox.parentNode.insertBefore(sidebarContainer, tabbox);
+        console.log("[ZenHaven] Sidebar container added before tabbrowser-tabbox");
+      } else {
+        // Fallback to original placement after splitter
+        sidebarSplitter.parentNode.insertBefore(
+          sidebarContainer,
+          sidebarSplitter.nextSibling
+        );
+        console.log("[ZenHaven] Tabbox not found, sidebar container added after splitter");
+      }
 
       // Create workspace observer
       const workspaceObserver = new MutationObserver((mutations) => {
         mutations.forEach((mutation) => {
           if (mutation.type === "attributes" && mutation.attributeName === "haven-workspaces") {
             console.log("[ZenHaven] Workspace observer triggered");
-            
+
             // Toggle behavior - if workspaces are already shown, hide them
             const existingWorkspaces = sidebarContainer.querySelectorAll('.haven-workspace');
             if (existingWorkspaces.length > 0) {
@@ -252,7 +260,7 @@
               sidebarContainer.removeAttribute("haven-workspaces");
               return;
             }
-          
+
             // Add styles for workspace button
             const workspaceStyles = document.createElement("style");
             workspaceStyles.textContent = `
@@ -306,7 +314,7 @@
               const workspacesButton = document.getElementById("zen-workspaces-button");
               if (workspacesButton) {
                 console.log("[ZenHaven] Found workspace button:", workspacesButton);
-                
+
                 // Get all workspace elements directly
                 const workspaceElements = Array.from(workspacesButton.children);
                 console.log("[ZenHaven] Workspace elements:", workspaceElements);
@@ -330,20 +338,19 @@
                     }
                   });
 
-                  
+
                   // Create content container
                   const contentDiv = document.createElement("div");
                   contentDiv.className = "haven-workspace-content";
-                  
+
                   // Find workspace sections using the workspace's own ID
                   const sections = document.querySelectorAll(
                     `.zen-workspace-tabs-section[zen-workspace-id="${workspace.getAttribute('zen-workspace-id')}"]`
                   );
-                  
-                  // Replace the sections.forEach section with:
+
                   sections.forEach(section => {
                     const root = section.shadowRoot || section;
-                    
+
                     // Create wrapper with same class
                     const sectionWrapper = document.createElement('div');
                     sectionWrapper.className = 'haven-workspace-section';
@@ -355,8 +362,10 @@
                     }, '');
                     sectionWrapper.style.cssText = cssText;
 
+                    // Move tab groups query inside the loop where root is defined
+                    const tabGroups = root.querySelectorAll('tab-group');
+
                     // Clone tab groups with their styles
-                    const tabGroups = root.querySelectorAll('.zen-tab-group');
                     tabGroups.forEach(group => {
                       const groupClone = group.cloneNode(true);
                       // Copy computed styles from original group
@@ -381,7 +390,7 @@
                         sectionWrapper.appendChild(clone);
                       }
                     });
-                    
+
                     contentDiv.appendChild(sectionWrapper);
                   });
 
@@ -394,9 +403,8 @@
           }
 
           if (mutation.type === "attributes" && mutation.attributeName === "haven-downloads") {
-            const sidebarContainer = document.getElementById("zen-haven-container"); // Assuming sidebarContainer is defined elsewhere, added for context
+            const sidebarContainer = document.getElementById("zen-haven-container");
 
-            // --- Clear existing ---
             const existingDownloadsContent = sidebarContainer.querySelector('.haven-downloads-view');
             if (existingDownloadsContent) {
               existingDownloadsContent.remove();
@@ -410,7 +418,6 @@
               const downloadsViewContainer = document.createElement("div");
               downloadsViewContainer.className = "haven-downloads-view";
 
-              // --- Search Bar ---
               const searchBar = document.createElement("div");
               searchBar.className = "haven-downloads-searchbar";
               const searchInput = document.createElement("input");
@@ -419,241 +426,278 @@
               searchBar.appendChild(searchInput);
               downloadsViewContainer.appendChild(searchBar);
 
-              // --- List Area ---
               const downloadsListArea = document.createElement("div");
               downloadsListArea.className = "haven-downloads-list-area";
               downloadsListArea.textContent = "Loading download history...";
-              downloadsListArea.style.color = 'var(--toolbar-color, white)'; // Use theme variable
+              downloadsListArea.style.color = 'var(--toolbar-color, white)';
               downloadsViewContainer.appendChild(downloadsListArea);
 
-              // --- Append container ---
               sidebarContainer.appendChild(downloadsViewContainer);
 
-              // --- Execute Direct SQL Query and Build UI ---
-              let dbConnection = null,
-                statement = null,
-                downloadItems = [];
+              (async () => {
+                let downloadItems = [];
+                try {
+                  const { DownloadHistory } = ChromeUtils.importESModule("resource://gre/modules/DownloadHistory.sys.mjs");
+                  const { Downloads } = ChromeUtils.importESModule("resource://gre/modules/Downloads.sys.mjs");
+                  const { PrivateBrowsingUtils } = ChromeUtils.importESModule("resource://gre/modules/PrivateBrowsingUtils.sys.mjs");
+                  const { FileUtils } = ChromeUtils.importESModule("resource://gre/modules/FileUtils.sys.mjs");
+                  const { NetUtil } = ChromeUtils.importESModule("resource://gre/modules/NetUtil.sys.mjs");
+                  const { OpenDownload } = ChromeUtils.importESModule("resource://gre/modules/DownloadsCommon.sys.mjs");
 
-              try {
-                const { PlacesUtils } = ChromeUtils.importESModule("resource://gre/modules/PlacesUtils.sys.mjs");
-                dbConnection = PlacesUtils.history.DBConnection;
+                  const isPrivate = PrivateBrowsingUtils.isContentWindowPrivate(window);
+                  console.log("[ZenHaven Downloads] Fetching list. Private context:", isPrivate);
 
-                let attrStmt = dbConnection.createStatement(
-                  "SELECT id FROM moz_anno_attributes WHERE name = 'downloads/destinationFileURI'"
-                );
-                let downloadAttrId = null;
-                if (attrStmt.executeStep()) {
-                  downloadAttrId = attrStmt.getInt64(0);
-                }
-                attrStmt.finalize();
-
-                if (!downloadAttrId) {
-                  throw new Error("'downloads/destinationFileURI' attribute ID not found.");
-                }
-
-                const sql = `
-                  SELECT p.url, p.title, h.visit_date, a.content AS fileUri
-                  FROM moz_places p
-                  JOIN moz_annos a ON p.id = a.place_id
-                  JOIN moz_historyvisits h ON p.id = h.place_id
-                  WHERE a.anno_attribute_id = :attr_id
-                  GROUP BY p.id
-                  ORDER BY h.visit_date DESC
-                `;
-                statement = dbConnection.createStatement(sql);
-                statement.params.attr_id = downloadAttrId;
-
-                while (statement.executeStep()) {
-                  let url = statement.getUTF8String(0);
-                  let title = statement.getUTF8String(1);
-                  let visit_date_micros = statement.getInt64(2);
-                  let fileUri = statement.getUTF8String(3);
-
-                  if (fileUri && fileUri.startsWith('file:///')) {
-                    downloadItems.push({
-                      filename: title || url?.split('/').pop() || 'Unknown Filename',
-                      timestamp: visit_date_micros / 1000,
-                      url: url,
-                      fileUri: fileUri,
-                    });
-                  }
-                }
-
-                // --- UI Building ---
-                downloadsListArea.textContent = ''; // Clear "Loading..."
-
-                if (downloadItems.length === 0) {
-                  downloadsListArea.textContent = "No downloads found in history.";
-                  downloadsListArea.style.border = '1px dashed var(--error-color, red)'; // Use theme variable if possible
-                  downloadsListArea.style.color = 'var(--error-color, red)';
-                } else {
-                  downloadsListArea.style.border = 'none';
-
-                  const downloadsByDate = downloadItems.reduce((acc, download) => {
-                    const date = new Date(download.timestamp);
-                    const dateString = date.toISOString().split('T')[0];
-                    if (!acc[dateString]) {
-                      acc[dateString] = [];
-                    }
-                    acc[dateString].push(download);
-                    return acc;
-                  }, {});
-
-                  function getDownloadCategory(filename) {
-                    const name = filename || '';
-                    const extension = name.includes('.') ? name.split('.').pop().toLowerCase() : '';
-                    const mediaExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg', 'avif', 'jxl', 'mp4', 'webm', 'mov', 'avi', 'mkv', 'flv', 'mp3', 'wav', 'ogg', 'aac', 'flac', 'm4a', 'opus'];
-                    const docExtensions = ['pdf', 'epub', 'mobi', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'odt', 'ods', 'odp', 'txt', 'log', 'csv', 'json', 'xml', 'md'];
-                    const fileExtensions = ['zip', 'rar', '7z', 'tar', 'gz', 'bz2', 'iso', 'img', 'exe', 'msi', 'dmg', 'pkg', 'deb', 'rpm'];
-
-                    if (mediaExtensions.includes(extension)) return 'media';
-                    if (docExtensions.includes(extension)) return 'documents';
-                    if (fileExtensions.includes(extension)) return 'files';
-                    return 'files'; // Default to files
-                  }
-
-                  function escapeForHTMLAttr(str) {
-                    if (!str) return '';
-                    return str.toString()
-                      .replace(/&/g, '&amp;')
-                      .replace(/</g, '&lt;')
-                      .replace(/>/g, '&gt;')
-                      .replace(/"/g, '&quot;')
-                      .replace(/'/g, '&#39;');
-                  }
-
-                  const sortedDates = Object.keys(downloadsByDate).sort((a, b) => b.localeCompare(a));
-
-                  sortedDates.forEach((dateString, dateIndex) => {
-                    const downloadsForDate = downloadsByDate[dateString].sort((a, b) => b.timestamp - a.timestamp);
-
-                    const dateSection = document.createElement("div");
-                    dateSection.className = "haven-downloads-date-section";
-                    const dateHeader = document.createElement("div");
-                    dateHeader.className = "haven-downloads-date-header";
-                    const dateObj = new Date(dateString + 'T00:00:00');
-                    const formattedDate = dateObj.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
-                    dateHeader.innerHTML = `<span class="date-toggle">▼</span><span class="date-text">${formattedDate}</span>`;
-                    dateSection.appendChild(dateHeader);
-
-                    const dateContent = document.createElement("div");
-                    dateContent.className = "haven-downloads-date-content";
-                    dateSection.appendChild(dateContent);
-
-                    const filesColumn = document.createElement("div");
-                    filesColumn.className = "haven-downloads-column files-column";
-                    filesColumn.innerHTML = '<div class="column-title">Files</div>';
-                    const filesList = document.createElement("div");
-                    filesList.className = "files-list";
-                    filesColumn.appendChild(filesList);
-
-                    const rightColumn = document.createElement("div");
-                    rightColumn.className = "haven-downloads-column right-column";
-
-                    const mediaColumn = document.createElement("div");
-                    mediaColumn.className = "haven-downloads-subcolumn media-column";
-                    mediaColumn.innerHTML = '<div class="column-title">Media</div>';
-                    const mediaGrid = document.createElement("div");
-                    mediaGrid.className = "media-grid";
-                    mediaColumn.appendChild(mediaGrid);
-
-                    const documentsColumn = document.createElement("div");
-                    documentsColumn.className = "haven-downloads-subcolumn documents-column";
-                    documentsColumn.innerHTML = '<div class="column-title">Documents</div>';
-                    const documentsGrid = document.createElement("div");
-                    documentsGrid.className = "documents-grid";
-                    documentsColumn.appendChild(documentsGrid);
-
-                    rightColumn.appendChild(mediaColumn);
-                    rightColumn.appendChild(documentsColumn);
-
-                    const separator = document.createElement("div");
-                    separator.className = "column-separator";
-
-                    dateContent.appendChild(filesColumn);
-                    dateContent.appendChild(separator);
-                    dateContent.appendChild(rightColumn);
-
-                    let itemsAdded = false;
-                    downloadsForDate.forEach((download) => {
-                      const category = getDownloadCategory(download.filename);
-                      const state = "Complete"; // Assuming completion based on history entry
-
-                      try {
-                        const safeFilenameForAttr = escapeForHTMLAttr(download.filename);
-                        const safeSourceUrlForAttr = escapeForHTMLAttr(download.url);
-                        const safeFileUriForAttr = escapeForHTMLAttr(download.fileUri);
-                        const titleAttr = `${safeFilenameForAttr}\nSource: ${safeSourceUrlForAttr}\nFile: ${safeFileUriForAttr}`;
-                        const displayFilename = download.filename || 'Unknown Filename';
-
-                        let targetElement;
-                        let itemElement;
-
-                        if (category === 'files') {
-                          itemElement = document.createElement("div");
-                          itemElement.className = "haven-download-file-item";
-                          itemElement.innerHTML = `<div class="file-icon"></div><div class="file-details"><div class="file-name" title="${titleAttr}">${displayFilename}</div><div class="file-status">${state}</div></div>`;
-                          targetElement = filesList;
-                        } else if (category === 'media') {
-                          itemElement = document.createElement("div");
-                          itemElement.className = "haven-download-media-item";
-                          itemElement.title = titleAttr;
-                          // Optionally add background image preview for media if feasible
-                          // itemElement.style.backgroundImage = `url('${escapeForHTMLAttr(download.fileUri)}')`; // Requires careful handling/security
-                          targetElement = mediaGrid;
-                        } else if (category === 'documents') {
-                          itemElement = document.createElement("div");
-                          itemElement.className = "haven-download-document-item";
-                          itemElement.title = titleAttr;
-                          // Optionally add a document icon/preview
-                          targetElement = documentsGrid;
-                        }
-
-                        if (itemElement && targetElement) {
-                          targetElement.appendChild(itemElement);
-                          itemsAdded = true;
-                        }
-
-                      } catch (itemError) {
-                        // Optionally log the error to a more persistent store or UI element if needed
-                        const errorItem = document.createElement('div');
-                        errorItem.textContent = `Error processing: ${download.filename || 'Unknown'}`;
-                        errorItem.style.color = 'var(--error-color, red)';
-                        errorItem.style.fontSize = '0.8em';
-                        if (category === 'files') filesList.appendChild(errorItem);
-                        else if (category === 'media') mediaGrid.appendChild(errorItem);
-                        else if (category === 'documents') documentsGrid.appendChild(errorItem);
-                      }
-                    });
-
-                    if (itemsAdded) {
-                      dateHeader.addEventListener("click", () => {
-                        const isExpanded = dateContent.style.display !== "none";
-                        dateContent.style.display = isExpanded ? "none" : "";
-                        dateHeader.querySelector(".date-toggle").textContent = isExpanded ? "▶" : "▼";
-                      });
-                      downloadsListArea.appendChild(dateSection);
-                      if (dateIndex < sortedDates.length - 1) {
-                        const horizontalSeparator = document.createElement("div");
-                        horizontalSeparator.className = "date-separator";
-                        downloadsListArea.appendChild(horizontalSeparator);
-                      }
-                    }
+                  const list = await DownloadHistory.getList({
+                    type: isPrivate ? Downloads.ALL : Downloads.PUBLIC
                   });
-                }
 
-              } catch (err) {
-                // Report error more gracefully if possible
-                downloadsListArea.textContent = "Error loading download history.";
-                downloadsListArea.style.border = '1px dashed var(--error-color, red)';
-                downloadsListArea.style.color = 'var(--error-color, red)';
-              } finally {
-                if (statement) {
-                  statement.finalize();
-                }
-              }
+                  console.log("[ZenHaven Downloads] List object:", list);
+                  const allDownloads = await list.getAll();
+                  console.log(`[ZenHaven Downloads] Fetched ${allDownloads.length} download objects.`);
 
-              // --- CSS Styles ---
+                  for (const download of allDownloads) {
+                    if (!download.target || !download.target.path) {
+                      continue;
+                    }
+
+                    let filename = 'Unknown Filename';
+                    try {
+                      let file = new FileUtils.File(download.target.path);
+                      filename = file.leafName;
+                    } catch (e) {
+                      try {
+                        filename = decodeURIComponent(download.source.url.split('/').pop().split('?')[0]);
+                      } catch (urlError) {
+                        console.warn("[ZenHaven Downloads] Error getting filename from path or URL:", e, urlError, download);
+                      }
+                    }
+
+                    const timestamp = download.endTime || download.startTime;
+
+                    let fileUri;
+                    try {
+                      let file = new FileUtils.File(download.target.path);
+                      fileUri = NetUtil.newURI(file).spec;
+                    } catch (e) {
+                      console.warn("[ZenHaven Downloads] Error converting path to URI:", e, download.target.path);
+                      continue;
+                    }
+                    downloadItems.push({
+                      filename: filename || url?.split('/').pop() || 'Unknown Filename',
+                      timestamp: timestamp,
+                      url: download.source.url,
+                      fileUri: fileUri
+                    });
+                    console.log(downloadItems)
+
+                  }
+
+                  console.log(`[ZenHaven Downloads] Processed ${downloadItems.length} valid download items.`);
+
+                  downloadsListArea.textContent = '';
+
+                  if (downloadItems.length === 0) {
+                    downloadsListArea.textContent = "No downloads found in history.";
+                    downloadsListArea.style.border = '1px dashed var(--error-color, red)';
+                    downloadsListArea.style.color = 'var(--error-color, red)';
+                  } else {
+                    downloadsListArea.style.border = 'none';
+
+                    const downloadsByDate = downloadItems.reduce((acc, download) => {
+                      const date = new Date(download.timestamp);
+                      const dateString = date.toISOString().split('T')[0];
+                      if (!acc[dateString]) {
+                        acc[dateString] = [];
+                      }
+                      acc[dateString].push(download);
+                      return acc;
+                    }, {});
+
+                    function getDownloadCategory(filename) {
+                      const name = filename || '';
+                      const extension = name.includes('.') ? name.split('.').pop().toLowerCase() : '';
+                      const mediaExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg', 'avif', 'jxl', 'mp4', 'webm', 'mov', 'avi', 'mkv', 'flv', 'mp3', 'wav', 'ogg', 'aac', 'flac', 'm4a', 'opus'];
+                      const docExtensions = ['pdf', 'epub', 'mobi', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'odt', 'ods', 'odp', 'txt', 'log', 'csv', 'json', 'xml', 'md'];
+                      const fileExtensions = ['zip', 'rar', '7z', 'tar', 'gz', 'bz2', 'iso', 'img', 'exe', 'msi', 'dmg', 'pkg', 'deb', 'rpm'];
+
+                      if (mediaExtensions.includes(extension)) return 'media';
+                      if (docExtensions.includes(extension)) return 'documents';
+                      if (fileExtensions.includes(extension)) return 'files';
+                      return 'files';
+                    }
+
+                    function escapeForHTMLAttr(str) {
+                      if (!str) return '';
+                      return str.toString()
+                        .replace(/&/g, '&')
+                        .replace(/</g, '<')
+                        .replace(/>/g, '>')
+                        .replace(/"/g, '"')
+                        .replace(/'/g, '&#39;');
+                    }
+
+                    const sortedDates = Object.keys(downloadsByDate).sort((a, b) => b.localeCompare(a));
+
+                    sortedDates.forEach((dateString, dateIndex) => {
+                      const downloadsForDate = downloadsByDate[dateString].sort((a, b) => b.timestamp - a.timestamp);
+
+                      const dateSection = document.createElement("div");
+                      dateSection.className = "haven-downloads-date-section";
+                      const dateHeader = document.createElement("div");
+                      dateHeader.className = "haven-downloads-date-header";
+                      const dateObj = new Date(dateString + 'T00:00:00');
+                      const formattedDate = dateObj.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+                      dateHeader.innerHTML = `<span class="date-toggle">▼</span><span class="date-text">${formattedDate}</span>`;
+                      dateSection.appendChild(dateHeader);
+
+                      const dateContent = document.createElement("div");
+                      dateContent.className = "haven-downloads-date-content";
+                      dateSection.appendChild(dateContent);
+
+                      const filesColumn = document.createElement("div");
+                      filesColumn.className = "haven-downloads-column files-column";
+                      filesColumn.innerHTML = '<div class="column-title">Files</div>';
+                      const filesList = document.createElement("div");
+                      filesList.className = "files-list";
+                      filesColumn.appendChild(filesList);
+
+                      const rightColumn = document.createElement("div");
+                      rightColumn.className = "haven-downloads-column right-column";
+
+                      const mediaColumn = document.createElement("div");
+                      mediaColumn.className = "haven-downloads-subcolumn media-column";
+                      mediaColumn.innerHTML = '<div class="column-title">Media</div>';
+                      const mediaGrid = document.createElement("div");
+                      mediaGrid.className = "media-grid";
+                      mediaColumn.appendChild(mediaGrid);
+
+                      const documentsColumn = document.createElement("div");
+                      documentsColumn.className = "haven-downloads-subcolumn documents-column";
+                      documentsColumn.innerHTML = '<div class="column-title">Documents</div>';
+                      const documentsGrid = document.createElement("div");
+                      documentsGrid.className = "documents-grid";
+                      documentsColumn.appendChild(documentsGrid);
+
+                      rightColumn.appendChild(mediaColumn);
+                      rightColumn.appendChild(documentsColumn);
+
+                      const separator = document.createElement("div");
+                      separator.className = "column-separator";
+
+                      dateContent.appendChild(filesColumn);
+                      dateContent.appendChild(separator);
+                      dateContent.appendChild(rightColumn);
+
+
+                      let itemsAdded = false;
+                      downloadsForDate.forEach((download) => {
+                        const category = getDownloadCategory(download.filename);
+                        try {
+                          const safeFilenameForAttr = escapeForHTMLAttr(download.filename);
+                          // const safeSourceUrlForAttr = escapeForHTMLAttr(download.url);
+                          const safeFileUriForAttr = escapeForHTMLAttr(download.fileUri);
+                          // const safeFilePathForAttr = escapeForHTMLAttr(download.filePath);
+                          const titleAttr = `${safeFilenameForAttr}\nFile: ${safeFileUriForAttr}`;
+                          const displayFilename = download.filename || 'Unknown Filename';
+
+                          let targetElement;
+                          let itemElement;
+                          
+                          // Opening the File
+                          const handleItemClick = (event) => {
+                            event.preventDefault();
+                            try {
+                              let filePath = download.fileUri.replace('file:///', '');
+                              filePath = decodeURIComponent(filePath);
+
+                              filePath = filePath.replace(/\//g, '\\');
+
+                              let file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
+
+                              if (filePath.match(/^[A-Za-z]:\\/)) {
+                                file.initWithPath(filePath);
+                              } else {
+                                file.initWithPath(`C:\\${filePath}`);
+                              }
+
+                              if (file.exists()) {
+                                try {
+                                  file.launch();
+                                } catch (launchError) {
+                                  console.error('[ZenHaven] Error launching file:', launchError);
+                                  alert(`Error opening file: ${download.filename}`);
+                                }
+                              } else {
+                                console.error(`[ZenHaven] File not found: ${filePath}`);
+                                alert(`File not found: ${download.filename}`);
+                              }
+                            } catch (err) {
+                              console.error('[ZenHaven] Error opening file:', err);
+                              alert(`Error accessing file: ${download.filename}`);
+                            }
+                          };
+
+                          if (category === 'files') {
+                            itemElement = document.createElement("div");
+                            itemElement.className = "haven-download-file-item";
+                            itemElement.innerHTML = `<div class="file-icon"></div><div class="file-details"><div class="file-name" title="${titleAttr}">${displayFilename}</div><div class="file-status">Complete</div></div>`; 
+                            itemElement.addEventListener('click', handleItemClick);
+                            targetElement = filesList;
+                          } else if (category === 'media') {
+                            itemElement = document.createElement("div");
+                            itemElement.className = "haven-download-media-item";
+                            itemElement.title = titleAttr;
+                            itemElement.addEventListener('click', handleItemClick);
+                            targetElement = mediaGrid;
+                          } else if (category === 'documents') {
+                            itemElement = document.createElement("div");
+                            itemElement.className = "haven-download-document-item";
+                            itemElement.title = titleAttr;
+                            itemElement.addEventListener('click', handleItemClick);
+                            targetElement = documentsGrid;
+                          }
+
+                          if (itemElement && targetElement) {
+                            targetElement.appendChild(itemElement);
+                            itemsAdded = true;
+                          }
+
+                        } catch (itemError) {
+                          console.error("[ZenHaven Downloads] Error processing item:", itemError, download);
+                          const errorItem = document.createElement('div');
+                          errorItem.textContent = `Error displaying: ${download.filename || 'Unknown'}`;
+                          errorItem.style.color = 'var(--error-color, red)';
+                          errorItem.style.fontSize = '0.8em';
+                          if (category === 'files') filesList.appendChild(errorItem);
+                          else if (category === 'media') mediaGrid.appendChild(errorItem);
+                          else if (category === 'documents') documentsGrid.appendChild(errorItem);
+                        }
+                      });
+
+                      if (itemsAdded) {
+                        dateHeader.addEventListener("click", () => {
+                          const isExpanded = dateContent.style.display !== "none";
+                          dateContent.style.display = isExpanded ? "none" : "";
+                          dateHeader.querySelector(".date-toggle").textContent = isExpanded ? "▶" : "▼";
+                        });
+                        downloadsListArea.appendChild(dateSection);
+                        if (dateIndex < sortedDates.length - 1) {
+                          const horizontalSeparator = document.createElement("div");
+                          horizontalSeparator.className = "date-separator";
+                          downloadsListArea.appendChild(horizontalSeparator);
+                        }
+                      }
+                    });
+                  }
+
+                } catch (err) {
+                  console.error("[ZenHaven Downloads] Error fetching or processing download history:", err);
+                  downloadsListArea.textContent = "Error loading download history.";
+                  downloadsListArea.style.border = '1px dashed var(--error-color, red)';
+                  downloadsListArea.style.color = 'var(--error-color, red)';
+                }
+              })();
+
               const downloadsStyles = document.createElement("style");
               downloadsStyles.id = "haven-downloads-styles";
               downloadsStyles.textContent = `
@@ -669,7 +713,7 @@
               .haven-downloads-view {
                   display: flex;
                   flex-direction: column;
-                  height: 100%;
+                  height: 90vh;
                   width: 100%;
                   padding: 20px 32px 20px 40px;
                   box-sizing: border-box;
@@ -773,6 +817,9 @@
               }
 
               .haven-downloads-date-content[style*="display: none"] {
+                  max-height: 0;
+                  padding-top: 0;
+                  padding-bottom: 0;
                   max-height: 0;
                   padding-top: 0;
                   padding-bottom: 0;
@@ -931,38 +978,38 @@
 
           if (mutation.type === "attributes" && mutation.attributeName === "haven-history") {
             console.log("[ZenHaven] History observer triggered");
-          
+
             const existingHistory = sidebarContainer.querySelectorAll(".haven-history");
             existingHistory.forEach((el) => el.remove());
-          
+
             if (sidebarContainer.hasAttribute("haven-history")) {
               const historyContainer = document.createElement("div");
               historyContainer.className = "haven-history";
               sidebarContainer.appendChild(historyContainer);
-          
+
               const { PlacesUtils } = ChromeUtils.importESModule("resource://gre/modules/PlacesUtils.sys.mjs");
               const SESSION_TIMEOUT_MINUTES = 30;
-          
+
               const startDate = new Date();
               startDate.setDate(startDate.getDate() - 7);
-          
+
               const query = PlacesUtils.history.getNewQuery();
               query.beginTimeReference = query.TIME_RELATIVE_EPOCH;
               query.beginTime = startDate.getTime() * 1000;
               query.endTime = Date.now() * 1000;
               query.endTimeReference = query.TIME_RELATIVE_EPOCH;
-          
+
               const options = PlacesUtils.history.getNewQueryOptions();
               options.sortingMode = options.SORT_BY_DATE_DESCENDING;
               options.resultType = options.RESULTS_AS_VISIT;
               options.includeHidden = false;
-          
+
               const result = PlacesUtils.history.executeQuery(query, options);
               const root = result.root;
               root.containerOpen = true;
-          
+
               const visitsByDate = new Map();
-          
+
               for (let i = 0; i < root.childCount; i++) {
                 const node = root.getChild(i);
                 const visitTime = new Date(node.time / 1000);
@@ -972,22 +1019,22 @@
                   day: "numeric",
                   year: "numeric"
                 });
-          
+
                 if (!visitsByDate.has(dayKey)) visitsByDate.set(dayKey, []);
                 visitsByDate.get(dayKey).push({ node, time: visitTime });
               }
-          
+
               root.containerOpen = false;
-          
+
               visitsByDate.forEach((visits, dayKey, index) => {
                 const daySection = createCollapsible("📅 " + dayKey, false, "day-section");
                 historyContainer.appendChild(daySection.wrapper);
-          
+
                 // Group by session within the day
                 const sessions = [];
                 let currentSession = [];
                 let lastTime = null;
-          
+
                 visits.forEach(({ node, time }) => {
                   if (lastTime) {
                     const gap = (lastTime - time) / (1000 * 60);
@@ -1001,86 +1048,89 @@
                   currentSession.push({ node, time });
                   lastTime = time;
                 });
-          
+
                 if (currentSession.length > 0) sessions.push(currentSession);
-          
+
                 sessions.forEach((session, idx) => {
                   const sessionStart = session[session.length - 1].time;
                   const sessionEnd = session[0].time;
-          
+
                   const timeRange = `${sessionStart.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} – ${sessionEnd.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
                   const sessionTitle = `🕓 Session ${idx + 1} • ${timeRange}`;
-          
+
                   const sessionSection = createCollapsible(sessionTitle, false, "session-section");
                   daySection.content.appendChild(sessionSection.wrapper);
-          
+
                   session.forEach(({ node }) => {
                     const item = createHistoryItem(node);
                     sessionSection.content.appendChild(item);
                   });
                 });
               });
-          
+
               function createCollapsible(title, expanded = false, className = "") {
                 const wrapper = document.createElement("div");
                 wrapper.className = className;
-          
+
                 const header = document.createElement("div");
                 header.className = "collapsible-header";
                 header.innerHTML = `
                   <span class="section-toggle">${expanded ? "▼" : "▶"}</span>
                   <span class="section-title">${title}</span>
                 `;
-          
+
                 const content = document.createElement("div");
                 content.className = "collapsible-content";
                 content.style.display = expanded ? "block" : "none";
-          
+
                 header.addEventListener("click", () => {
                   const isOpen = content.style.display === "block";
                   content.style.display = isOpen ? "none" : "block";
                   header.querySelector(".section-toggle").textContent = isOpen ? "▶" : "▼";
                 });
-          
+
                 wrapper.appendChild(header);
                 wrapper.appendChild(content);
                 return { wrapper, content };
               }
-          
+
               function createHistoryItem(node) {
                 const item = document.createElement("div");
                 item.className = "haven-history-item";
-          
+
                 const favicon = document.createElement("img");
                 favicon.className = "history-icon";
                 favicon.src = "https://www.google.com/s2/favicons?sz=32&domain_url=" + encodeURIComponent(node.uri);
-          
+
                 const content = document.createElement("div");
                 content.className = "history-item-content";
-          
+
                 const title = document.createElement("div");
                 title.className = "history-title";
                 title.textContent = node.title || node.uri;
-          
+
                 const time = document.createElement("div");
                 time.className = "history-time";
                 time.textContent = new Date(node.time / 1000).toLocaleTimeString();
-          
+
                 content.appendChild(title);
                 content.appendChild(time);
-          
+
                 item.appendChild(favicon);
                 item.appendChild(content);
-          
+
                 item.addEventListener("click", () => {
                   gBrowser.selectedTab = gBrowser.addTab(node.uri, {
                     triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal()
                   });
                 });
-          
+
                 return item;
+
               }
-          
+
+
+
               const style = document.createElement("style");
               style.textContent = `
                 .haven-history {
@@ -1170,7 +1220,7 @@
               document.head.appendChild(style);
             }
           }
-          
+
 
         });
       });
@@ -1187,6 +1237,10 @@
             align-items: center;
             overflow-x: scroll;
             overflow-y: hidden;
+              box-shadow:
+                inset 10px 0 20px rgba(0, 0, 0, 0.5),  /* left */
+                inset 0 0 20px rgba(0, 0, 0, 0.5),  /* bottom */
+                inset 0 0 20px rgba(0, 0, 0, 0.5);   /* top */
             
             .haven-workspace {
               height: 85% !important;
@@ -1297,7 +1351,7 @@
     customStyles.textContent += `
       :root:has(#navigator-toolbox[haven]) {
         #custom-toolbar {
-          width: 100%;
+          width: 15vw;
           height: 100%;
           display: flex;
           flex-direction: column;
@@ -1406,26 +1460,26 @@
             // Restore bottom buttons after media controls toolbar
             const bottomButtons = document.getElementById("zen-sidebar-bottom-buttons");
             const mediaToolbar = document.getElementById("zen-media-controls-toolbar");
-            
+
             if (bottomButtons && mediaToolbar) {
-                // Insert after media toolbar
-                mediaToolbar.parentNode.insertBefore(bottomButtons, mediaToolbar.nextSibling);
-                
-                // Show workspaces button again
-                const workspacesButton = bottomButtons.querySelector("#zen-workspaces-button");
-                if (workspacesButton) {
-                    workspacesButton.style.display = "";
-                }
-                console.log("[ZenHaven] Bottom buttons restored after media controls");
+              // Insert after media toolbar
+              mediaToolbar.parentNode.insertBefore(bottomButtons, mediaToolbar.nextSibling);
+
+              // Show workspaces button again
+              const workspacesButton = bottomButtons.querySelector("#zen-workspaces-button");
+              if (workspacesButton) {
+                workspacesButton.style.display = "";
+              }
+              console.log("[ZenHaven] Bottom buttons restored after media controls");
             } else {
-                console.log("[ZenHaven] Could not find media controls toolbar or bottom buttons");
+              console.log("[ZenHaven] Could not find media controls toolbar or bottom buttons");
             }
 
             // Show all original children
             Array.from(toolbox.children).forEach((child) => {
-                if (child.id !== "custom-toolbar") {
-                    child.style.display = "";
-                }
+              if (child.id !== "custom-toolbar") {
+                child.style.display = "";
+              }
             });
 
             // Remove custom elements
@@ -1433,11 +1487,11 @@
             const havenContainer = document.getElementById("zen-haven-container");
 
             if (customToolbar) {
-                customToolbar.remove();
+              customToolbar.remove();
             }
 
             if (havenContainer) {
-                havenContainer.remove();
+              havenContainer.remove();
             }
           }
         }
@@ -1453,8 +1507,8 @@
   function createHavenToggle() {
     const sidebarBottomButtons = document.getElementById("zen-sidebar-bottom-buttons");
     if (!sidebarBottomButtons) {
-        console.log('[ZenHaven] Bottom buttons container not found');
-        return;
+      console.log('[ZenHaven] Bottom buttons container not found');
+      return;
     }
 
     // Create the button with correct XUL structure
@@ -1486,14 +1540,14 @@
 
     // Add click handler
     toolbarButton.addEventListener('click', () => {
-        const toolbox = document.getElementById('navigator-toolbox');
-        if (toolbox) {
-            if (toolbox.hasAttribute('haven')) {
-                toolbox.removeAttribute('haven');
-            } else {
-                toolbox.setAttribute('haven', '');
-            }
+      const toolbox = document.getElementById('navigator-toolbox');
+      if (toolbox) {
+        if (toolbox.hasAttribute('haven')) {
+          toolbox.removeAttribute('haven');
+        } else {
+          toolbox.setAttribute('haven', '');
         }
+      }
     });
 
     // Assemble the button
