@@ -10,6 +10,7 @@ An Optimistic To-Do list for Zen Haven
 * Rename Files
 ### Workspaces
 * Rearrange Workspaces by Drag-and-Drop
+* Tab Groups are Displayed in Haven
 * Copy Link Button (in place of reset pinned tab button)
 * intigration with other userChrome.js mods like [Tab Sorters](https://github.com/Darsh-A/Ai-TabGroups-ZenBrowser)
 * More Workspace Control Like Deltion, Creation, Renaming, etc.
@@ -30,7 +31,7 @@ An Optimistic To-Do list for Zen Haven
 
 ## Current
 [Anoms12](https://github.com/Anoms12)
-![image](https://github.com/user-attachments/assets/df8ba264-919f-4843-9fe7-ba476ed6a470)
+![image](https://github.com/user-attachments/assets/f0b3fa70-dc28-4df7-ae19-895add558de8)
 
 [ferrocyante](https://github.com/ferrocyante)
 
