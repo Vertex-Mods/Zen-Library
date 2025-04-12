@@ -364,7 +364,6 @@
 
                     // Move tab groups query inside the loop where root is defined
                     const tabGroups = root.querySelectorAll('tab-group');
-
                     // Clone tab groups with their styles
                     tabGroups.forEach(group => {
                       const groupClone = group.cloneNode(true);
