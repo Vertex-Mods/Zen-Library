@@ -1,27 +1,32 @@
 # Zen-Haven
 A new way to organize Zen
-**THIS WAS CODED WITH AI, I JUST HAVE IDEAS AND PATIENCE. ANYTHING IS POSSIBLE**
 ## To-Do
-* Full download history: Darsh-A
-  * Search downloads
-  * Native file view of standard formats
-  * Easy copy method to use downloads where needed
-* Fluent workspace integration allowing for advanced tab control: ???
-  * Copy link button when you hover over the tab icon
-  * Workspace creation form in Zen Haven
-Tab history support that allows for easy navigation: Anoms12
-  * Search for history
-  * Group by domain
-  * Easy way to delete history
-* Native password manager
-  * Use Firefox backend, give Zen feeling
-* Bookmark integration
-* Notes
-   * Built from the ground up
-* A _special_ feature that makes Haven stand out: ???
-* More native UI: Anoms12
-* Zen-like animations: logic
-
+An Optimistic To-Do list for Zen Haven
+### Downloads
+* Functioning search
+* Image Preview
+* Media Player (MP3, MP4, etc.)
+* Vertical Time Slider
+* Rename Files
+### Workspaces
+* Rearrange Workspaces by Drag-and-Drop
+* Copy Link Button (in place of reset pinned tab button)
+* intigration with other userChrome.js mods like [Tab Sorters](https://github.com/Darsh-A/Ai-TabGroups-ZenBrowser)
+* More Workspace Control Like Deltion, Creation, Renaming, etc.
+### History
+* Functioning Search
+* Vertical Time Slider
+* Delete History Items
+### Notes
+* Create Notes That Can be Read/Written
+* Save Notes Across Sessions
+* Functioning Search
+* Create Note From Selected Text in Browser
+* Group Notes
+### URL Bar Intigration
+* Opens Haven For Downloads and History
+* Searchable Workspaces
+* Searchable Notes
 
 ## Current
 [Anoms12](https://github.com/Anoms12)
