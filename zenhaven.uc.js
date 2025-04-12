@@ -441,7 +441,7 @@
                   const { PrivateBrowsingUtils } = ChromeUtils.importESModule("resource://gre/modules/PrivateBrowsingUtils.sys.mjs");
                   const { FileUtils } = ChromeUtils.importESModule("resource://gre/modules/FileUtils.sys.mjs");
                   const { NetUtil } = ChromeUtils.importESModule("resource://gre/modules/NetUtil.sys.mjs");
-                  const { OpenDownload } = ChromeUtils.importESModule("resource://gre/modules/DownloadsCommon.sys.mjs");
+                  // const { OpenDownload } = ChromeUtils.importESModule("resource://gre/modules/DownloadsCommon.sys.mjs");
 
                   const isPrivate = PrivateBrowsingUtils.isContentWindowPrivate(window);
                   console.log("[ZenHaven Downloads] Fetching list. Private context:", isPrivate);
