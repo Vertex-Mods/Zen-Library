@@ -1,5 +1,5 @@
 # Zen-Haven
-A new way to organize Zen
+A new way to organize Zen [(PR](https://github.com/zen-browser/desktop/pull/7550))
 ## To-Do
 An Optimistic To-Do list for Zen Haven
 ### Downloads
