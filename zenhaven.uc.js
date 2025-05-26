@@ -107,6 +107,14 @@
           <path fill-rule="evenodd" clip-rule="evenodd" d="M1 1.06567H14.9613V4.0144H1L1 1.06567ZM0 1.06567C0 0.513389 0.447715 0.0656738 1 0.0656738H14.9613C15.5136 0.0656738 15.9613 0.513389 15.9613 1.06567V4.0144C15.9613 4.55603 15.5307 4.99708 14.9932 5.01391V5.02686V13C14.9932 14.6569 13.65 16 11.9932 16H3.96814C2.31129 16 0.96814 14.6569 0.96814 13V5.02686V5.01391C0.430599 4.99708 0 4.55603 0 4.0144V1.06567ZM13.9932 5.02686H1.96814V13C1.96814 14.1046 2.86357 15 3.96814 15H11.9932C13.0977 15 13.9932 14.1046 13.9932 13V5.02686ZM9.95154 8.07495H6.01318V7.07495H9.95154V8.07495Z" fill="currentColor"/>
         </svg>`,
       },
+      {
+        id: "haven-notes-button",
+        label: "Notes",
+        command: "notes",
+        svgContent: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path fill-rule="evenodd" clip-rule="evenodd" d="M3 2C2.44772 2 2 2.44772 2 3V13C2 13.5523 2.44772 14 3 14H13C13.5523 14 14 13.5523 14 13V5.41421C14 5.149 13.8946 4.89464 13.7071 4.70711L11.2929 2.29289C11.1054 2.10536 10.851 2 10.5858 2H3ZM3 3H10V5.5C10 5.77614 10.2239 6 10.5 6H13V13H3V3ZM11 3.70711L12.2929 5H11V3.70711ZM5 7H11V8H5V7ZM11 9H5V10H11V9ZM5 11H11V12H5V11Z" fill="currentColor"/>
+        </svg>`,
+      },
     ];
 
     // Modify the button creation code
@@ -130,12 +138,17 @@
 
       // Add click handler for haven container attributes
       customDiv.addEventListener("click", (event) => {
-        // Handle haven container attributes
         const havenContainer = document.getElementById("zen-haven-container");
         if (havenContainer) {
           const currentAttr = `haven-${config.command}`;
           const hasCurrentAttr = havenContainer.hasAttribute(currentAttr);
 
+          
+          // Remove active state from all buttons
+          document.querySelectorAll('.custom-button').forEach(btn => {
+            btn.classList.remove('active');
+          });
+          
           // If clicking same button and container is visible, hide it
           if (hasCurrentAttr && havenContainer.style.display !== "none") {
             havenContainer.style.display = "none";
@@ -143,8 +156,15 @@
             return;
           }
 
+          
+          // Add active state to clicked button
+          customDiv.classList.add('active');
+          
           // Remove all existing content first
-          havenContainer.innerHTML = '';
+          while (havenContainer.firstChild) {
+            havenContainer.removeChild(havenContainer.firstChild);
+          }
+          
 
           // Remove all haven- attributes
           const attrs = havenContainer.getAttributeNames();
@@ -265,9 +285,9 @@
             const workspaceStyles = document.createElement("style");
             workspaceStyles.textContent = `
               .haven-workspace-add-button {
-                position: fixed;
+                position: sticky;
+                bottom: 16px;
                 right: 16px;
-                top: 16px;
                 width: 32px;
                 height: 32px;
                 display: flex;
@@ -277,19 +297,15 @@
                 border-radius: 6px;
                 cursor: pointer;
                 transition: background 0.2s;
-              }
-              .haven-workspace-add-button:hover {
-                background: var(--toolbar-hover-bgcolor);
-              }
-              .haven-workspace-add-button svg {
-                color: var(--toolbar-color);
+                margin-left: auto;
+                z-index: 100;
               }
             `;
             document.head.appendChild(workspaceStyles);
 
             // Create new workspace divs if attribute is present
             if (sidebarContainer.hasAttribute("haven-workspaces")) {
-              // Create add workspace button
+              // Create add workspace button and append it last
               const addWorkspaceButton = document.createElement("div");
               addWorkspaceButton.className = "haven-workspace-add-button";
               addWorkspaceButton.innerHTML = `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1416,6 +1432,10 @@
                   font-size: 12px;
                   width: 16px;
                   text-align: center;
+                  font-family: monospace;
+                  font-size: 12px;
+                  width: 16px;
+                  text-align: center;
                   color: var(--toolbar-color);
                 }
           
@@ -1474,6 +1494,206 @@
           }
 
 
+          if (mutation.type === "attributes" && mutation.attributeName === "haven-notes") {
+            const sidebarContainer = document.getElementById("zen-haven-container");
+            
+            if (sidebarContainer.hasAttribute("haven-notes")) {
+              // Only create new content if it doesn't exist
+              if (!sidebarContainer.querySelector('#haven-notes-view')) {
+                const notesViewContainer = document.createElement("div");
+                notesViewContainer.id = "haven-notes-view";
+            
+                // Create header section with search and add button
+                const headerSection = document.createElement("div");
+                headerSection.id = "haven-notes-header";
+            
+                // Add button
+                const addButton = document.createElement("button");
+                addButton.id = "haven-notes-add-button";
+                addButton.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 4V20M4 12H20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>`;
+                addButton.title = "Create new note";
+            
+                // Search bar
+                const searchBar = document.createElement("input");
+                searchBar.type = "text";
+                searchBar.id = "haven-notes-search";
+                searchBar.placeholder = "Search notes...";
+            
+                headerSection.appendChild(searchBar);
+                headerSection.appendChild(addButton);
+                notesViewContainer.appendChild(headerSection);
+            
+                // Notes grid container
+                const notesGrid = document.createElement("div");
+                notesGrid.id = "haven-notes-grid";
+            
+                // Create default note template
+                const createNoteCard = () => {
+                  const noteCard = document.createElement("div");
+                  noteCard.className = "haven-note-card"; // Keep as class since multiple cards
+                  noteCard.innerHTML = `
+                    <svg class="note-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path fill-rule="evenodd" clip-rule="evenodd" d="M4 4C4 2.89543 4.89543 2 6 2H14.1716C14.702 2 15.2107 2.21071 15.5858 2.58579L19.4142 6.41421C19.7893 6.78929 20 7.29799 20 7.82843V20C20 21.1046 19.1046 22 18 22H6C4.89543 22 4 21.1046 4 20V4ZM6 4H14V8C14 8.55228 14.4477 9 15 9H19V20H6V4ZM16 4.41421L18.5858 7H16V4.41421Z" fill="currentColor"/>
+                    </svg>
+                    <h1>Untitled</h1>
+                    <p>Click to add page content</p>
+                  `;
+                  return noteCard;
+                };
+            
+                addButton.addEventListener("click", () => {
+                  const newNote = createNoteCard();
+                  notesGrid.appendChild(newNote);
+                });
+            
+                notesGrid.appendChild(createNoteCard());
+                notesViewContainer.appendChild(notesGrid);
+                sidebarContainer.appendChild(notesViewContainer);
+            
+                const notesStyles = document.createElement("style");
+                notesStyles.id = "haven-notes-styles";
+                notesStyles.textContent = `
+                  #zen-haven-container[haven-notes] {
+                    flex-direction: column !important;
+                    overflow: hidden;
+                    width: 100%;
+                    height: 100%;
+                    padding: 0;
+                    box-sizing: border-box;
+                  }
+            
+                  #haven-notes-view {
+                    width: 100% !important;
+                    height: 90vh;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 20px;
+                    background: var(--zen-background);
+                    overflow-y: auto !important;  /* Enable vertical scrolling */
+                    scrollbar-width: thin;
+                    scrollbar-color: var(--zen-tabs-border-color) var(--zen-sidebar-background);
+                  }
+            
+                  #haven-notes-header {
+                    position: sticky !important;  /* Keep header visible when scrolling */
+                    top: 0 !important;
+                    z-index: 10 !important;
+                    background: var(--zen-background);
+                    padding: 20px !important;
+                    border-bottom: 1px solid var(--zen-tabs-border-color);
+                    display: flex !important;
+                    gap: 16px;
+                    flex-direction: row-reverse !important; /* Reverse the order */
+                  }
+            
+                  #haven-notes-add-button {
+                    width: 40px;
+                    height: 40px;
+                    border: none;
+                    border-radius: 8px;
+                    background: var(--zen-toolbar-field-background);
+                    color: var(--toolbar-color);
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    transition: background 0.2s;
+                    flex-shrink: 0; /* Prevent button from shrinking */
+                  }
+            
+                  #haven-notes-add-button:hover {
+                    background: var(--toolbarbutton-hover-background);
+                  }
+            
+                  #haven-notes-search {
+                    flex: 1;
+                    height: 40px;
+                    border: none;
+                    border-radius: 20px;
+                    background: var(--zen-toolbar-field-background);
+                    color: var(--toolbar-color);
+                    padding: 0 16px;
+                    font-size: 14px;
+                  }
+            
+                  #haven-notes-search::placeholder {
+                    color: var(--toolbar-color);
+                    opacity: 0.7;
+                  }
+            
+                  #haven-notes-grid {
+                    flex: 1;
+                    display: grid;
+                    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+                    gap: 16px;
+                    padding: 16px;
+                    overflow-y: visible; /* Allow grid to scroll within parent */
+                  }
+            
+                  /* Scrollbar styling */
+                  #haven-notes-view::-webkit-scrollbar {
+                    width: 8px;
+                  }
+            
+                  #haven-notes-view::-webkit-scrollbar-track {
+                    background: var(--zen-sidebar-background);
+                    border-radius: 4px;
+                  }
+            
+                  #haven-notes-view::-webkit-scrollbar-thumb {
+                    background-color: var(--zen-tabs-border-color);
+                    border-radius: 4px;
+                    border: 2px solid var(--zen-sidebar-background);
+                  }
+            
+                  .haven-note-card {
+                    width: 150px;
+                    height: 150px;
+                    background: var(--zen-toolbar-field-background);
+                    border-radius: 8px;
+                    padding: 16px;
+                    cursor: pointer;
+                    transition: transform 0.2s, background 0.2s;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 8px;
+                  }
+            
+                  .haven-note-card:hover {
+                    background: var(--toolbarbutton-hover-background);
+                    transform: translateY(-2px);
+                  }
+            
+                  .haven-note-card .note-icon {
+                    color: var(--toolbar-color);
+                    opacity: 0.8;
+                  }
+            
+                  .haven-note-card h1 {
+                    margin: 0;
+                    font-size: 16px;
+                    font-weight: 500;
+                    color: var(--toolbar-color);
+                  }
+            
+                  .haven-note-card p {
+                    margin: 0;
+                    font-size: 12px;
+                    color: var(--toolbar-color);
+                    opacity: 0.7;
+                  }
+                `;
+                document.head.appendChild(notesStyles);
+              }
+            } else {
+              // Clear content when attribute is removed
+              while (sidebarContainer.firstChild) {
+                sidebarContainer.removeChild(sidebarContainer.firstChild);
+              }
+            }
+          }
         });
       });
 
@@ -1671,7 +1891,7 @@
           position: relative;
         }
 
-      . custom-button:hover,
+        .custom-button:hover,
         .toolbarbutton-1:hover {
           background-color: var(--toolbarbutton-hover-background);
           transform: translateY(-1px);
@@ -1681,7 +1901,13 @@
           transform: translateY(1px);
           background-color: var(--toolbarbutton-active-background);
         } 
-    }
+
+        .custom-button.active {
+          background-color: var(--toolbarbutton-active-background);
+          box-shadow: inset 0 0 0 1px var(--toolbar-bgcolor);
+          transform: translateY(1px);
+        }
+      }
     `;
     document.head.appendChild(customStyles);
 
