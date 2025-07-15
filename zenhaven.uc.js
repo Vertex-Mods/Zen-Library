@@ -1983,41 +1983,11 @@
   // After document ready, create and inject the haven toggle button
   // Modify the createHavenToggle function to insert after new tab button
   function createHavenToggle() {
-    const sidebarBottomButtons = document.getElementById("zen-sidebar-bottom-buttons");
-    if (!sidebarBottomButtons) {
-      console.log('[ZenHaven] Bottom buttons container not found');
-      return;
-    }
-
-    // Create the button with correct XUL structure
-    const toolbarButton = document.createXULElement('toolbarbutton');
-    toolbarButton.setAttribute('xmlns', 'http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul');
-    toolbarButton.className = 'toolbarbutton-1 chromeclass-toolbar-additional subviewbutton-nav';
-    toolbarButton.id = 'haven-toggle-button';
-    toolbarButton.setAttribute('delegatesanchor', 'true');
-    toolbarButton.setAttribute('removable', 'true');
-    toolbarButton.setAttribute('overflows', 'true');
-    toolbarButton.setAttribute('label', 'Toggle Haven');
-    toolbarButton.setAttribute('tooltiptext', 'Toggle Haven Mode');
-
-    // Add icon
     const iconSVG = `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path fill-rule="evenodd" clip-rule="evenodd" d="M2 3C2 2.44772 2.44772 2 3 2H13C13.5523 2 14 2.44772 14 3V13C14 13.5523 13.5523 14 13 14H3C2.44772 14 2 13.5523 2 13V3ZM3 3H13V13H3V3ZM5 5H11V6H5V5ZM11 7H5V8H11V7ZM5 9H11V10H5V9Z" fill="currentColor"/>
     </svg>`;
-
-    const image = document.createXULElement('image');
-    image.className = 'toolbarbutton-icon';
-    image.style.listStyleImage = `url("data:image/svg+xml;charset=utf-8,${encodeURIComponent(iconSVG)}")`;
-    image.setAttribute('label', 'Toggle Haven');
-
-    const label = document.createXULElement('label');
-    label.className = 'toolbarbutton-text';
-    label.setAttribute('crop', 'end');
-    label.setAttribute('flex', '1');
-    label.setAttribute('value', 'Toggle Haven');
-
-    // Add click handler
-    toolbarButton.addEventListener('click', () => {
+    const imageURL = `url("data:image/svg+xml;charset=utf-8,${encodeURIComponent(iconSVG)}")`;
+    const openHaven = () => {
       const toolbox = document.getElementById('navigator-toolbox');
       if (toolbox) {
         if (toolbox.hasAttribute('haven')) {
@@ -2026,15 +1996,19 @@
           toolbox.setAttribute('haven', '');
         }
       }
-    });
+    }
 
-    // Assemble the button
-    toolbarButton.appendChild(image);
-    toolbarButton.appendChild(label);
-
-    // Add to sidebar bottom buttons
-    sidebarBottomButtons.appendChild(toolbarButton);
     console.log('[ZenHaven] Toggle button added to sidebar bottom buttons');
+    const widget = {
+      id: "zen-heven",
+      type: "toolbarbutton",
+      label: "Zen Heven",
+      tooltip: "Zen Heven",
+      class: "toolbarbutton-1 chromeclass-toolbar-additional",
+      image: imageURL,
+      callback: openHaven,
+    }
+    UC_API.Utils.createWidget(widget);
   }
 
   // Wait for startup before injecting UI
@@ -2056,4 +2030,4 @@
     });
     observer.observe(document, { childList: true, subtree: true });
   }
-})();
+})()
