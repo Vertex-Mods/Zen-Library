@@ -1984,7 +1984,7 @@
   // Modify the createHavenToggle function to insert after new tab button
   function createHavenToggle() {
     const iconSVG = `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path fill-rule="evenodd" clip-rule="evenodd" d="M2 3C2 2.44772 2.44772 2 3 2H13C13.5523 2 14 2.44772 14 3V13C14 13.5523 13.5523 14 13 14H3C2.44772 14 2 13.5523 2 13V3ZM3 3H13V13H3V3ZM5 5H11V6H5V5ZM11 7H5V8H11V7ZM5 9H11V10H5V9Z" fill="currentColor"/>
+        <path fill-rule="evenodd" clip-rule="evenodd" d="M2 3C2 2.44772 2.44772 2 3 2H13C13.5523 2 14 2.44772 14 3V13C14 13.5523 13.5523 14 13 14H3C2.44772 14 2 13.5523 2 13V3ZM3 3H13V13H3V3ZM5 5H11V6H5V5ZM11 7H5V8H11V7ZM5 9H11V10H5V9Z" fill="white"/>
     </svg>`;
     const image = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(iconSVG)}`;
     const openHaven = () => {
@@ -2005,7 +2005,7 @@
       label: "Zen Haven",
       tooltip: "Zen Haven",
       class: "toolbarbutton-1",
-      image: image,
+      image,
       callback: openHaven,
     }
     UC_API.Utils.createWidget(widget);
