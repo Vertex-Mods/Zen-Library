@@ -2000,10 +2000,10 @@
 
     console.log('[ZenHaven] Toggle button added to sidebar bottom buttons');
     const widget = {
-      id: "zen-heven",
+      id: "zen-haven",
       type: "toolbarbutton",
-      label: "Zen Heven",
-      tooltip: "Zen Heven",
+      label: "Zen Haven",
+      tooltip: "Zen Haven",
       class: "toolbarbutton-1",
       image: image,
       callback: openHaven,
