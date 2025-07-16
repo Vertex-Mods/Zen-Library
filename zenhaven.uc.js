@@ -27,6 +27,17 @@
     return `linear-gradient(${angle}deg, ${stops})`;
   }
 
+  const parseElement = (elementString, type = "html") => {
+    if (type === "xul") {
+      return window.MozXULElement.parseXULToFragment(elementString).firstChild;
+    }
+
+    let element = new DOMParser().parseFromString(elementString, "text/html");
+    if (element.body.children.length) element = element.body.firstChild;
+    else element = element.head.firstChild;
+    return element;
+  };
+
   class ZenHaven {
     constructor() {
       this.sections = new Map();
@@ -96,31 +107,22 @@
       });
 
       // Create container for new UI elements
-      const customContainer = document.createElement("div");
-      customContainer.id = "custom-toolbar";
+      const customContainer = parseElement(`<div id="custom-toolbar">
+          <div id="toolbar-header">
+            <span class="toolbarbutton-1">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path fill-rule="evenodd" clip-rule="evenodd" d="M8 15C11.866 15 15 11.866 15 8C15 4.13401 11.866 1 8 1C4.13401 1 1 4.13401 1 8C1 11.866 4.13401 15 8 15ZM8 14C11.3137 14 14 11.3137 14 8C14 4.68629 11.3137 2 8 2C4.68629 2 2 4.68629 2 8C2 11.3137 4.68629 14 8 14Z" fill="currentColor"/>
+              </svg>
+            </span>
+            <span class="header-text">Haven</span>
+          </div>
+          <div id="functions-container"></div>
+        </div>`);
       this.elements.customToolbar = customContainer;
+      this.elements.functionsContainer = customContainer.querySelector(
+        "#functions-container",
+      );
       this.elements.toolbox.appendChild(customContainer);
-
-      // Create top div with header icon and text
-      const topDiv = document.createElement("div");
-      topDiv.id = "toolbar-header";
-      const headerIcon = document.createElement("span");
-      headerIcon.className = "toolbarbutton-1";
-      headerIcon.innerHTML = `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path fill-rule="evenodd" clip-rule="evenodd" d="M8 15C11.866 15 15 11.866 15 8C15 4.13401 11.866 1 8 1C4.13401 1 1 4.13401 1 8C1 11.866 4.13401 15 8 15ZM8 14C11.3137 14 14 11.3137 14 8C14 4.68629 11.3137 2 8 2C4.68629 2 2 4.68629 2 8C2 11.3137 4.68629 14 8 14Z" fill="currentColor"/>
-      </svg>`;
-      const headerText = document.createElement("span");
-      headerText.className = "header-text";
-      headerText.textContent = "Haven";
-      topDiv.appendChild(headerIcon);
-      topDiv.appendChild(headerText);
-      customContainer.appendChild(topDiv);
-
-      // Create middle container for function buttons
-      const functionsContainer = document.createElement("div");
-      functionsContainer.id = "functions-container";
-      this.elements.functionsContainer = functionsContainer;
-      customContainer.appendChild(functionsContainer);
 
       // Create buttons from registered sections
       this.sections.forEach((section) => this.createNavButton(section));
@@ -143,9 +145,9 @@
       // Create sidebar container
       const sidebarSplitter = document.getElementById("zen-sidebar-splitter");
       if (sidebarSplitter) {
-        const sidebarContainer = document.createElement("div");
-        sidebarContainer.id = "zen-haven-container";
-        sidebarContainer.style.cssText = `height: 100%; width: 60vw; position: relative; display: none; flex-direction: column;`;
+        const sidebarContainer = parseElement(
+          `<div id="zen-haven-container" style="height: 100%; width: 60vw; position: relative; display: none; flex-direction: column;"></div>`,
+        );
         this.elements.havenContainer = sidebarContainer;
         const tabbox = document.getElementById("tabbrowser-tabbox");
         if (tabbox) {
@@ -206,20 +208,11 @@
     }
 
     createNavButton(section) {
-      const customDiv = document.createElement("div");
-      customDiv.className = "custom-button";
-      customDiv.id = `haven-${section.id}-button`;
-
-      const iconSpan = document.createElement("span");
-      iconSpan.className = "icon";
-      iconSpan.innerHTML = section.icon;
-
-      const labelSpan = document.createElement("span");
-      labelSpan.className = "label";
-      labelSpan.textContent = section.label;
-
-      customDiv.appendChild(iconSpan);
-      customDiv.appendChild(labelSpan);
+      const customDiv =
+        parseElement(`<div class="custom-button" id="haven-${section.id}-button">
+          <span class="icon">${section.icon}</span>
+          <span class="label">${section.label}</span>
+        </div>`);
 
       customDiv.addEventListener("click", () =>
         this.activateSection(section.id),
@@ -312,8 +305,9 @@
       <path fill-rule="evenodd" clip-rule="evenodd" d="M8 2C4.68629 2 2 4.68629 2 8C2 11.3137 4.68629 14 8 14C11.3137 14 14 11.3137 14 8C14 4.68629 11.3137 2 8 2ZM1 8C1 4.13401 4.13401 1 8 1C11.866 1 15 4.13401 15 8C15 11.866 11.866 15 8 15C4.13401 15 1 11.866 1 8ZM8 4V8.5L11 10L10.5 11L7 9.25V4H8Z" fill="currentColor"/>
     </svg>`,
     init: function() {
-      const downloadsViewContainer = document.createElement("div");
-      downloadsViewContainer.className = "haven-downloads-container";
+      const downloadsViewContainer = parseElement(
+        `<div class="haven-downloads-container"></div>`,
+      );
 
       // --- Data Store and State ---
       let allFetchedDownloads = [];
@@ -483,72 +477,41 @@
         const IMAGES_SVG = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M21 15L17.914 11.914C17.5389 11.5391 17.0303 11.3284 16.5 11.3284C15.9697 11.3284 15.4611 11.5391 15.086 11.914L6 21M5 3H19C20.1046 3 21 3.89543 21 5V19C21 20.1046 20.1046 21 19 21H5C3.89543 21 3 20.1046 3 19V5C3 3.89543 3.89543 3 5 3ZM11 9C11 10.1046 10.1046 11 9 11C7.89543 11 7 10.1046 7 9C7 7.89543 7.89543 7 9 7C10.1046 7 11 7.89543 11 9Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
         const MEDIA_SVG = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 10V13M6 6V17M10 3V21M14 8V15M18 5V18M22 10V13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 
-        const header = document.createElement("div");
-        header.className = "haven-dl-header";
-        const titleSection = document.createElement("div");
-        titleSection.className = "haven-dl-title-section";
-        const titleText = document.createElement("h1");
-        titleText.className = "haven-dl-title-text";
-        titleText.textContent = "Downloads";
-        titleSection.appendChild(titleText);
-        header.appendChild(titleSection);
+        const header = parseElement(`<div class="haven-dl-header">
+            <div class="haven-dl-title-section">
+              <h1 class="haven-dl-title-text">Downloads</h1>
+            </div>
+          </div>`);
 
-        const controls = document.createElement("div");
-        controls.className = "haven-dl-controls";
-        const searchFilterRow = document.createElement("div");
-        searchFilterRow.className = "haven-dl-search-filter-row";
-        const searchBox = document.createElement("div");
-        searchBox.className = "haven-dl-search-box";
-        const searchIconPlaceholder = document.createElement("span");
-        searchIconPlaceholder.className = "haven-dl-search-icon-placeholder";
-        searchIconPlaceholder.innerHTML = SEARCH_SVG;
-        const searchInput = document.createElement("input");
-        searchInput.type = "text";
-        searchInput.className = "haven-dl-search-input";
-        searchInput.placeholder = "Search downloads...";
-        searchInput.value = currentSearchTerm;
-        searchBox.appendChild(searchIconPlaceholder);
-        searchBox.appendChild(searchInput);
+        const controls = parseElement(`<div class="haven-dl-controls"></div>`);
+        const searchFilterRow = parseElement(
+          `<div class="haven-dl-search-filter-row"></div>`,
+        );
+
+        const searchBox = parseElement(`<div class="haven-dl-search-box">
+            <span class="haven-dl-search-icon-placeholder">${SEARCH_SVG}</span>
+            <input type="text" class="haven-dl-search-input" placeholder="Search downloads..." value="${currentSearchTerm}">
+          </div>`);
+        // const searchInput = searchBox.querySelector(".haven-dl-search-input");
         searchFilterRow.appendChild(searchBox);
 
-        const statusFilter = document.createElement("select");
-        statusFilter.className = "haven-dl-filter-dropdown";
-        statusFilter.id = "statusFilter";
-        ["all", "completed", "paused", "failed"].forEach((val) => {
-          const option = document.createElement("option");
-          option.value = val;
-          option.textContent =
-            val === "paused"
-              ? "Paused/Interrupted"
-              : val.charAt(0).toUpperCase() + val.slice(1);
-          if (val === currentStatusFilter) option.selected = true;
-          statusFilter.appendChild(option);
-        });
+        const optionsHTML = ["all", "completed", "paused", "failed"]
+          .map(
+            (val) =>
+              `<option value="${val}" ${val === currentStatusFilter ? "selected" : ""}>${val === "paused" ? "Paused/Interrupted" : val.charAt(0).toUpperCase() + val.slice(1)}</option>`,
+          )
+          .join("");
+        const statusFilter = parseElement(
+          `<select class="haven-dl-filter-dropdown" id="statusFilter">${optionsHTML}</select>`,
+        );
         searchFilterRow.appendChild(statusFilter);
 
-        const viewToggle = document.createElement("div");
-        viewToggle.className = "haven-dl-view-toggle";
-        const recentBtn = document.createElement("button");
-        recentBtn.className = `haven-dl-view-btn ${currentViewMode === "recent" ? "active" : ""}`;
-        recentBtn.dataset.view = "recent";
-        recentBtn.title = "Recent Downloads";
-        recentBtn.textContent = "Recent";
-        const historyBtn = document.createElement("button");
-        historyBtn.className = `haven-dl-view-btn ${currentViewMode === "history" ? "active" : ""}`;
-        historyBtn.dataset.view = "history";
-        historyBtn.title = "Download History";
-        historyBtn.textContent = "History";
-        viewToggle.appendChild(recentBtn);
-        viewToggle.appendChild(historyBtn);
+        const viewToggle = parseElement(`<div class="haven-dl-view-toggle">
+            <button class="haven-dl-view-btn ${currentViewMode === "recent" ? "active" : ""}" data-view="recent" title="Recent Downloads">Recent</button>
+            <button class="haven-dl-view-btn ${currentViewMode === "history" ? "active" : ""}" data-view="history" title="Download History">History</button>
+          </div>`);
         searchFilterRow.appendChild(viewToggle);
         controls.appendChild(searchFilterRow);
-
-        const categoryTabsContainer = document.createElement("div");
-        categoryTabsContainer.className = "haven-dl-category-tabs-container";
-        categoryActiveIndicatorEl = document.createElement("div");
-        categoryActiveIndicatorEl.className =
-          "haven-dl-category-active-indicator";
-        categoryTabsContainer.appendChild(categoryActiveIndicatorEl);
 
         const categories = [
           { id: "all", text: "All Files", svg: ALL_FILES_SVG },
@@ -556,47 +519,37 @@
           { id: "images", text: "Images", svg: IMAGES_SVG },
           { id: "media", text: "Media", svg: MEDIA_SVG },
         ];
-
-        let firstTab = true;
-        categories.forEach((cat) => {
-          const tab = document.createElement("button");
-          tab.className = `haven-dl-category-tab`;
-          if (currentCategoryFilter === cat.id) tab.classList.add("active");
-          tab.dataset.category = cat.id;
-          const iconSpan = document.createElement("span");
-          iconSpan.className = "haven-dl-tab-icon";
-          iconSpan.innerHTML = cat.svg;
-          const textSpan = document.createElement("span");
-          textSpan.textContent = cat.text;
-          tab.appendChild(iconSpan);
-          tab.appendChild(textSpan);
-          categoryTabsContainer.appendChild(tab);
-          if (firstTab && currentCategoryFilter === cat.id) {
-            requestAnimationFrame(() => updateCategoryIndicatorPosition(tab));
-          }
-          firstTab = false;
-        });
+        const categoriesHTML = categories
+          .map(
+            (cat) =>
+              `<button class="haven-dl-category-tab ${currentCategoryFilter === cat.id ? "active" : ""}" data-category="${cat.id}">
+              <span class="haven-dl-tab-icon">${cat.svg}</span>
+              <span>${cat.text}</span>
+            </button>`,
+          )
+          .join("");
+        const categoryTabsContainer =
+          parseElement(`<div class="haven-dl-category-tabs-container">
+            <div class="haven-dl-category-active-indicator"></div>
+            ${categoriesHTML}
+          </div>`);
+        categoryActiveIndicatorEl = categoryTabsContainer.querySelector(
+          ".haven-dl-category-active-indicator",
+        );
         controls.appendChild(categoryTabsContainer);
 
-        const stats = document.createElement("div");
-        stats.className = "haven-dl-stats-bar";
-        const statsCounts = document.createElement("div");
-        statsCounts.className = "haven-dl-stats-counts";
-        statsCounts.innerHTML = `Total: <strong id="totalCount">0</strong> Active: <strong id="activeCount">0</strong> Completed: <strong id="completedCount">0</strong>`;
-        const viewInfoText = document.createElement("div");
-        viewInfoText.className = "haven-dl-view-info";
-        viewInfoText.id = "viewInfoText";
-        viewInfoText.textContent = "Showing recent downloads";
-        stats.appendChild(statsCounts);
-        stats.appendChild(viewInfoText);
+        const stats = parseElement(`<div class="haven-dl-stats-bar">
+            <div class="haven-dl-stats-counts">Total: <strong id="totalCount">0</strong> Active: <strong id="activeCount">0</strong> Completed: <strong id="completedCount">0</strong></div>
+            <div class="haven-dl-view-info" id="viewInfoText">Showing recent downloads</div>
+          </div>`);
 
         downloadsViewContainer.appendChild(header);
         downloadsViewContainer.appendChild(controls);
         downloadsViewContainer.appendChild(stats);
 
-        const listContainer = document.createElement("div");
-        listContainer.className = "haven-dl-list-container";
-        listContainer.id = "downloadsListArea";
+        const listContainer = parseElement(
+          `<div class="haven-dl-list-container" id="downloadsListArea"></div>`,
+        );
         downloadsViewContainer.appendChild(listContainer);
 
         updateAndRenderDownloadsList();
@@ -656,15 +609,10 @@
               ? "Showing recent downloads"
               : "Showing download history";
         if (filteredDisplayDownloads.length === 0) {
-          const emptyState = document.createElement("div");
-          emptyState.className = "haven-dl-empty-state";
-          const emptyIcon = document.createElement("span");
-          emptyIcon.className = "haven-dl-empty-icon-placeholder";
-          emptyIcon.textContent = "📥";
-          const emptyText = document.createElement("p");
-          emptyText.textContent = "No downloads found.";
-          emptyState.appendChild(emptyIcon);
-          emptyState.appendChild(emptyText);
+          const emptyState = parseElement(`<div class="haven-dl-empty-state">
+              <span class="haven-dl-empty-icon-placeholder">📥</span>
+              <p>No downloads found.</p>
+            </div>`);
           listArea.appendChild(emptyState);
           return;
         }
@@ -687,9 +635,9 @@
               return tsB - tsA;
             })
             .forEach((dateKey) => {
-              const dateSeparator = document.createElement("div");
-              dateSeparator.className = "haven-dl-date-separator";
-              dateSeparator.textContent = dateKey;
+              const dateSeparator = parseElement(
+                `<div class="haven-dl-date-separator">${dateKey}</div>`,
+              );
               listArea.appendChild(dateSeparator);
               groupedByDate[dateKey]
                 .sort((a, b) => b.timestamp - a.timestamp)
@@ -756,10 +704,6 @@
         return groups;
       }
       function createDownloadItemElement(item) {
-        const el = document.createElement("div");
-        el.className = "haven-dl-item";
-        if (item.status === "failed") el.classList.add("failed-item");
-        if (item.status === "paused") el.classList.add("paused-item");
         const iconDetails = getFileIconDetails(item.filename);
         const statusInfo = getStatusInfo(item);
         let progressPercent = 0;
@@ -772,54 +716,34 @@
                 Math.max(0, (item.progressBytes / item.totalBytes) * 100),
               )
               : 0;
-        const itemIconDiv = document.createElement("div");
-        itemIconDiv.className = `haven-dl-item-icon ${iconDetails.className}`;
-        itemIconDiv.textContent = iconDetails.text;
-        const itemInfoDiv = document.createElement("div");
-        itemInfoDiv.className = "haven-dl-item-info";
-        const itemNameDiv = document.createElement("div");
-        itemNameDiv.className = "haven-dl-item-name";
-        itemNameDiv.title = `${item.filename || "Unknown Filename"}\n${item.url || "Unknown URL"}`;
-        itemNameDiv.textContent = item.filename || "Unknown Filename";
-        const itemDetailsDiv = document.createElement("div");
-        itemDetailsDiv.className = "haven-dl-item-details";
-        const sizeSpan = document.createElement("span");
-        sizeSpan.textContent = formatBytes(item.totalBytes);
-        const sepSpan = document.createElement("span");
-        sepSpan.textContent = "•";
-        const timeSpan = document.createElement("span");
-        timeSpan.textContent = timeAgo(new Date(item.timestamp));
-        const urlSpan = document.createElement("span");
-        urlSpan.className = "haven-dl-item-url";
-        urlSpan.title = item.url || "Unknown URL";
-        urlSpan.textContent = item.url || "Unknown URL";
-        itemDetailsDiv.appendChild(sizeSpan);
-        itemDetailsDiv.appendChild(sepSpan);
-        itemDetailsDiv.appendChild(timeSpan);
-        itemDetailsDiv.appendChild(urlSpan);
-        itemInfoDiv.appendChild(itemNameDiv);
-        itemInfoDiv.appendChild(itemDetailsDiv);
-        const itemStatusSection = document.createElement("div");
-        itemStatusSection.className = "haven-dl-item-status-section";
-        const progressBar = document.createElement("div");
-        progressBar.className = "haven-dl-item-progress-bar";
-        const progressFill = document.createElement("div");
-        progressFill.className = `haven-dl-item-progress-fill ${statusInfo.className}`;
-        progressFill.style.width = `${progressPercent}%`;
-        progressBar.appendChild(progressFill);
-        const statusText = document.createElement("div");
-        statusText.className = `haven-dl-item-status-text ${statusInfo.className}`;
-        statusText.textContent = statusInfo.text;
-        itemStatusSection.appendChild(progressBar);
-        itemStatusSection.appendChild(statusText);
-        const itemActionsDiv = document.createElement("div");
-        itemActionsDiv.className = "haven-dl-item-actions";
+
+        const el =
+          parseElement(`<div class="haven-dl-item ${item.status === "failed" ? "failed-item" : ""} ${item.status === "paused" ? "paused-item" : ""}">
+            <div class="haven-dl-item-icon ${iconDetails.className}">${iconDetails.text}</div>
+            <div class="haven-dl-item-info">
+              <div class="haven-dl-item-name" title="${item.filename || "Unknown Filename"}\n${item.url || "Unknown URL"}">${item.filename || "Unknown Filename"}</div>
+              <div class="haven-dl-item-details">
+                <span>${formatBytes(item.totalBytes)}</span>
+                <span>•</span>
+                <span>${timeAgo(new Date(item.timestamp))}</span>
+                <span class="haven-dl-item-url" title="${item.url || "Unknown URL"}">${item.url || "Unknown URL"}</span>
+              </div>
+            </div>
+            <div class="haven-dl-item-status-section">
+              <div class="haven-dl-item-progress-bar">
+                <div class="haven-dl-item-progress-fill ${statusInfo.className}" style="width: ${progressPercent}%;"></div>
+              </div>
+              <div class="haven-dl-item-status-text ${statusInfo.className}">${statusInfo.text}</div>
+            </div>
+            <div class="haven-dl-item-actions"></div>
+          </div>`);
+
+        const itemActionsDiv = el.querySelector(".haven-dl-item-actions");
         const actionButtons = getActionButtonsDOM(item);
         actionButtons.forEach((button) => itemActionsDiv.appendChild(button));
-        el.appendChild(itemIconDiv);
-        el.appendChild(itemInfoDiv);
-        el.appendChild(itemStatusSection);
-        el.appendChild(itemActionsDiv);
+
+        const itemInfoDiv = el.querySelector(".haven-dl-item-info");
+
         itemActionsDiv.addEventListener("click", (e) => {
           const action = e.target.closest("button")?.dataset.action;
           if (action) handleItemAction(item, action, e);
@@ -832,25 +756,9 @@
       function getActionButtonsDOM(item) {
         const buttons = [];
         function createSVGIcon(pathD) {
-          const svg = document.createElementNS(
-            "http://www.w3.org/2000/svg",
-            "svg",
-          );
-          svg.setAttribute("width", "16");
-          svg.setAttribute("height", "16");
-          svg.setAttribute("viewBox", "0 0 24 24");
-          svg.setAttribute("fill", "none");
-          const path = document.createElementNS(
-            "http://www.w3.org/2000/svg",
-            "path",
-          );
-          path.setAttribute("d", pathD);
-          path.setAttribute("stroke", "currentColor");
-          path.setAttribute("stroke-width", "2");
-          path.setAttribute("stroke-linecap", "round");
-          path.setAttribute("stroke-linejoin", "round");
-          svg.appendChild(path);
-          return svg;
+          return parseElement(`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="${pathD}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>`);
         }
         function createActionButton(action, title, svgPathD) {
           const button = document.createElement("button");
@@ -1216,14 +1124,12 @@
       <path fill-rule="evenodd" clip-rule="evenodd" d="M3 2H13V14H3V2ZM2 2C2 1.44772 2.44772 1 3 1H13C13.5523 1 14 1.44772 14 2V14C14 14.5523 13.5523 15 13 15H3C2.44772 15 0.96814 14.5523 0.96814 14V2ZM4 4H12V5H4V4ZM4 7H12V8H4V7ZM12 10H4V11H12V10Z" fill="currentColor"/>
     </svg>`,
     init: function() {
-      const container = document.createElement("div");
-      container.style.cssText = "display: contents;";
+      const container = parseElement(`<div style="display: contents;"></div>`);
 
-      const addWorkspaceButton = document.createElement("div");
-      addWorkspaceButton.className = "haven-workspace-add-button";
-      addWorkspaceButton.innerHTML = `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+      const addWorkspaceButton =
+        parseElement(`<div class="haven-workspace-add-button"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M8 3V13M3 8H13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-        </svg>`;
+        </svg></div>`);
       addWorkspaceButton.addEventListener("click", () => {
         try {
           if (typeof ZenWorkspaces?.openSaveDialog === "function") {
@@ -1247,8 +1153,9 @@
 
         workspaceElements.forEach((workspace) => {
           // Create base workspace div
-          const workspaceDiv = document.createElement("div");
-          workspaceDiv.className = "haven-workspace";
+          const workspaceDiv = parseElement(
+            `<div class="haven-workspace"></div>`,
+          );
           const uuid = workspace.getAttribute("zen-workspace-id");
 
           ZenWorkspacesStorage.getWorkspaces().then((allWorkspaces) => {
@@ -1266,8 +1173,9 @@
           });
 
           // Create content container
-          const contentDiv = document.createElement("div");
-          contentDiv.className = "haven-workspace-content";
+          const contentDiv = parseElement(
+            `<div class="haven-workspace-content"></div>`,
+          );
 
           // Find workspace sections using the workspace's own ID
           const sections = document.querySelectorAll(
@@ -1276,8 +1184,9 @@
 
           sections.forEach((section) => {
             const root = section.shadowRoot || section;
-            const sectionWrapper = document.createElement("div");
-            sectionWrapper.className = "haven-workspace-section";
+            const sectionWrapper = parseElement(
+              `<div class="haven-workspace-section"></div>`,
+            );
 
             // Copy computed styles from original section
             const computedStyle = window.getComputedStyle(section);
@@ -1337,8 +1246,9 @@
     </svg>`,
     init: function() {
       console.log("[ZenHaven] History init triggered");
-      const historyContainer = document.createElement("div");
-      historyContainer.className = "haven-history";
+      const historyContainer = parseElement(
+        `<div class="haven-history"></div>`,
+      );
 
       const { PlacesUtils } = ChromeUtils.importESModule(
         "resource://gre/modules/PlacesUtils.sys.mjs",
@@ -1411,45 +1321,31 @@
       });
 
       function createCollapsible(title, expanded = false, className = "") {
-        const wrapper = document.createElement("div");
-        wrapper.className = className;
-        const header = document.createElement("div");
-        header.className = "collapsible-header";
-        header.innerHTML = `<span class="section-toggle">${expanded ? "▼" : "▶"}</span><span class="section-title">${title}</span>`;
-        const content = document.createElement("div");
-        content.className = "collapsible-content";
-        content.style.display = expanded ? "block" : "none";
+        const wrapper = parseElement(`<div class="${className}">
+         <div class="collapsible-header">
+           <span class="section-toggle">${expanded ? "▼" : "▶"}</span>
+           <span class="section-title">${title}</span>
+         </div>
+         <div class="collapsible-content" style="display: ${expanded ? "block" : "none"};"></div>
+        </div>`);
+        const header = wrapper.querySelector(".collapsible-header");
+        const content = wrapper.querySelector(".collapsible-content");
         header.addEventListener("click", () => {
-          const isOpen = content.style.display === "block";
+          const isOpen = wrapper.querySelector(".collapsible-content").style.display === "block";
           content.style.display = isOpen ? "none" : "block";
-          header.querySelector(".section-toggle").textContent = isOpen
-            ? "▶"
-            : "▼";
+          header.querySelector(".section-toggle").textContent = isOpen ? "▶" : "▼";
         });
-        wrapper.appendChild(header);
-        wrapper.appendChild(content);
         return { wrapper, content };
       }
+
       function createHistoryItem(node) {
-        const item = document.createElement("div");
-        item.className = "haven-history-item";
-        const favicon = document.createElement("img");
-        favicon.className = "history-icon";
-        favicon.src =
-          "https://www.google.com/s2/favicons?sz=32&domain_url=" +
-          encodeURIComponent(node.uri);
-        const content = document.createElement("div");
-        content.className = "history-item-content";
-        const title = document.createElement("div");
-        title.className = "history-title";
-        title.textContent = node.title || node.uri;
-        const time = document.createElement("div");
-        time.className = "history-time";
-        time.textContent = new Date(node.time / 1000).toLocaleTimeString();
-        content.appendChild(title);
-        content.appendChild(time);
-        item.appendChild(favicon);
-        item.appendChild(content);
+        const item = parseElement(`<div class="haven-history-item">
+            <img class="history-icon" src="https://www.google.com/s2/favicons?sz=32&domain_url=${encodeURIComponent(node.uri)}">
+            <div class="history-item-content">
+              <div class="history-title">${node.title || node.uri}</div>
+              <div class="history-time">${new Date(node.time / 1000).toLocaleTimeString()}</div>
+            </div>
+          </div>`);
         item.addEventListener("click", () => {
           gBrowser.selectedTab = gBrowser.addTab(node.uri, {
             triggeringPrincipal:
@@ -1469,35 +1365,33 @@
       <path fill-rule="evenodd" clip-rule="evenodd" d="M3 2C2.44772 2 2 2.44772 2 3V13C2 13.5523 2.44772 14 3 14H13C13.5523 14 14 13.5523 14 13V5.41421C14 5.149 13.8946 4.89464 13.7071 4.70711L11.2929 2.29289C11.1054 2.10536 10.851 2 10.5858 2H3ZM3 3H10V5.5C10 5.77614 10.2239 6 10.5 6H13V13H3V3ZM11 3.70711L12.2929 5H11V3.70711ZM5 7H11V8H5V7ZM11 9H5V10H11V9ZM5 11H11V12H5V11Z" fill="currentColor"/>
     </svg>`,
     init: function() {
-      const notesViewContainer = document.createElement("div");
-      notesViewContainer.id = "haven-notes-view";
-      const headerSection = document.createElement("div");
-      headerSection.id = "haven-notes-header";
-      const addButton = document.createElement("button");
-      addButton.id = "haven-notes-add-button";
-      addButton.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 4V20M4 12H20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`;
-      addButton.title = "Create new note";
-      const searchBar = document.createElement("input");
-      searchBar.type = "text";
-      searchBar.id = "haven-notes-search";
-      searchBar.placeholder = "Search notes...";
-      headerSection.appendChild(searchBar);
-      headerSection.appendChild(addButton);
-      notesViewContainer.appendChild(headerSection);
-      const notesGrid = document.createElement("div");
-      notesGrid.id = "haven-notes-grid";
+      const notesViewContainer = parseElement(`<div id="haven-notes-view">
+          <div id="haven-notes-header">
+            <input type="text" id="haven-notes-search" placeholder="Search notes...">
+            <button id="haven-notes-add-button" title="Create new note">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 4V20M4 12H20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            </button>
+          </div>
+          <div id="haven-notes-grid"></div>
+        </div>`);
+
+      const notesGrid = notesViewContainer.querySelector("#haven-notes-grid");
+      const addButton = notesViewContainer.querySelector(
+        "#haven-notes-add-button",
+      );
+
       const createNoteCard = () => {
-        const noteCard = document.createElement("div");
-        noteCard.className = "haven-note-card";
-        noteCard.innerHTML = `<svg class="note-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M4 4C4 2.89543 4.89543 2 6 2H14.1716C14.702 2 15.2107 2.21071 15.5858 2.58579L19.4142 6.41421C19.7893 6.78929 20 7.29799 20 7.82843V20C20 21.1046 19.1046 22 18 22H6C4.89543 22 4 21.1046 4 20V4ZM6 4H14V8C14 8.55228 14.4477 9 15 9H19V20H6V4ZM16 4.41421L18.5858 7H16V4.41421Z" fill="currentColor"/></svg>
-                <h1>Untitled</h1><p>Click to add page content</p>`;
-        return noteCard;
+        return parseElement(`<div class="haven-note-card">
+              <svg class="note-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M4 4C4 2.89543 4.89543 2 6 2H14.1716C14.702 2 15.2107 2.21071 15.5858 2.58579L19.4142 6.41421C19.7893 6.78929 20 7.29799 20 7.82843V20C20 21.1046 19.1046 22 18 22H6C4.89543 22 4 21.1046 4 20V4ZM6 4H14V8C14 8.55228 14.4477 9 15 9H19V20H6V4ZM16 4.41421L18.5858 7H16V4.41421Z" fill="currentColor"/></svg>
+              <h1>Untitled</h1><p>Click to add page content</p>
+            </div>`);
       };
+
       addButton.addEventListener("click", () =>
         notesGrid.appendChild(createNoteCard()),
       );
+
       notesGrid.appendChild(createNoteCard());
-      notesViewContainer.appendChild(notesGrid);
       return notesViewContainer;
     },
   };
