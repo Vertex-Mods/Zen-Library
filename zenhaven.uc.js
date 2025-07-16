@@ -4,7 +4,7 @@
 // @include     main
 // ==/UserScript==
 
-(function() {
+(function () {
   const { document } = window;
   if (window.haven) {
     console.log("[ZenHaven] Already initialized. Aborting.");
@@ -63,13 +63,13 @@
       ) {
         console.error(
           "[ZenHaven] Invalid section config: id, label, icon, and init function are required.",
-          config,
+          config
         );
         return;
       }
       if (this.sections.has(config.id)) {
         console.warn(
-          `[ZenHaven] Section with id "${config.id}" already exists. Overwriting.`,
+          `[ZenHaven] Section with id "${config.id}" already exists. Overwriting.`
         );
       }
 
@@ -81,7 +81,7 @@
         console.log(`[ZenHaven] Section "${config.id}" registered.`);
       } else {
         console.log(
-          `[ZenHaven] Condition not met for section "${config.id}". Skipping registration.`,
+          `[ZenHaven] Condition not met for section "${config.id}". Skipping registration.`
         );
       }
     }
@@ -94,7 +94,7 @@
         !this.elements.toolbox.hasAttribute("haven")
       ) {
         console.log(
-          "[ZenHaven] Toolbox not found or haven attribute is missing.",
+          "[ZenHaven] Toolbox not found or haven attribute is missing."
         );
         return;
       }
@@ -108,19 +108,19 @@
 
       // Create container for new UI elements
       const customContainer = parseElement(`<div id="custom-toolbar">
-          <div id="toolbar-header">
-            <span class="toolbarbutton-1">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path fill-rule="evenodd" clip-rule="evenodd" d="M8 15C11.866 15 15 11.866 15 8C15 4.13401 11.866 1 8 1C4.13401 1 1 4.13401 1 8C1 11.866 4.13401 15 8 15ZM8 14C11.3137 14 14 11.3137 14 8C14 4.68629 11.3137 2 8 2C4.68629 2 2 4.68629 2 8C2 11.3137 4.68629 14 8 14Z" fill="currentColor"/>
-              </svg>
-            </span>
-            <span class="header-text">Haven</span>
-          </div>
-          <div id="functions-container"></div>
-        </div>`);
+            <div id="toolbar-header">
+              <span class="toolbarbutton-1">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path fill-rule="evenodd" clip-rule="evenodd" d="M8 15C11.866 15 15 11.866 15 8C15 4.13401 11.866 1 8 1C4.13401 1 1 4.13401 1 8C1 11.866 4.13401 15 8 15ZM8 14C11.3137 14 14 11.3137 14 8C14 4.68629 11.3137 2 8 2C4.68629 2 2 4.68629 2 8C2 11.3137 4.68629 14 8 14Z" fill="currentColor"/>
+                </svg>
+              </span>
+              <span class="header-text">Haven</span>
+            </div>
+            <div id="functions-container"></div>
+          </div>`);
       this.elements.customToolbar = customContainer;
       this.elements.functionsContainer = customContainer.querySelector(
-        "#functions-container",
+        "#functions-container"
       );
       this.elements.toolbox.appendChild(customContainer);
 
@@ -129,13 +129,13 @@
 
       // Handle bottom buttons
       this.elements.bottomButtons = document.getElementById(
-        "zen-sidebar-bottom-buttons",
+        "zen-sidebar-bottom-buttons"
       );
       this.elements.mediaToolbar = document.getElementById(
-        "zen-media-controls-toolbar",
+        "zen-media-controls-toolbar"
       );
       const workspacesButton = this.elements.bottomButtons?.querySelector(
-        "#zen-workspaces-button",
+        "#zen-workspaces-button"
       );
       if (this.elements.bottomButtons && workspacesButton) {
         customContainer.appendChild(this.elements.bottomButtons);
@@ -146,22 +146,22 @@
       const sidebarSplitter = document.getElementById("zen-sidebar-splitter");
       if (sidebarSplitter) {
         const sidebarContainer = parseElement(
-          `<div id="zen-haven-container" style="height: 100%; width: 60vw; position: relative; display: none; flex-direction: column;"></div>`,
+          `<div id="zen-haven-container" style="height: 100%; width: 60vw; position: relative; display: none; flex-direction: column;"></div>`
         );
         this.elements.havenContainer = sidebarContainer;
         const tabbox = document.getElementById("tabbrowser-tabbox");
         if (tabbox) {
           tabbox.parentNode.insertBefore(sidebarContainer, tabbox);
           console.log(
-            "[ZenHaven] Sidebar container added before tabbrowser-tabbox",
+            "[ZenHaven] Sidebar container added before tabbrowser-tabbox"
           );
         } else {
           sidebarSplitter.parentNode.insertBefore(
             sidebarContainer,
-            sidebarSplitter.nextSibling,
+            sidebarSplitter.nextSibling
           );
           console.log(
-            "[ZenHaven] Tabbox not found, sidebar container added after splitter",
+            "[ZenHaven] Tabbox not found, sidebar container added after splitter"
           );
         }
       }
@@ -177,10 +177,10 @@
       if (this.elements.bottomButtons && this.elements.mediaToolbar) {
         this.elements.mediaToolbar.parentNode.insertBefore(
           this.elements.bottomButtons,
-          this.elements.mediaToolbar.nextSibling,
+          this.elements.mediaToolbar.nextSibling
         );
         const workspacesButton = this.elements.bottomButtons.querySelector(
-          "#zen-workspaces-button",
+          "#zen-workspaces-button"
         );
         if (workspacesButton) {
           workspacesButton.style.display = "";
@@ -210,21 +210,21 @@
     createNavButton(section) {
       const customDiv =
         parseElement(`<div class="custom-button" id="haven-${section.id}-button">
-          <span class="icon">${section.icon}</span>
-          <span class="label">${section.label}</span>
-        </div>`);
+            <span class="icon">${section.icon}</span>
+            <span class="label">${section.label}</span>
+          </div>`);
 
       customDiv.addEventListener("click", () =>
-        this.activateSection(section.id),
+        this.activateSection(section.id)
       );
       customDiv.addEventListener("mousedown", () =>
-        customDiv.classList.add("clicked"),
+        customDiv.classList.add("clicked")
       );
       customDiv.addEventListener("mouseup", () =>
-        customDiv.classList.remove("clicked"),
+        customDiv.classList.remove("clicked")
       );
       customDiv.addEventListener("mouseleave", () =>
-        customDiv.classList.remove("clicked"),
+        customDiv.classList.remove("clicked")
       );
 
       this.elements.functionsContainer.appendChild(customDiv);
@@ -260,7 +260,7 @@
         this.activeSectionId = id;
       } else {
         console.error(
-          `[ZenHaven] Section "${id}" init() did not return a valid DOM element.`,
+          `[ZenHaven] Section "${id}" init() did not return a valid DOM element.`
         );
       }
     }
@@ -282,7 +282,7 @@
       Array.from(this.elements.havenContainer.attributes)
         .filter((attr) => attr.name.startsWith("haven-"))
         .forEach((attr) =>
-          this.elements.havenContainer.removeAttribute(attr.name),
+          this.elements.havenContainer.removeAttribute(attr.name)
         );
 
       this.elements.havenContainer.style.display = "none";
@@ -302,11 +302,11 @@
     id: "downloads",
     label: "Downloads",
     icon: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path fill-rule="evenodd" clip-rule="evenodd" d="M8 2C4.68629 2 2 4.68629 2 8C2 11.3137 4.68629 14 8 14C11.3137 14 14 11.3137 14 8C14 4.68629 11.3137 2 8 2ZM1 8C1 4.13401 4.13401 1 8 1C11.866 1 15 4.13401 15 8C15 11.866 11.866 15 8 15C4.13401 15 1 11.866 1 8ZM8 4V8.5L11 10L10.5 11L7 9.25V4H8Z" fill="currentColor"/>
-    </svg>`,
-    init: function() {
+        <path fill-rule="evenodd" clip-rule="evenodd" d="M8 2C4.68629 2 2 4.68629 2 8C2 11.3137 4.68629 14 8 14C11.3137 14 14 11.3137 14 8C14 4.68629 11.3137 2 8 2ZM1 8C1 4.13401 4.13401 1 8 1C11.866 1 15 4.13401 15 8C15 11.866 11.866 15 8 15C4.13401 15 1 11.866 1 8ZM8 4V8.5L11 10L10.5 11L7 9.25V4H8Z" fill="currentColor"/>
+      </svg>`,
+    init: function () {
       const downloadsViewContainer = parseElement(
-        `<div class="haven-downloads-container"></div>`,
+        `<div class="haven-downloads-container"></div>`
       );
 
       // --- Data Store and State ---
@@ -325,7 +325,9 @@
         const dm = decimals < 0 ? 0 : decimals;
         const sizes = ["Bytes", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
         const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
+        return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${
+          sizes[i]
+        }`;
       }
 
       function getFileIconDetails(filename) {
@@ -478,38 +480,48 @@
         const MEDIA_SVG = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 10V13M6 6V17M10 3V21M14 8V15M18 5V18M22 10V13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 
         const header = parseElement(`<div class="haven-dl-header">
-            <div class="haven-dl-title-section">
-              <h1 class="haven-dl-title-text">Downloads</h1>
-            </div>
-          </div>`);
+              <div class="haven-dl-title-section">
+                <h1 class="haven-dl-title-text">Downloads</h1>
+              </div>
+            </div>`);
 
         const controls = parseElement(`<div class="haven-dl-controls"></div>`);
         const searchFilterRow = parseElement(
-          `<div class="haven-dl-search-filter-row"></div>`,
+          `<div class="haven-dl-search-filter-row"></div>`
         );
 
         const searchBox = parseElement(`<div class="haven-dl-search-box">
-            <span class="haven-dl-search-icon-placeholder">${SEARCH_SVG}</span>
-            <input type="text" class="haven-dl-search-input" placeholder="Search downloads..." value="${currentSearchTerm}">
-          </div>`);
+              <span class="haven-dl-search-icon-placeholder">${SEARCH_SVG}</span>
+              <input type="text" class="haven-dl-search-input" placeholder="Search downloads..." value="${currentSearchTerm}">
+            </div>`);
         // const searchInput = searchBox.querySelector(".haven-dl-search-input");
         searchFilterRow.appendChild(searchBox);
 
         const optionsHTML = ["all", "completed", "paused", "failed"]
           .map(
             (val) =>
-              `<option value="${val}" ${val === currentStatusFilter ? "selected" : ""}>${val === "paused" ? "Paused/Interrupted" : val.charAt(0).toUpperCase() + val.slice(1)}</option>`,
+              `<option value="${val}" ${
+                val === currentStatusFilter ? "selected" : ""
+              }>${
+                val === "paused"
+                  ? "Paused/Interrupted"
+                  : val.charAt(0).toUpperCase() + val.slice(1)
+              }</option>`
           )
           .join("");
         const statusFilter = parseElement(
-          `<select class="haven-dl-filter-dropdown" id="statusFilter">${optionsHTML}</select>`,
+          `<select class="haven-dl-filter-dropdown" id="statusFilter">${optionsHTML}</select>`
         );
         searchFilterRow.appendChild(statusFilter);
 
         const viewToggle = parseElement(`<div class="haven-dl-view-toggle">
-            <button class="haven-dl-view-btn ${currentViewMode === "recent" ? "active" : ""}" data-view="recent" title="Recent Downloads">Recent</button>
-            <button class="haven-dl-view-btn ${currentViewMode === "history" ? "active" : ""}" data-view="history" title="Download History">History</button>
-          </div>`);
+              <button class="haven-dl-view-btn ${
+                currentViewMode === "recent" ? "active" : ""
+              }" data-view="recent" title="Recent Downloads">Recent</button>
+              <button class="haven-dl-view-btn ${
+                currentViewMode === "history" ? "active" : ""
+              }" data-view="history" title="Download History">History</button>
+            </div>`);
         searchFilterRow.appendChild(viewToggle);
         controls.appendChild(searchFilterRow);
 
@@ -522,33 +534,35 @@
         const categoriesHTML = categories
           .map(
             (cat) =>
-              `<button class="haven-dl-category-tab ${currentCategoryFilter === cat.id ? "active" : ""}" data-category="${cat.id}">
-              <span class="haven-dl-tab-icon">${cat.svg}</span>
-              <span>${cat.text}</span>
-            </button>`,
+              `<button class="haven-dl-category-tab ${
+                currentCategoryFilter === cat.id ? "active" : ""
+              }" data-category="${cat.id}">
+                <span class="haven-dl-tab-icon">${cat.svg}</span>
+                <span>${cat.text}</span>
+              </button>`
           )
           .join("");
         const categoryTabsContainer =
           parseElement(`<div class="haven-dl-category-tabs-container">
-            <div class="haven-dl-category-active-indicator"></div>
-            ${categoriesHTML}
-          </div>`);
+              <div class="haven-dl-category-active-indicator"></div>
+              ${categoriesHTML}
+            </div>`);
         categoryActiveIndicatorEl = categoryTabsContainer.querySelector(
-          ".haven-dl-category-active-indicator",
+          ".haven-dl-category-active-indicator"
         );
         controls.appendChild(categoryTabsContainer);
 
         const stats = parseElement(`<div class="haven-dl-stats-bar">
-            <div class="haven-dl-stats-counts">Total: <strong id="totalCount">0</strong> Active: <strong id="activeCount">0</strong> Completed: <strong id="completedCount">0</strong></div>
-            <div class="haven-dl-view-info" id="viewInfoText">Showing recent downloads</div>
-          </div>`);
+              <div class="haven-dl-stats-counts">Total: <strong id="totalCount">0</strong> Active: <strong id="activeCount">0</strong> Completed: <strong id="completedCount">0</strong></div>
+              <div class="haven-dl-view-info" id="viewInfoText">Showing recent downloads</div>
+            </div>`);
 
         downloadsViewContainer.appendChild(header);
         downloadsViewContainer.appendChild(controls);
         downloadsViewContainer.appendChild(stats);
 
         const listContainer = parseElement(
-          `<div class="haven-dl-list-container" id="downloadsListArea"></div>`,
+          `<div class="haven-dl-list-container" id="downloadsListArea"></div>`
         );
         downloadsViewContainer.appendChild(listContainer);
 
@@ -556,11 +570,11 @@
         attachEventListeners();
 
         const initialActiveTab = categoryTabsContainer.querySelector(
-          `.haven-dl-category-tab[data-category="${currentCategoryFilter}"]`,
+          `.haven-dl-category-tab[data-category="${currentCategoryFilter}"]`
         );
         if (initialActiveTab) {
           requestAnimationFrame(() =>
-            updateCategoryIndicatorPosition(initialActiveTab),
+            updateCategoryIndicatorPosition(initialActiveTab)
           );
         }
       }
@@ -571,7 +585,9 @@
         if (!tabContainer) return;
         const containerRect = tabContainer.getBoundingClientRect();
         const tabRect = activeTabElement.getBoundingClientRect();
-        categoryActiveIndicatorEl.style.left = `${tabRect.left - containerRect.left}px`;
+        categoryActiveIndicatorEl.style.left = `${
+          tabRect.left - containerRect.left
+        }px`;
         categoryActiveIndicatorEl.style.width = `${activeTabElement.offsetWidth}px`;
       }
 
@@ -581,7 +597,7 @@
           downloadsViewContainer.querySelector("#downloadsListArea");
         if (!listArea) {
           console.error(
-            "downloadsListArea not found in updateAndRenderDownloadsList",
+            "downloadsListArea not found in updateAndRenderDownloadsList"
           );
           return;
         }
@@ -597,11 +613,11 @@
         if (totalCountEl) totalCountEl.textContent = allFetchedDownloads.length;
         if (activeCountEl)
           activeCountEl.textContent = allFetchedDownloads.filter(
-            (d) => d.status === "paused",
+            (d) => d.status === "paused"
           ).length;
         if (completedCountEl)
           completedCountEl.textContent = allFetchedDownloads.filter(
-            (d) => d.status === "completed",
+            (d) => d.status === "completed"
           ).length;
         if (viewInfoTextEl)
           viewInfoTextEl.textContent =
@@ -610,9 +626,9 @@
               : "Showing download history";
         if (filteredDisplayDownloads.length === 0) {
           const emptyState = parseElement(`<div class="haven-dl-empty-state">
-              <span class="haven-dl-empty-icon-placeholder">📥</span>
-              <p>No downloads found.</p>
-            </div>`);
+                <span class="haven-dl-empty-icon-placeholder">📥</span>
+                <p>No downloads found.</p>
+              </div>`);
           listArea.appendChild(emptyState);
           return;
         }
@@ -636,20 +652,20 @@
             })
             .forEach((dateKey) => {
               const dateSeparator = parseElement(
-                `<div class="haven-dl-date-separator">${dateKey}</div>`,
+                `<div class="haven-dl-date-separator">${dateKey}</div>`
               );
               listArea.appendChild(dateSeparator);
               groupedByDate[dateKey]
                 .sort((a, b) => b.timestamp - a.timestamp)
                 .forEach((item) =>
-                  listArea.appendChild(createDownloadItemElement(item)),
+                  listArea.appendChild(createDownloadItemElement(item))
                 );
             });
         } else {
           filteredDisplayDownloads
             .sort((a, b) => b.timestamp - a.timestamp)
             .forEach((item) =>
-              listArea.appendChild(createDownloadItemElement(item)),
+              listArea.appendChild(createDownloadItemElement(item))
             );
         }
       }
@@ -678,12 +694,12 @@
             currentWeekStart.setHours(0, 0, 0, 0);
             const downloadWeekStart = new Date(downloadDate);
             downloadWeekStart.setDate(
-              downloadDate.getDate() - downloadDate.getDay(),
+              downloadDate.getDate() - downloadDate.getDay()
             );
             downloadWeekStart.setHours(0, 0, 0, 0);
             const diffWeeks = Math.floor(
               (currentWeekStart.getTime() - downloadWeekStart.getTime()) /
-              (7 * 24 * 60 * 60 * 1000),
+                (7 * 24 * 60 * 60 * 1000)
             );
             if (diffWeeks === 1) dateKey = "Last Week";
             else if (diffWeeks > 1 && diffWeeks <= 4)
@@ -712,31 +728,44 @@
           progressPercent =
             item.totalBytes > 0
               ? Math.min(
-                100,
-                Math.max(0, (item.progressBytes / item.totalBytes) * 100),
-              )
+                  100,
+                  Math.max(0, (item.progressBytes / item.totalBytes) * 100)
+                )
               : 0;
 
-        const el =
-          parseElement(`<div class="haven-dl-item ${item.status === "failed" ? "failed-item" : ""} ${item.status === "paused" ? "paused-item" : ""}">
-            <div class="haven-dl-item-icon ${iconDetails.className}">${iconDetails.text}</div>
-            <div class="haven-dl-item-info">
-              <div class="haven-dl-item-name" title="${item.filename || "Unknown Filename"}\n${item.url || "Unknown URL"}">${item.filename || "Unknown Filename"}</div>
-              <div class="haven-dl-item-details">
-                <span>${formatBytes(item.totalBytes)}</span>
-                <span>•</span>
-                <span>${timeAgo(new Date(item.timestamp))}</span>
-                <span class="haven-dl-item-url" title="${item.url || "Unknown URL"}">${item.url || "Unknown URL"}</span>
+        const el = parseElement(`<div class="haven-dl-item ${
+          item.status === "failed" ? "failed-item" : ""
+        } ${item.status === "paused" ? "paused-item" : ""}">
+              <div class="haven-dl-item-icon ${iconDetails.className}">${
+          iconDetails.text
+        }</div>
+              <div class="haven-dl-item-info">
+                <div class="haven-dl-item-name" title="${
+                  item.filename || "Unknown Filename"
+                }\n${item.url || "Unknown URL"}">${
+          item.filename || "Unknown Filename"
+        }</div>
+                <div class="haven-dl-item-details">
+                  <span>${formatBytes(item.totalBytes)}</span>
+                  <span>•</span>
+                  <span>${timeAgo(new Date(item.timestamp))}</span>
+                  <span class="haven-dl-item-url" title="${
+                    item.url || "Unknown URL"
+                  }">${item.url || "Unknown URL"}</span>
+                </div>
               </div>
-            </div>
-            <div class="haven-dl-item-status-section">
-              <div class="haven-dl-item-progress-bar">
-                <div class="haven-dl-item-progress-fill ${statusInfo.className}" style="width: ${progressPercent}%;"></div>
+              <div class="haven-dl-item-status-section">
+                <div class="haven-dl-item-progress-bar">
+                  <div class="haven-dl-item-progress-fill ${
+                    statusInfo.className
+                  }" style="width: ${progressPercent}%;"></div>
+                </div>
+                <div class="haven-dl-item-status-text ${
+                  statusInfo.className
+                }">${statusInfo.text}</div>
               </div>
-              <div class="haven-dl-item-status-text ${statusInfo.className}">${statusInfo.text}</div>
-            </div>
-            <div class="haven-dl-item-actions"></div>
-          </div>`);
+              <div class="haven-dl-item-actions"></div>
+            </div>`);
 
         const itemActionsDiv = el.querySelector(".haven-dl-item-actions");
         const actionButtons = getActionButtonsDOM(item);
@@ -757,8 +786,8 @@
         const buttons = [];
         function createSVGIcon(pathD) {
           return parseElement(`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="${pathD}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>`);
+                <path d="${pathD}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>`);
         }
         function createActionButton(action, title, svgPathD) {
           const button = document.createElement("button");
@@ -779,25 +808,25 @@
         const RESUME_DOWNLOAD_PATH = "M6 3L20 12L6 21V3Z";
         if (item.status === "completed")
           buttons.push(
-            createActionButton("show", "Show in Folder", OPEN_FOLDER_PATH),
+            createActionButton("show", "Show in Folder", OPEN_FOLDER_PATH)
           );
         else if (item.status === "failed")
           buttons.push(
-            createActionButton("retry", "Retry Download", RETRY_DOWNLOAD_PATH),
+            createActionButton("retry", "Retry Download", RETRY_DOWNLOAD_PATH)
           );
         else if (item.status === "paused")
           buttons.push(
             createActionButton(
               "resume",
               "Resume Download",
-              RESUME_DOWNLOAD_PATH,
-            ),
+              RESUME_DOWNLOAD_PATH
+            )
           );
         buttons.push(
-          createActionButton("copy", "Copy Download Link", OPEN_ORIGIN_PATH),
+          createActionButton("copy", "Copy Download Link", OPEN_ORIGIN_PATH)
         );
         buttons.push(
-          createActionButton("remove", "Delete File", DELETE_FILE_PATH),
+          createActionButton("remove", "Delete File", DELETE_FILE_PATH)
         );
         return buttons;
       }
@@ -855,7 +884,7 @@
             }
             if (
               confirm(
-                `Are you sure you want to permanently delete "${item.filename}" from your system?\n\nThis action cannot be undone.`,
+                `Are you sure you want to permanently delete "${item.filename}" from your system?\n\nThis action cannot be undone.`
               )
             ) {
               try {
@@ -864,7 +893,7 @@
                   file.remove(false);
                   item.deleted = true;
                   allFetchedDownloads = allFetchedDownloads.filter(
-                    (d) => d.id !== item.id,
+                    (d) => d.id !== item.id
                   );
                   updateAndRenderDownloadsList();
                   alert(`File "${item.filename}" was successfully deleted.`);
@@ -874,7 +903,7 @@
               } catch (e) {
                 console.error("Error deleting file:", e);
                 alert(
-                  `Could not delete file: ${item.filename}\n\nError: ${e.message}`,
+                  `Could not delete file: ${item.filename}\n\nError: ${e.message}`
                 );
               }
             }
@@ -910,12 +939,12 @@
           return true;
         });
         filteredDisplayDownloads.sort(
-          (a, b) => (b.timestamp || 0) - (a.timestamp || 0),
+          (a, b) => (b.timestamp || 0) - (a.timestamp || 0)
         );
       }
       function attachEventListeners() {
         const searchInputEl = downloadsViewContainer.querySelector(
-          ".haven-dl-search-input",
+          ".haven-dl-search-input"
         );
         if (searchInputEl)
           searchInputEl.addEventListener("input", (e) => {
@@ -942,7 +971,7 @@
             });
           });
         const categoryTabsContainerEl = downloadsViewContainer.querySelector(
-          ".haven-dl-category-tabs-container",
+          ".haven-dl-category-tabs-container"
         );
         categoryTabsContainerEl
           .querySelectorAll(".haven-dl-category-tab")
@@ -959,7 +988,7 @@
             });
           });
         const initialActiveCatTab = categoryTabsContainerEl.querySelector(
-          `.haven-dl-category-tab[data-category="${currentCategoryFilter}"]`,
+          `.haven-dl-category-tab[data-category="${currentCategoryFilter}"]`
         );
         if (initialActiveCatTab) {
           updateCategoryIndicatorPosition(initialActiveCatTab);
@@ -969,16 +998,16 @@
       (async () => {
         try {
           const { DownloadHistory } = ChromeUtils.importESModule(
-            "resource://gre/modules/DownloadHistory.sys.mjs",
+            "resource://gre/modules/DownloadHistory.sys.mjs"
           );
           const { Downloads } = ChromeUtils.importESModule(
-            "resource://gre/modules/Downloads.sys.mjs",
+            "resource://gre/modules/Downloads.sys.mjs"
           );
           const { PrivateBrowsingUtils } = ChromeUtils.importESModule(
-            "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
+            "resource://gre/modules/PrivateBrowsingUtils.sys.mjs"
           );
           const { FileUtils } = ChromeUtils.importESModule(
-            "resource://gre/modules/FileUtils.sys.mjs",
+            "resource://gre/modules/FileUtils.sys.mjs"
           );
 
           const isPrivate = PrivateBrowsingUtils.isContentWindowPrivate(window);
@@ -1000,7 +1029,7 @@
                   console.warn(
                     "[ZenHaven Downloads] Error creating FileUtils.File or getting leafName from path:",
                     d.target.path,
-                    e,
+                    e
                   );
                   const pathParts = String(d.target.path).split(/[\\/]/);
                   filename = pathParts.pop() || "ErrorInPathUtil";
@@ -1033,7 +1062,7 @@
                   console.warn(
                     "[ZenHaven Downloads] Error extracting filename from URL:",
                     d.source.url,
-                    e,
+                    e
                   );
                   const urlPartsDirect = String(d.source.url).split("/");
                   const lastPartDirect =
@@ -1087,7 +1116,7 @@
                 totalBytes: totalBytes,
                 progressBytes: progressBytes,
                 type: getFileIconDetails(
-                  String(filename || "tmp.file"),
+                  String(filename || "tmp.file")
                 ).text.toLowerCase(),
                 category: getFileCategory(String(filename || "tmp.file")),
                 status: status,
@@ -1101,13 +1130,13 @@
 
           console.log(
             "[ZenHaven Downloads] Processed Download Items:",
-            allFetchedDownloads.length,
+            allFetchedDownloads.length
           );
           renderUI();
         } catch (err) {
           console.error(
             "[ZenHaven Downloads] Error fetching or processing download history:",
-            err,
+            err
           );
           downloadsViewContainer.innerHTML = `<div class="haven-dl-empty-state"><p>Error loading download history.</p><pre>${err.message}\n${err.stack}</pre></div>`;
         }
@@ -1121,20 +1150,20 @@
     id: "workspaces",
     label: "Workspaces",
     icon: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path fill-rule="evenodd" clip-rule="evenodd" d="M3 2H13V14H3V2ZM2 2C2 1.44772 2.44772 1 3 1H13C13.5523 1 14 1.44772 14 2V14C14 14.5523 13.5523 15 13 15H3C2.44772 15 0.96814 14.5523 0.96814 14V2ZM4 4H12V5H4V4ZM4 7H12V8H4V7ZM12 10H4V11H12V10Z" fill="currentColor"/>
-    </svg>`,
-    init: function() {
+        <path fill-rule="evenodd" clip-rule="evenodd" d="M3 2H13V14H3V2ZM2 2C2 1.44772 2.44772 1 3 1H13C13.5523 1 14 1.44772 14 2V14C14 14.5523 13.5523 15 13 15H3C2.44772 15 0.96814 14.5523 0.96814 14V2ZM4 4H12V5H4V4ZM4 7H12V8H4V7ZM12 10H4V11H12V10Z" fill="currentColor"/>
+      </svg>`,
+    init: function () {
       const container = parseElement(`<div style="display: contents;"></div>`);
 
       const addWorkspaceButton =
         parseElement(`<div class="haven-workspace-add-button"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M8 3V13M3 8H13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-        </svg></div>`);
+            <path d="M8 3V13M3 8H13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg></div>`);
       addWorkspaceButton.addEventListener("click", () => {
         try {
           if (typeof ZenWorkspaces?.openSaveDialog === "function") {
             console.log(
-              "[ZenHaven] Attempting to open workspace save dialog...",
+              "[ZenHaven] Attempting to open workspace save dialog..."
             );
             ZenWorkspaces.openSaveDialog();
           } else {
@@ -1154,7 +1183,7 @@
         workspaceElements.forEach((workspace) => {
           // Create base workspace div
           const workspaceDiv = parseElement(
-            `<div class="haven-workspace"></div>`,
+            `<div class="haven-workspace"></div>`
           );
           const uuid = workspace.getAttribute("zen-workspace-id");
 
@@ -1174,27 +1203,31 @@
 
           // Create content container
           const contentDiv = parseElement(
-            `<div class="haven-workspace-content"></div>`,
+            `<div class="haven-workspace-content"></div>`
           );
 
           // Find workspace sections using the workspace's own ID
           const sections = document.querySelectorAll(
-            `.zen-workspace-tabs-section[zen-workspace-id="${workspace.getAttribute("zen-workspace-id")}"]`,
+            `.zen-workspace-tabs-section[zen-workspace-id="${workspace.getAttribute(
+              "zen-workspace-id"
+            )}"]`
           );
 
           sections.forEach((section) => {
             const root = section.shadowRoot || section;
             const sectionWrapper = parseElement(
-              `<div class="haven-workspace-section"></div>`,
+              `<div class="haven-workspace-section"></div>`
             );
 
             // Copy computed styles from original section
             const computedStyle = window.getComputedStyle(section);
             sectionWrapper.style.cssText = Array.from(computedStyle).reduce(
               (str, property) => {
-                return `${str}${property}:${computedStyle.getPropertyValue(property)};`;
+                return `${str}${property}:${computedStyle.getPropertyValue(
+                  property
+                )};`;
               },
-              "",
+              ""
             );
 
             // Clone tab groups with their styles
@@ -1204,9 +1237,11 @@
               const groupStyle = window.getComputedStyle(group);
               groupClone.style.cssText = Array.from(groupStyle).reduce(
                 (str, property) => {
-                  return `${str}${property}:${groupStyle.getPropertyValue(property)};`;
+                  return `${str}${property}:${groupStyle.getPropertyValue(
+                    property
+                  )};`;
                 },
-                "",
+                ""
               );
               sectionWrapper.appendChild(groupClone);
             });
@@ -1218,9 +1253,11 @@
                 const childStyle = window.getComputedStyle(child);
                 clone.style.cssText = Array.from(childStyle).reduce(
                   (str, property) => {
-                    return `${str}${property}:${childStyle.getPropertyValue(property)};`;
+                    return `${str}${property}:${childStyle.getPropertyValue(
+                      property
+                    )};`;
                   },
-                  "",
+                  ""
                 );
                 sectionWrapper.appendChild(clone);
               }
@@ -1242,118 +1279,377 @@
     id: "history",
     label: "History",
     icon: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path fill-rule="evenodd" clip-rule="evenodd" d="M1 1.06567H14.9613V4.0144H1L1 1.06567ZM0 1.06567C0 0.513389 0.447715 0.0656738 1 0.0656738H14.9613C15.5136 0.0656738 15.9613 0.513389 15.9613 1.06567V4.0144C15.9613 4.55603 15.5307 4.99708 14.9932 5.01391V5.02686V13C14.9932 14.6569 13.65 16 11.9932 16H3.96814C2.31129 16 0.96814 14.6569 0.96814 13V5.02686V5.01391C0.430599 4.99708 0 4.55603 0 4.0144V1.06567ZM13.9932 5.02686H1.96814V13C1.96814 14.1046 2.86357 15 3.96814 15H11.9932C13.0977 15 13.9932 14.1046 13.9932 13V5.02686ZM9.95154 8.07495H6.01318V7.07495H9.95154V8.07495Z" fill="currentColor"/>
-    </svg>`,
-    init: function() {
+        <path fill-rule="evenodd" clip-rule="evenodd" d="M1 1.06567H14.9613V4.0144H1L1 1.06567ZM0 1.06567C0 0.513389 0.447715 0.0656738 1 0.0656738H14.9613C15.5136 0.0656738 15.9613 0.513389 15.9613 1.06567V4.0144C15.9613 4.55603 15.5307 4.99708 14.9932 5.01391V5.02686V13C14.9932 14.6569 13.65 16 11.9932 16H3.96814C2.31129 16 0.96814 14.6569 0.96814 13V5.02686V5.01391C0.430599 4.99708 0 4.55603 0 4.0144V1.06567ZM13.9932 5.02686H1.96814V13C1.96814 14.1046 2.86357 15 3.96814 15H11.9932C13.0977 15 13.9932 14.1046 13.9932 13V5.02686ZM9.95154 8.07495H6.01318V7.07495H9.95154V8.07495Z" fill="currentColor"/>
+      </svg>`,
+    init: function () {
       console.log("[ZenHaven] History init triggered");
+
+      // Create main container with loading message
       const historyContainer = parseElement(
-        `<div class="haven-history"></div>`,
+        `<div class="haven-history">
+          <div class="haven-history-loading-initial" style="text-align: center; padding: 20px;">
+            <div class="loading-spinner"></div>
+            <div>Loading history...</div>
+          </div>
+        </div>`
       );
 
-      const { PlacesUtils } = ChromeUtils.importESModule(
-        "resource://gre/modules/PlacesUtils.sys.mjs",
+      // Add loading indicator at the bottom for infinite scrolling
+      const loadingIndicator = parseElement(
+        `<div class="haven-history-loading" style="display: none; text-align: center; padding: 20px;">
+          <div class="loading-spinner"></div>
+          <div>Loading more history...</div>
+        </div>`
       );
+
+      // Add CSS for styling
+      const style = document.createElement("style");
+      style.textContent = `
+        .loading-spinner {
+          width: 30px;
+          height: 30px;
+          border: 3px solid rgba(0, 0, 0, 0.1);
+          border-radius: 50%;
+          border-top-color: #3498db;
+          animation: spin 1s ease-in-out infinite;
+          margin: 0 auto 10px auto;
+        }
+        
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+        
+        .haven-history {
+          overflow-y: auto;
+          max-height: 100%;
+          padding: 10px;
+          scroll-behavior: smooth;
+        }
+        
+        .haven-history-end-message {
+          text-align: center;
+          padding: 10px;
+          color: #666;
+          margin-top: 10px;
+        }
+      `;
+      document.head.appendChild(style);
+
+      // Variables for lazy loading
+      const DAYS_PER_BATCH = 7;
       const SESSION_TIMEOUT_MINUTES = 30;
-      const startDate = new Date();
-      startDate.setDate(startDate.getDate() - 7);
-      const query = PlacesUtils.history.getNewQuery();
-      query.beginTime = startDate.getTime() * 1000;
-      query.endTime = Date.now() * 1000;
-      const options = PlacesUtils.history.getNewQueryOptions();
-      options.sortingMode = options.SORT_BY_DATE_DESCENDING;
-      options.resultType = options.RESULTS_AS_VISIT;
-      const result = PlacesUtils.history.executeQuery(query, options);
-      const root = result.root;
-      root.containerOpen = true;
-      const visitsByDate = new Map();
-      for (let i = 0; i < root.childCount; i++) {
-        const node = root.getChild(i);
-        const visitTime = new Date(node.time / 1000);
-        const dayKey = visitTime.toLocaleDateString(undefined, {
-          weekday: "long",
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-        });
-        if (!visitsByDate.has(dayKey)) visitsByDate.set(dayKey, []);
-        visitsByDate.get(dayKey).push({ node, time: visitTime });
-      }
-      root.containerOpen = false;
+      let isLoading = false;
+      let noMoreHistory = false;
+      let currentStartDate = new Date();
+      let scrollThrottleTimer = null;
 
-      visitsByDate.forEach((visits, dayKey) => {
-        const daySection = createCollapsible(
-          "📅 " + dayKey,
-          false,
-          "day-section",
-        );
-        historyContainer.appendChild(daySection.wrapper);
-        const sessions = [];
-        let currentSession = [],
-          lastTime = null;
-        visits.forEach(({ node, time }) => {
-          if (
-            lastTime &&
-            (lastTime - time) / (1000 * 60) > SESSION_TIMEOUT_MINUTES
-          ) {
-            if (currentSession.length > 0) sessions.push(currentSession);
-            currentSession = [];
-          }
-          currentSession.push({ node, time });
-          lastTime = time;
-        });
-        if (currentSession.length > 0) sessions.push(currentSession);
-
-        sessions.forEach((session, idx) => {
-          const sessionStart = session[session.length - 1].time;
-          const sessionEnd = session[0].time;
-          const timeRange = `${sessionStart.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} – ${sessionEnd.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
-          const sessionTitle = `🕓 Session ${idx + 1} • ${timeRange}`;
-          const sessionSection = createCollapsible(
-            sessionTitle,
-            false,
-            "session-section",
-          );
-          daySection.content.appendChild(sessionSection.wrapper);
-          session.forEach(({ node }) =>
-            sessionSection.content.appendChild(createHistoryItem(node)),
-          );
-        });
-      });
-
+      // Helper function to create collapsible sections
       function createCollapsible(title, expanded = false, className = "") {
         const wrapper = parseElement(`<div class="${className}">
-         <div class="collapsible-header">
-           <span class="section-toggle">${expanded ? "▼" : "▶"}</span>
-           <span class="section-title">${title}</span>
-         </div>
-         <div class="collapsible-content" style="display: ${expanded ? "block" : "none"};"></div>
+          <div class="collapsible-header">
+            <span class="section-toggle">${expanded ? "▼" : "▶"}</span>
+            <span class="section-title">${title}</span>
+          </div>
+          <div class="collapsible-content" style="display: ${
+            expanded ? "block" : "none"
+          };"></div>
         </div>`);
+
         const header = wrapper.querySelector(".collapsible-header");
         const content = wrapper.querySelector(".collapsible-content");
+
         header.addEventListener("click", () => {
-          const isOpen = wrapper.querySelector(".collapsible-content").style.display === "block";
+          const isOpen = content.style.display === "block";
           content.style.display = isOpen ? "none" : "block";
-          header.querySelector(".section-toggle").textContent = isOpen ? "▶" : "▼";
+          header.querySelector(".section-toggle").textContent = isOpen
+            ? "▶"
+            : "▼";
         });
+
         return { wrapper, content };
       }
 
+      // Helper function to create history item
       function createHistoryItem(node) {
         const item = parseElement(`<div class="haven-history-item">
-            <img class="history-icon" src="https://www.google.com/s2/favicons?sz=32&domain_url=${encodeURIComponent(node.uri)}">
-            <div class="history-item-content">
-              <div class="history-title">${node.title || node.uri}</div>
-              <div class="history-time">${new Date(node.time / 1000).toLocaleTimeString()}</div>
-            </div>
-          </div>`);
+          <img class="history-icon" src="https://www.google.com/s2/favicons?sz=32&domain_url=${encodeURIComponent(
+            node.uri
+          )}">
+          <div class="history-item-content">
+            <div class="history-title">${node.title || node.uri}</div>
+            <div class="history-time">${new Date(
+              node.time / 1000
+            ).toLocaleTimeString()}</div>
+          </div>
+        </div>`);
+
         item.addEventListener("click", () => {
           gBrowser.selectedTab = gBrowser.addTab(node.uri, {
             triggeringPrincipal:
               Services.scriptSecurityManager.getSystemPrincipal(),
           });
         });
+
         return item;
       }
+
+      // Function to load history data for a specific date range
+      function loadHistoryBatch(startDate, endDate) {
+        return new Promise((resolve, reject) => {
+          try {
+            const { PlacesUtils } = ChromeUtils.importESModule(
+              "resource://gre/modules/PlacesUtils.sys.mjs"
+            );
+
+            const query = PlacesUtils.history.getNewQuery();
+            query.beginTime = startDate.getTime() * 1000;
+            query.endTime = endDate.getTime() * 1000;
+
+            const options = PlacesUtils.history.getNewQueryOptions();
+            options.sortingMode = options.SORT_BY_DATE_DESCENDING;
+            options.resultType = options.RESULTS_AS_VISIT;
+
+            const result = PlacesUtils.history.executeQuery(query, options);
+            const root = result.root;
+            root.containerOpen = true;
+
+            // Process history data
+            const visitsByDate = new Map();
+
+            for (let i = 0; i < root.childCount; i++) {
+              const node = root.getChild(i);
+              const visitTime = new Date(node.time / 1000);
+              const dayKey = visitTime.toLocaleDateString(undefined, {
+                weekday: "long",
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+              });
+
+              if (!visitsByDate.has(dayKey)) {
+                visitsByDate.set(dayKey, []);
+              }
+
+              visitsByDate.get(dayKey).push({ node, time: visitTime });
+            }
+
+            root.containerOpen = false;
+            resolve(visitsByDate);
+          } catch (error) {
+            console.error("[ZenHaven] Error loading history batch:", error);
+            reject(error);
+          }
+        });
+      }
+
+      // Function to process visits and create sessions
+      function processVisitsForDay(visits) {
+        const sessions = [];
+        let currentSession = [];
+        let lastTime = null;
+
+        visits.forEach(({ node, time }) => {
+          if (
+            lastTime &&
+            (lastTime - time) / (1000 * 60) > SESSION_TIMEOUT_MINUTES
+          ) {
+            if (currentSession.length > 0) {
+              sessions.push(currentSession);
+            }
+            currentSession = [];
+          }
+
+          currentSession.push({ node, time });
+          lastTime = time;
+        });
+
+        if (currentSession.length > 0) {
+          sessions.push(currentSession);
+        }
+
+        return sessions;
+      }
+
+      // Function to render day sections with sessions
+      function renderDaySections(visitsByDate) {
+        const fragment = document.createDocumentFragment();
+
+        visitsByDate.forEach((visits, dayKey) => {
+          const daySection = createCollapsible(
+            "📅 " + dayKey,
+            false,
+            "day-section"
+          );
+          fragment.appendChild(daySection.wrapper);
+
+          const sessions = processVisitsForDay(visits);
+
+          sessions.forEach((session, idx) => {
+            const sessionStart = session[session.length - 1].time;
+            const sessionEnd = session[0].time;
+
+            const timeRange = `${sessionStart.toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            })} – ${sessionEnd.toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            })}`;
+
+            const sessionTitle = `🕓 Session ${idx + 1} • ${timeRange}`;
+            const sessionSection = createCollapsible(
+              sessionTitle,
+              false,
+              "session-section"
+            );
+            daySection.content.appendChild(sessionSection.wrapper);
+
+            // Add lazy loading for session items
+            const sessionHeader = sessionSection.wrapper.querySelector(
+              ".collapsible-header"
+            );
+            let sessionItemsLoaded = false;
+
+            sessionHeader.addEventListener("click", () => {
+              if (!sessionItemsLoaded) {
+                // Only create DOM elements when the session is expanded
+                session.forEach(({ node }) => {
+                  sessionSection.content.appendChild(createHistoryItem(node));
+                });
+                sessionItemsLoaded = true;
+              }
+            });
+          });
+        });
+
+        return fragment;
+      }
+
+      // Function to load more history
+      function loadMoreHistory() {
+        if (isLoading || noMoreHistory) return;
+
+        isLoading = true;
+        loadingIndicator.style.display = "block";
+
+        // Calculate date range for next batch
+        const endDate = new Date(currentStartDate);
+        currentStartDate = new Date(currentStartDate);
+        currentStartDate.setDate(currentStartDate.getDate() - DAYS_PER_BATCH);
+
+        // Load history batch
+        loadHistoryBatch(currentStartDate, endDate)
+          .then((visitsByDate) => {
+            // If no more history found
+            if (visitsByDate.size === 0) {
+              noMoreHistory = true;
+              loadingIndicator.style.display = "none";
+
+              const endMessage = parseElement(
+                `<div class="haven-history-end-message">No more history available</div>`
+              );
+              historyContainer.appendChild(endMessage);
+              return;
+            }
+
+            // Render the new history sections
+            const newSections = renderDaySections(visitsByDate);
+
+            // Insert before the loading indicator
+            historyContainer.insertBefore(newSections, loadingIndicator);
+
+            isLoading = false;
+          })
+          .catch((error) => {
+            console.error("[ZenHaven] Error loading more history:", error);
+            isLoading = false;
+
+            // Show error message but allow retry
+            loadingIndicator.innerHTML = `
+              <div>Error loading history. <a href="#" id="retry-history-load">Retry</a></div>
+            `;
+
+            const retryLink = loadingIndicator.querySelector(
+              "#retry-history-load"
+            );
+            if (retryLink) {
+              retryLink.addEventListener("click", (e) => {
+                e.preventDefault();
+                loadingIndicator.innerHTML = `
+                  <div class="loading-spinner"></div>
+                  <div>Loading more history...</div>
+                `;
+                loadMoreHistory();
+              });
+            }
+          });
+      }
+
+      // Scroll event handler with throttling
+      function handleScroll() {
+        if (scrollThrottleTimer !== null) {
+          clearTimeout(scrollThrottleTimer);
+        }
+
+        scrollThrottleTimer = setTimeout(() => {
+          if (isLoading || noMoreHistory) return;
+
+          const containerHeight = historyContainer.clientHeight;
+          const scrollPosition = historyContainer.scrollTop;
+          const scrollHeight = historyContainer.scrollHeight;
+
+          // Load more when user scrolls near the bottom (within 200px)
+          if (scrollHeight - scrollPosition - containerHeight < 200) {
+            loadMoreHistory();
+          }
+        }, 100);
+      }
+
+      // Initialize history view
+      setTimeout(() => {
+        try {
+          // Add loading indicator to the container
+          historyContainer.innerHTML = "";
+          historyContainer.appendChild(loadingIndicator);
+
+          // Set up scroll event listener
+          historyContainer.addEventListener("scroll", handleScroll);
+
+          // Initial load
+          const endDate = new Date();
+          currentStartDate = new Date();
+          currentStartDate.setDate(currentStartDate.getDate() - DAYS_PER_BATCH);
+
+          loadHistoryBatch(currentStartDate, endDate)
+            .then((visitsByDate) => {
+              // If no history found
+              if (visitsByDate.size === 0) {
+                historyContainer.innerHTML =
+                  '<div style="text-align: center; padding: 20px;">No browsing history found</div>';
+                return;
+              }
+
+              // Render the initial history sections
+              const initialSections = renderDaySections(visitsByDate);
+              historyContainer.insertBefore(initialSections, loadingIndicator);
+
+              // Trigger first scroll check after a short delay
+              setTimeout(() => {
+                handleScroll();
+              }, 500);
+            })
+            .catch((error) => {
+              console.error("[ZenHaven] Error initializing history:", error);
+              historyContainer.innerHTML =
+                '<div style="text-align: center; padding: 20px;">Error loading history</div>';
+            });
+        } catch (error) {
+          console.error("[ZenHaven] Error setting up history view:", error);
+          historyContainer.innerHTML =
+            '<div style="text-align: center; padding: 20px;">Error loading history</div>';
+        }
+      }, 100); // Short delay to allow UI to render first
+
       return historyContainer;
     },
   };
@@ -1362,33 +1658,33 @@
     id: "notes",
     label: "Notes",
     icon: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path fill-rule="evenodd" clip-rule="evenodd" d="M3 2C2.44772 2 2 2.44772 2 3V13C2 13.5523 2.44772 14 3 14H13C13.5523 14 14 13.5523 14 13V5.41421C14 5.149 13.8946 4.89464 13.7071 4.70711L11.2929 2.29289C11.1054 2.10536 10.851 2 10.5858 2H3ZM3 3H10V5.5C10 5.77614 10.2239 6 10.5 6H13V13H3V3ZM11 3.70711L12.2929 5H11V3.70711ZM5 7H11V8H5V7ZM11 9H5V10H11V9ZM5 11H11V12H5V11Z" fill="currentColor"/>
-    </svg>`,
-    init: function() {
+        <path fill-rule="evenodd" clip-rule="evenodd" d="M3 2C2.44772 2 2 2.44772 2 3V13C2 13.5523 2.44772 14 3 14H13C13.5523 14 14 13.5523 14 13V5.41421C14 5.149 13.8946 4.89464 13.7071 4.70711L11.2929 2.29289C11.1054 2.10536 10.851 2 10.5858 2H3ZM3 3H10V5.5C10 5.77614 10.2239 6 10.5 6H13V13H3V3ZM11 3.70711L12.2929 5H11V3.70711ZM5 7H11V8H5V7ZM11 9H5V10H11V9ZM5 11H11V12H5V11Z" fill="currentColor"/>
+      </svg>`,
+    init: function () {
       const notesViewContainer = parseElement(`<div id="haven-notes-view">
-          <div id="haven-notes-header">
-            <input type="text" id="haven-notes-search" placeholder="Search notes...">
-            <button id="haven-notes-add-button" title="Create new note">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 4V20M4 12H20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-            </button>
-          </div>
-          <div id="haven-notes-grid"></div>
-        </div>`);
+            <div id="haven-notes-header">
+              <input type="text" id="haven-notes-search" placeholder="Search notes...">
+              <button id="haven-notes-add-button" title="Create new note">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 4V20M4 12H20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+              </button>
+            </div>
+            <div id="haven-notes-grid"></div>
+          </div>`);
 
       const notesGrid = notesViewContainer.querySelector("#haven-notes-grid");
       const addButton = notesViewContainer.querySelector(
-        "#haven-notes-add-button",
+        "#haven-notes-add-button"
       );
 
       const createNoteCard = () => {
         return parseElement(`<div class="haven-note-card">
-              <svg class="note-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M4 4C4 2.89543 4.89543 2 6 2H14.1716C14.702 2 15.2107 2.21071 15.5858 2.58579L19.4142 6.41421C19.7893 6.78929 20 7.29799 20 7.82843V20C20 21.1046 19.1046 22 18 22H6C4.89543 22 4 21.1046 4 20V4ZM6 4H14V8C14 8.55228 14.4477 9 15 9H19V20H6V4ZM16 4.41421L18.5858 7H16V4.41421Z" fill="currentColor"/></svg>
-              <h1>Untitled</h1><p>Click to add page content</p>
-            </div>`);
+                <svg class="note-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M4 4C4 2.89543 4.89543 2 6 2H14.1716C14.702 2 15.2107 2.21071 15.5858 2.58579L19.4142 6.41421C19.7893 6.78929 20 7.29799 20 7.82843V20C20 21.1046 19.1046 22 18 22H6C4.89543 22 4 21.1046 4 20V4ZM6 4H14V8C14 8.55228 14.4477 9 15 9H19V20H6V4ZM16 4.41421L18.5858 7H16V4.41421Z" fill="currentColor"/></svg>
+                <h1>Untitled</h1><p>Click to add page content</p>
+              </div>`);
       };
 
       addButton.addEventListener("click", () =>
-        notesGrid.appendChild(createNoteCard()),
+        notesGrid.appendChild(createNoteCard())
       );
 
       notesGrid.appendChild(createNoteCard());
@@ -1444,9 +1740,11 @@
 
   function createHavenToggle() {
     const iconSVG = `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path fill-rule="evenodd" clip-rule="evenodd" d="M2 3C2 2.44772 2.44772 2 3 2H13C13.5523 2 14 2.44772 14 3V13C14 13.5523 13.5523 14 13 14H3C2.44772 14 2 13.5523 2 13V3ZM3 3H13V13H3V3ZM5 5H11V6H5V5ZM11 7H5V8H11V7ZM5 9H11V10H5V9Z" fill="white"/>
-    </svg>`;
-    const image = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(iconSVG)}`;
+          <path fill-rule="evenodd" clip-rule="evenodd" d="M2 3C2 2.44772 2.44772 2 3 2H13C13.5523 2 14 2.44772 14 3V13C14 13.5523 13.5523 14 13 14H3C2.44772 14 2 13.5523 2 13V3ZM3 3H13V13H3V3ZM5 5H11V6H5V5ZM11 7H5V8H11V7ZM5 9H11V10H5V9Z" fill="white"/>
+      </svg>`;
+    const image = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
+      iconSVG
+    )}`;
     const openHaven = () => {
       const toolbox = document.getElementById("navigator-toolbox");
       if (toolbox) {
