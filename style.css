@@ -552,6 +552,70 @@
   height: 0;
 }
 
+       .loading-spinner {
+          width: 30px;
+          height: 30px;
+          border: 3px solid rgba(0, 0, 0, 0.1);
+          border-radius: 50%;
+          border-top-color: #3498db;
+          animation: spin 1s ease-in-out infinite;
+          margin: 0 auto 10px auto;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        .history-search-container {
+          display: flex;
+          align-items: center;
+          gap: 20px;
+          padding: 12px;
+          position: sticky;
+          top: 0;    
+          .search-input-wrapper {
+            flex: 1;
+            position: relative;
+          }
+        }
+        
+        .history-search-input {
+          --input-bgcolor: var(--tab-hover-background-color);
+          --input-border-color: transparent;
+          width: 100%;
+          padding: 8px 12px;
+          border: 1px solid rgba(0, 0, 0, 0.2);
+          border-radius: 6px;
+          font-size: 14px;
+          background: transparent;
+          outline: none;
+          transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        
+        .history-filter-btn {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 36px;
+          height: 36px;
+          border: transparent;
+          border-radius: 6px;
+          background: transparent;
+          cursor: pointer;
+          transition: all 0.2s;
+          color: var(--tab-selected-textcolor);
+        }
+        
+        .history-filter-btn:hover {
+          background: var(--tab-hover-background-color);
+        }
+        
+        .history-filter-btn:active {
+          transform: scale(0.95);
+        }
+        
+        .history-filter-btn svg {
+          width: 16px;
+          height: 16px;
+        }
+
 .history-section-header {
   font-size: 32px;
   font-weight: 800;
