@@ -1,0 +1,535 @@
+/* --- Custom Toolbar & Bottom Buttons --- */
+#zen-sidebar-bottom-buttons {
+    display: flex !important;
+    justify-content: space-between;
+    height: min-content;
+    width: 100%;
+    padding: 8px;
+}
+
+#zen-sidebar-bottom-buttons > * {
+    margin: 0 5px;
+    -moz-context-properties: fill, fill-opacity !important;
+}
+
+#zen-sidebar-bottom-buttons toolbarbutton {
+    -moz-appearance: none !important;
+}
+
+:root:has(#navigator-toolbox[haven]) {
+  #custom-toolbar {
+    width: 15vw;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  #toolbar-header {
+    font-size: 20px;
+    display: flex !important;
+    align-items: center;
+    margin-top: 5px;
+    margin-left: 5px;
+    margin-right: 50px;
+    height: 24px;
+  }
+
+  #toolbar-header .header-icon {
+    display: flex;
+    width: 24px;
+    height: 24px;
+    align-items: center;
+    justify-content: center;
+    margin-right: 5px;
+  }
+
+  #toolbar-header .header-icon svg {
+    width: 20px !important;
+    height: 20px !important;
+  }
+
+  #functions-container {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .custom-button {
+    display: flex;
+    flex-direction: column;
+    width: 100px;
+    height: 100px;
+    margin-top: auto;
+    margin-bottom: auto;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .custom-button .icon svg {
+    height: 24px !important;
+  }
+
+  .custom-button .label {
+    display: block;
+    margin-top: 8px;
+    text-align: center;
+  }
+
+  .custom-button,
+  .toolbarbutton-1 {
+    transition: transform 0.1s ease-in-out, background-color 0.2s ease;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 4px;
+    position: relative;
+  }
+
+  .custom-button:hover,
+  .toolbarbutton-1:hover {
+    background-color: var(--toolbarbutton-hover-background);
+    transform: translateY(-1px);
+  } 
+
+  .custom-button.clicked {
+    transform: translateY(1px);
+    background-color: var(--toolbarbutton-active-background);
+  } 
+
+  .custom-button.active {
+    background-color: var(--toolbarbutton-active-background);
+    box-shadow: inset 0 0 0 1px var(--toolbar-bgcolor);
+    transform: translateY(1px);
+  }
+}
+
+/* --- Workspaces --- */
+.haven-workspace-add-button {
+  position: sticky;
+  bottom: 16px;
+  right: 16px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--toolbar-bgcolor);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-left: auto;
+  z-index: 100;
+}
+
+:root:has(#navigator-toolbox[haven]) {
+  #zen-haven-container {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center;
+    overflow-x: scroll;
+    overflow-y: hidden;
+      box-shadow:
+        inset 10px 0 20px rgba(0, 0, 0, 0.5),  /* left */
+        inset 0 0 20px rgba(0, 0, 0, 0.5),  /* bottom */
+        inset 0 0 20px rgba(0, 0, 0, 0.5);   /* top */
+    
+    .haven-workspace {
+      height: 85% !important;
+      min-width: 20%;
+      background-color: var(--zen-primary-color);
+      margin-left: 30px;
+      margin-right: 30px;
+      border-radius: 8px;
+      border: 2px solid var(--zen-colors-border);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 10px !important;
+
+      .tab-reset-pin-button {
+        display: none;
+      }
+
+      .tab-icon-image {
+        margin-right: 10px;
+      }
+      
+      .haven-workspace-header {
+        margin: 2px !important;
+        
+        .workspace-icon {
+          font-size: 16px;
+        }
+        
+        .workspace-title {
+          font-size: 16px !important;
+          margin-right: 10px !important;
+        }
+      }
+      
+      .haven-workspace-content {
+        margin: 0 !important;
+        padding: 10px !important;
+        display: flex !important;
+        align-items: center !important;
+        height: fit-content !important;
+        width: 100% !important;
+        overflow: hidden !important;
+        align-items: flex-start;
+        
+        .haven-workspace-section {
+          display: flex !important;
+          position: relative !important;
+          min-height: 70px !important;
+          margin: 0 !important;
+          padding-inline: 2px !important;
+          transform: translateX(0) !important;
+        }
+      }
+    }
+  }
+}
+
+.haven-workspace {
+  width: 20%;
+  height: 100%;
+  display: none;
+  padding: 16px;
+}
+
+.haven-workspace-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.workspace-icon {
+  font-size: 24px;
+  margin: 0;
+  color: var(--toolbar-color);
+}
+
+.workspace-title {
+  font-size: 24px;
+  margin: 0;
+  color: var(--toolbar-color);
+}
+
+#zen-haven-container[haven-workspaces] .haven-workspace {
+  display: block;
+}
+
+.haven-workspace-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px;
+  overflow-y: auto;
+}
+
+.haven-workspace-content > * {
+  width: 100%;
+}
+
+/* --- Downloads --- */
+:root {
+  --haven-dl-bg: #202020; --haven-dl-surface-bg: #2a2a2a; --haven-dl-text-primary: #E0E0E0;
+  --haven-dl-text-secondary: #A0A0A0; --haven-dl-text-disabled: #666666; --haven-dl-border-color: #404040;
+  --haven-dl-accent-color: #7B68EE; --haven-dl-accent-hover: #9370DB; --haven-dl-success-color: #5CB85C;
+  --haven-dl-warning-color: #F0AD4E; --haven-dl-error-color: #D9534F;
+  --haven-dl-icon-bg-pdf: linear-gradient(135deg, #D9534F, #CD5C5C); --haven-dl-icon-bg-zip: linear-gradient(135deg, #7B68EE, #6A5ACD);
+  --haven-dl-icon-bg-vid: linear-gradient(135deg, #F0AD4E, #EE9A2E); --haven-dl-icon-bg-doc: linear-gradient(135deg, #5BC0DE, #46B8DA);
+  --haven-dl-icon-bg-mp3: linear-gradient(135deg, #DB7093, #D86087); --haven-dl-icon-bg-img: linear-gradient(135deg, #5CB85C, #4CAF50);
+  --haven-dl-icon-bg-default: linear-gradient(135deg, #6c757d, #5a6268);
+}
+.haven-downloads-container { display: flex; flex-direction: column; height: 100%; width: 100%; background-color: transparent; color: var(--haven-dl-text-primary); padding: 16px; box-sizing: border-box; overflow: hidden; font-family: system-ui, sans-serif; max-height: 100vh; }
+.haven-dl-header { flex-shrink: 0; display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding: 0 8px; }
+.haven-dl-title-section { display: flex; align-items: center; gap: 10px; }
+.haven-dl-title-text { font-size: 22px; font-weight: 600; margin: 0; line-height: 1; }
+.haven-dl-controls { flex-shrink: 0; display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; padding: 0 8px; }
+.haven-dl-search-filter-row { display: flex; gap: 10px; align-items: center; }
+.haven-dl-search-box { position: relative; flex-grow: 1; }
+.haven-dl-search-icon-placeholder { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--haven-dl-text-secondary); pointer-events: none; display: flex; align-items: center; justify-content: center; }
+.haven-dl-search-icon-placeholder svg { width: 16px; height: 16px; display: block; }
+.haven-dl-search-input { width: 100%; padding: 8px 10px 8px 34px; border: 1px solid var(--haven-dl-border-color); border-radius: 6px; background-color: var(--haven-dl-surface-bg); color: var(--haven-dl-text-primary); font-size: 14px; box-sizing: border-box; height: 36px; }
+.haven-dl-search-input:focus { outline: none; border-color: var(--haven-dl-accent-color); box-shadow: 0 0 0 2px rgba(123, 104, 238, 0.3); }
+.haven-dl-filter-dropdown { padding: 0 12px; border: 1px solid var(--haven-dl-border-color); border-radius: 6px; background-color: var(--haven-dl-surface-bg); color: var(--haven-dl-text-primary); font-size: 13px; cursor: pointer; box-sizing: border-box; height: 36px; -moz-appearance: none; background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23${"A0A0A0".substring(1)}%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.4-5.4-12.8z%22%2F%3E%3C%2Fsvg%3E'); background-repeat: no-repeat; background-position: right 10px top 50%; background-size: .65em auto; padding-right: 30px; }
+.haven-dl-filter-dropdown:focus { outline: none; }
+.haven-dl-view-toggle { display: flex; background-color: var(--haven-dl-surface-bg); border-radius: 6px; border: 1px solid var(--haven-dl-border-color); overflow: hidden; height: 36px; }
+.haven-dl-view-btn { background-color: transparent; border: none; border-radius: 0; padding: 0 12px; color: var(--haven-dl-text-secondary); font-size: 13px; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-grow: 1; }
+.haven-dl-view-btn:not(:last-child) { border-right: 1px solid var(--haven-dl-border-color); }
+.haven-dl-view-btn.active { background-color: var(--haven-dl-accent-color); color: white; }
+.haven-dl-view-btn:hover:not(.active) { background-color: var(--haven-dl-border-color); }
+.haven-dl-category-tabs-container { overflow: hidden; display: flex; gap: 4px; background-color: var(--haven-dl-surface-bg); padding: 4px; border-radius: 6px; border: 1px solid var(--haven-dl-border-color); position: relative; }
+.haven-dl-category-active-indicator {
+  position: absolute;
+  top: 4px;
+  height: 30px;
+  background-color: var(--haven-dl-accent-color);
+  border-radius: 4px;
+  transition: left 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), width 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 0;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+.haven-dl-category-tab {
+  flex-grow: 1; padding: 6px 10px; border: none; background-color: transparent;
+  border-radius: 4px; font-size: 12px; font-weight: 500; color: var(--haven-dl-text-secondary);
+  cursor: pointer; transition: color 0.2s;
+  display: flex; align-items: center; justify-content: center; gap: 5px;
+  height: 30px; box-sizing: border-box;
+  position: relative; z-index: 1;
+}
+.haven-dl-category-tab.active {
+  color: white;
+}
+.haven-dl-category-tab:hover:not(.active) {
+  color: var(--haven-dl-text-primary);
+}
+.haven-dl-category-tab .haven-dl-tab-icon { display: flex; align-items: center; justify-content: center; }
+.haven-dl-category-tab .haven-dl-tab-icon svg { width: 14px; height: 14px; }
+.haven-dl-stats-bar { flex-shrink: 0; display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--haven-dl-text-secondary); padding: 8px; margin-bottom: 8px; border-bottom: 1px solid var(--haven-dl-border-color); }
+.haven-dl-stats-bar strong { color: var(--haven-dl-text-primary); font-weight: 500; }
+.haven-dl-list-container { flex: 1 1 0; overflow-y: auto; overflow-x: hidden; padding-right: 5px; scrollbar-width: thin; scrollbar-color: var(--haven-dl-border-color) var(--haven-dl-surface-bg); min-height: 0; height: 0; border: 1px solid transparent; }
+.haven-dl-list-container::-webkit-scrollbar { width: 8px; } .haven-dl-list-container::-webkit-scrollbar-track { background: var(--haven-dl-surface-bg); } .haven-dl-list-container::-webkit-scrollbar-thumb { background-color: var(--haven-dl-border-color); border-radius: 4px; }
+.haven-dl-date-separator { padding: 10px 8px; font-size: 11px; font-weight: 600; color: var(--haven-dl-text-secondary); text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--haven-dl-border-color); margin: 16px 0 8px 0; position: sticky; top: -1px; background: var(--haven-dl-bg); z-index: 1; }
+.haven-dl-item { display: flex; align-items: center; padding: 12px 8px; border-bottom: 1px solid var(--haven-dl-border-color); transition: background-color 0.15s ease; cursor: default; }
+.haven-dl-item:hover { background-color: var(--haven-dl-surface-bg); } .haven-dl-item:last-child { border-bottom: none; }
+.haven-dl-item-icon { width: 36px; height: 36px; border-radius: 6px; display: flex; align-items: center; justify-content: center; margin-right: 12px; font-size: 13px; color: white; font-weight: bold; flex-shrink: 0; text-transform: uppercase; }
+.pdf-icon { background: var(--haven-dl-icon-bg-pdf); } .zip-icon { background: var(--haven-dl-icon-bg-zip); } .vid-icon { background: var(--haven-dl-icon-bg-vid); } .doc-icon { background: var(--haven-dl-icon-bg-doc); } .mp3-icon { background: var(--haven-dl-icon-bg-mp3); } .img-icon { background: var(--haven-dl-icon-bg-img); } .default-icon { background: var(--haven-dl-icon-bg-default); }
+.haven-dl-item-info { flex-grow: 1; min-width: 0; cursor: pointer; }
+.haven-dl-item-name { font-weight: 500; font-size: 14px; color: var(--haven-dl-text-primary); margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.haven-dl-item-details { font-size: 12px; color: var(--haven-dl-text-secondary); display: flex; gap: 6px; align-items: center; }
+.haven-dl-item-url { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 1; max-width: 150px; }
+.haven-dl-item-status-section { min-width: 100px; text-align: right; margin-left: 12px; flex-shrink: 0; }
+.haven-dl-item-progress-bar { width: 100%; height: 4px; background-color: var(--haven-dl-border-color); border-radius: 2px; overflow: hidden; margin-bottom: 4px; }
+.haven-dl-item-progress-fill { height: 100%; border-radius: 2px; } .haven-dl-item-status-text { font-size: 11px; font-weight: 500; }
+.status-completed { color: var(--haven-dl-success-color); } .haven-dl-item-progress-fill.status-completed { background-color: var(--haven-dl-success-color); }
+.status-paused { color: var(--haven-dl-warning-color); } .haven-dl-item-progress-fill.status-paused { background-color: var(--haven-dl-warning-color); }
+.status-failed { color: var(--haven-dl-error-color); } .haven-dl-item-progress-fill.status-failed { background-color: var(--haven-dl-error-color); }
+.haven-dl-item-actions { display: flex; gap: 6px; margin-left: 16px; flex-shrink: 0; }
+.haven-dl-action-btn { width: 30px; height: 30px; border: none; border-radius: 4px; background-color: var(--haven-dl-surface-bg); color: var(--haven-dl-text-secondary); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background-color 0.2s, color 0.2s; font-size: 16px; }
+.haven-dl-action-btn:hover { background-color: var(--haven-dl-border-color); color: var(--haven-dl-text-primary); }
+.haven-dl-empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: var(--haven-dl-text-secondary); text-align: center; }
+.haven-dl-empty-icon-placeholder { font-size: 48px; color: var(--haven-dl-text-disabled); margin-bottom: 16px; }
+.haven-dl-empty-state p { font-size: 16px; }
+
+/* --- History --- */
+.haven-history {
+  padding: 16px;
+  height: 90vh;
+  width: 50vw;
+  overflow-y: auto;
+  background: var(--zen-background);
+}
+
+.day-section, .session-section {
+  margin-bottom: 12px;
+}
+
+.collapsible-header {
+  background: var(--zen-themed-toolbar-bg);
+  border-radius: 6px;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.collapsible-header:hover {
+  background: var(--toolbarbutton-hover-background);
+}
+
+.section-toggle {
+  font-family: monospace;
+  font-size: 12px;
+  width: 16px;
+  text-align: center;
+  font-family: monospace;
+  font-size: 12px;
+  width: 16px;
+  text-align: center;
+  color: var(--toolbar-color);
+}
+
+.section-title {
+  font-weight: 600;
+  color: var(--toolbar-color);
+}
+
+.collapsible-content {
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.haven-history-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+  cursor: pointer;
+}
+
+.haven-history-item:hover {
+  background-color: var(--toolbarbutton-hover-background);
+}
+
+.history-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--zen-colors-border);
+}
+
+.history-item-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.history-title {
+  font-weight: 500;
+  color: var(--toolbar-color);
+}
+
+.history-time {
+  font-size: 0.85em;
+  color: var(--toolbar-color);
+  opacity: 0.75;
+}
+
+/* --- Notes --- */
+#zen-haven-container[haven-notes] {
+  flex-direction: column !important;
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+#haven-notes-view {
+  width: 100% !important;
+  height: 90vh;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  background: var(--zen-background);
+  overflow-y: auto !important;
+  scrollbar-width: thin;
+  scrollbar-color: var(--zen-tabs-border-color) var(--zen-sidebar-background);
+}
+
+#haven-notes-header {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 10 !important;
+  background: var(--zen-background);
+  padding: 20px !important;
+  border-bottom: 1px solid var(--zen-tabs-border-color);
+  display: flex !important;
+  gap: 16px;
+  flex-direction: row-reverse !important;
+}
+
+#haven-notes-add-button {
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 8px;
+  background: var(--zen-toolbar-field-background);
+  color: var(--toolbar-color);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+
+#haven-notes-add-button:hover {
+  background: var(--toolbarbutton-hover-background);
+}
+
+#haven-notes-search {
+  flex: 1;
+  height: 40px;
+  border: none;
+  border-radius: 20px;
+  background: var(--zen-toolbar-field-background);
+  color: var(--toolbar-color);
+  padding: 0 16px;
+  font-size: 14px;
+}
+
+#haven-notes-search::placeholder {
+  color: var(--toolbar-color);
+  opacity: 0.7;
+}
+
+#haven-notes-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 16px;
+  padding: 16px;
+  overflow-y: visible;
+}
+
+#haven-notes-view::-webkit-scrollbar {
+  width: 8px;
+}
+
+#haven-notes-view::-webkit-scrollbar-track {
+  background: var(--zen-sidebar-background);
+  border-radius: 4px;
+}
+
+#haven-notes-view::-webkit-scrollbar-thumb {
+  background-color: var(--zen-tabs-border-color);
+  border-radius: 4px;
+  border: 2px solid var(--zen-sidebar-background);
+}
+
+.haven-note-card {
+  width: 150px;
+  height: 150px;
+  background: var(--zen-toolbar-field-background);
+  border-radius: 8px;
+  padding: 16px;
+  cursor: pointer;
+  transition: transform 0.2s, background 0.2s;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.haven-note-card:hover {
+  background: var(--toolbarbutton-hover-background);
+  transform: translateY(-2px);
+}
+
+.haven-note-card .note-icon {
+  color: var(--toolbar-color);
+  opacity: 0.8;
+}
+
+.haven-note-card h1 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--toolbar-color);
+}
+
+.haven-note-card p {
+  margin: 0;
+  font-size: 12px;
+  color: var(--toolbar-color);
+  opacity: 0.7;
+}
