@@ -92,15 +92,26 @@
 }
 
 :root:has(#navigator-toolbox[haven]) {
+
   #zen-haven-container {
+  overflow: hidden;
+    padding: 20px !important;
     display: flex !important;
-    flex-direction: row !important;
-    align-items: center;
-    overflow-x: scroll;
-    overflow-y: hidden;
+    flex-direction: column !important;
+    align-items: center !important;
+    overflow-x: scroll !important;
+    overflow-y: hidden !important;
     box-shadow: inset 10px 0 20px rgba(0, 0, 0, 0.5),
       /* left */ inset 0 0 20px rgba(0, 0, 0, 0.5),
       /* bottom */ inset 0 0 20px rgba(0, 0, 0, 0.5); /* top */
+
+    &[haven-workspaces] {
+      div {
+        display: flex !important;
+        align-items: center !important;
+        height: 100%
+      }
+    }
 
     .haven-workspace {
       height: 85% !important;
@@ -530,93 +541,82 @@
 
 /* --- History --- */
 .haven-history {
-  padding: 20px !important;
-  padding-top: 50px !important;
-  height: 100%;
-  width: 100%;
-  overflow-y: auto;
-  background: var(--zen-background);
-}
-
-.day-section,
-.session-section {
-  margin-bottom: 12px;
-}
-
-.collapsible-header {
-  background: var(--zen-themed-toolbar-bg);
-  border-radius: 6px;
-  padding: 12px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-}
-
-.collapsible-header:hover {
-  background: var(--toolbarbutton-hover-background);
-}
-
-.section-toggle {
-  font-family: monospace;
-  font-size: 12px;
-  width: 16px;
-  text-align: center;
-  font-family: monospace;
-  font-size: 12px;
-  width: 16px;
-  text-align: center;
-  color: var(--toolbar-color);
-}
-
-.section-title {
-  font-weight: 600;
-  color: var(--toolbar-color);
-}
-
-.collapsible-content {
-  padding: 8px 12px;
-  display: flex;
+  display: flex !important;
   flex-direction: column;
-  gap: 8px;
+  width: 100% !important;
+  flex: 1 1 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-color: var(--tab-hover-background-color) transparent;
+  min-height: 0;
+  height: 0;
+}
+
+.history-section-header {
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--tab-selected-textcolor);
+  margin-bottom: 5px;
 }
 
 .haven-history-item {
   display: flex;
   align-items: center;
+  flex-direction: row !important;
   gap: 12px;
   padding: 8px;
-  border-radius: 4px;
+  border-radius: 6px;
   transition: background-color 0.2s;
   cursor: pointer;
-}
+  &:hover {
+    background-color: var(--toolbarbutton-hover-background) !important;
+  }
+  .history-icon {
+    width: 22px;
+    height: 22px;
+    border-radius: 5px;
+    background: var(--tab-selected-textcolor);
+  }
+  .history-item-row {
+    width: 100%;
+    align-items: center;
+    display: flex;
+    flex-direction: row;
+  }
+  
+    .history-item-content {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
 
-.haven-history-item:hover {
-  background-color: var(--toolbarbutton-hover-background);
-}
+    .history-title {
+      max-width: 300px !important;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis !important;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--tab-selected-textcolor);
+    }
+    
+    .history-url {
+      font-size: 10px;
+      color: #9f9f9f;
+      max-width: 300px !important;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis !important;
+    }
+  
 
-.history-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: var(--zen-colors-border);
-}
 
-.history-item-content {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.history-title {
-  font-weight: 500;
-  color: var(--toolbar-color);
-}
-
-.history-time {
-  font-size: 0.85em;
-  color: var(--toolbar-color);
-  opacity: 0.75;
+    .history-time {
+      font-size: 0.85em;
+      color: #9f9f9f;
+      margin-left: auto;
+    }
+  
 }
 
 /* --- Notes --- */
