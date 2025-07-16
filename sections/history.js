@@ -12,6 +12,18 @@ export const historySection = {
     // Create main container with loading message
     const historyContainer = parseElement(
       `<div class="haven-history">
+          <div class="history-search-container">
+            <div class="search-input-wrapper">
+              <input type="text" class="history-search-input" placeholder="Search history...">
+            </div>
+            <button class="history-filter-btn" title="Filter options">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M1.5 2.5C1.5 1.94772 1.94772 1.5 2.5 1.5H13.5C14.0523 1.5 14.5 1.94772 14.5 2.5V4.5C14.5 4.77614 14.2761 5 14 5H2C1.72386 5 1.5 4.77614 1.5 4.5V2.5Z" stroke="currentColor" stroke-width="1.5"/>
+                <path d="M4.5 6.5C4.5 5.94772 4.94772 5.5 5.5 5.5H10.5C11.0523 5.5 11.5 5.94772 11.5 6.5V8.5C11.5 8.77614 11.2761 9 11 9H5C4.72386 9 4.5 8.77614 4.5 8.5V6.5Z" stroke="currentColor" stroke-width="1.5"/>
+                <path d="M7.5 10.5C7.5 9.94772 7.94772 9.5 8.5 9.5H13.5C14.0523 9.5 14.5 9.94772 14.5 10.5V12.5C14.5 12.7761 14.2761 13 14 13H8C7.72386 13 7.5 12.7761 7.5 12.5V10.5Z" stroke="currentColor" stroke-width="1.5"/>
+              </svg>
+            </button>
+          </div>
           <div class="haven-history-loading-initial" style="text-align: center; padding: 20px;">
             <div class="loading-spinner"></div>
             <div>Loading history...</div>
@@ -30,16 +42,7 @@ export const historySection = {
     // Add CSS for styling
     const style = document.createElement("style");
     style.textContent = `
-        .loading-spinner {
-          width: 30px;
-          height: 30px;
-          border: 3px solid rgba(0, 0, 0, 0.1);
-          border-radius: 50%;
-          border-top-color: #3498db;
-          animation: spin 1s ease-in-out infinite;
-          margin: 0 auto 10px auto;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
+ 
       `;
     document.head.appendChild(style);
 
@@ -49,6 +52,8 @@ export const historySection = {
     let noMoreHistory = false;
     let currentStartDate = new Date();
     let scrollThrottleTimer = null;
+    let searchQuery = "";
+    let allHistoryItems = []; // Store all loaded history items for search
 
     // Helper: get relative day/week/month/year label
     function getSectionLabel(date, today) {
@@ -122,8 +127,59 @@ export const historySection = {
       });
     }
 
+    // Function to filter history items based on search query
+    function filterHistoryItems(items, query) {
+      if (!query.trim()) return items;
+      
+      const searchTerm = query.toLowerCase();
+      return items.filter(item => {
+        const title = (item.title || "").toLowerCase();
+        const url = item.uri.toLowerCase();
+        return title.includes(searchTerm) || url.includes(searchTerm);
+      });
+    }
+
+    // Function to perform search
+    function performSearch() {
+      const searchInput = historyContainer.querySelector('.history-search-input');
+      searchQuery = searchInput.value;
+      
+      // Clear current display
+      const historyContent = historyContainer.querySelector('.haven-history-content') || historyContainer;
+      const searchContainer = historyContainer.querySelector('.history-search-container');
+      const loadingIndicator = historyContainer.querySelector('.haven-history-loading');
+      
+      // Remove all content except search container and loading indicator
+      Array.from(historyContent.children).forEach(child => {
+        if (child !== searchContainer && child !== loadingIndicator) {
+          child.remove();
+        }
+      });
+      
+      if (searchQuery.trim()) {
+        // Filter and display search results
+        const filteredItems = filterHistoryItems(allHistoryItems, searchQuery);
+        if (filteredItems.length > 0) {
+          const searchResults = renderHistoryBatch(filteredItems);
+          historyContainer.insertBefore(searchResults, loadingIndicator);
+        } else {
+          const noResults = parseElement(
+            `<div style="text-align: center; padding: 20px; color: #666;">No results found for "${searchQuery}"</div>`
+          );
+          historyContainer.insertBefore(noResults, loadingIndicator);
+        }
+      } else {
+        // Show all items
+        const allResults = renderHistoryBatch(allHistoryItems);
+        historyContainer.insertBefore(allResults, loadingIndicator);
+      }
+    }
+
     // Group history items by day and render them
     function renderHistoryBatch(nodes) {
+      // Store items for search functionality
+      allHistoryItems = [...allHistoryItems, ...nodes];
+      
       const fragment = document.createDocumentFragment();
       const today = new Date();
       today.setHours(0, 0, 0, 0);
@@ -231,7 +287,15 @@ export const historySection = {
     // Initialize history view
     setTimeout(() => {
       try {
+        // Clear only the history content, preserve search container
+        const searchContainer = historyContainer.querySelector('.history-search-container');
         historyContainer.innerHTML = "";
+        
+        // Re-add the search container at the top
+        if (searchContainer) {
+          historyContainer.appendChild(searchContainer);
+        }
+        
         historyContainer.appendChild(loadingIndicator);
         historyContainer.addEventListener("scroll", handleScroll);
         
@@ -243,14 +307,39 @@ export const historySection = {
         loadHistoryBatch(currentStartDate, endDate)
           .then((nodes) => {
             if (nodes.length === 0) {
-              historyContainer.innerHTML =
-                '<div style="text-align: center; padding: 20px;">No browsing history found</div>';
+              const noHistoryMessage = parseElement(
+                '<div style="text-align: center; padding: 20px;">No browsing history found</div>'
+              );
+              historyContainer.appendChild(noHistoryMessage);
               return;
             }
             
             // Render the initial history sections
             const initialSections = renderHistoryBatch(nodes);
             historyContainer.insertBefore(initialSections, loadingIndicator);
+            
+            // Add event listeners for search and filter after content is loaded
+            const searchInput = historyContainer.querySelector('.history-search-input');
+            const filterBtn = historyContainer.querySelector('.history-filter-btn');
+            
+            if (searchInput) {
+              // Search input event listener with debouncing
+              let searchTimeout;
+              searchInput.addEventListener('input', (e) => {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                  performSearch();
+                }, 300); // 300ms delay for better performance
+              });
+            }
+            
+            if (filterBtn) {
+              // Filter button event listener
+              filterBtn.addEventListener('click', () => {
+                // TODO: Implement filter options (date range, domain, etc.)
+                console.log('[ZenHaven] Filter button clicked - implement filter options');
+              });
+            }
             
             // Trigger first scroll check after a short delay
             setTimeout(() => {
@@ -259,13 +348,17 @@ export const historySection = {
           })
           .catch((error) => {
             console.error("[ZenHaven] Error initializing history:", error);
-            historyContainer.innerHTML =
-              '<div style="text-align: center; padding: 20px;">Error loading history</div>';
+            const errorMessage = parseElement(
+              '<div style="text-align: center; padding: 20px;">Error loading history</div>'
+            );
+            historyContainer.appendChild(errorMessage);
           });
       } catch (error) {
         console.error("[ZenHaven] Error setting up history view:", error);
-        historyContainer.innerHTML =
-          '<div style="text-align: center; padding: 20px;">Error loading history</div>';
+        const errorMessage = parseElement(
+          '<div style="text-align: center; padding: 20px;">Error loading history</div>'
+        );
+        historyContainer.appendChild(errorMessage);
       }
     }, 100);
 
