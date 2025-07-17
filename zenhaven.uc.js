@@ -1,657 +1,372 @@
-import { parseElement } from "../utils/parse.js";
+// ==UserScript==
+// @name        Custom Toolbox UI (Safe Mode)
+// @description Only injects UI when #navigator-toolbox has [haven]
+// @include     main
+// ==/UserScript==
 
-export const historySection = {
-  id: "history",
-  label: "History",
-  icon: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path fill-rule="evenodd" clip-rule="evenodd" d="M1 1.06567H14.9613V4.0144H1L1 1.06567ZM0 1.06567C0 0.513389 0.447715 0.0656738 1 0.0656738H14.9613C15.5136 0.0656738 15.9613 0.513389 15.9613 1.06567V4.0144C15.9613 4.55603 15.5307 4.99708 14.9932 5.01391V5.02686V13C14.9932 14.6569 13.65 16 11.9932 16H3.96814C2.31129 16 0.96814 14.6569 0.96814 13V5.02686V5.01391C0.430599 4.99708 0 4.55603 0 4.0144V1.06567ZM13.9932 5.02686H1.96814V13C1.96814 14.1046 2.86357 15 3.96814 15H11.9932C13.0977 15 13.9932 14.1046 13.9932 13V5.02686ZM9.95154 8.07495H6.01318V7.07495H9.95154V8.07495Z" fill="currentColor"/>
-      </svg>`,
-  init: function() {
-    console.log("[ZenHaven] History init triggered");
+import { parseElement } from "./utils/parse.js";
+import { downloadsSection } from "./sections/download.js";
+import { workspacesSection } from "./sections/workspace.js";
+import { historySection } from "./sections/history.js";
+import { notesSection } from "./sections/notes.js";
 
-    // Create main container with loading message
-    const historyContainer = parseElement(
-      `<div class="haven-history">
-          <div class="history-search-container">
-            <div class="search-input-wrapper">
-              <input type="text" class="history-search-input" placeholder="Search history...">
-            </div>
-            <button class="history-filter-btn" title="Filter options">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M1.5 2.5C1.5 1.94772 1.94772 1.5 2.5 1.5H13.5C14.0523 1.5 14.5 1.94772 14.5 2.5V4.5C14.5 4.77614 14.2761 5 14 5H2C1.72386 5 1.5 4.77614 1.5 4.5V2.5Z" stroke="currentColor" stroke-width="1.5"/>
-                <path d="M4.5 6.5C4.5 5.94772 4.94772 5.5 5.5 5.5H10.5C11.0523 5.5 11.5 5.94772 11.5 6.5V8.5C11.5 8.77614 11.2761 9 11 9H5C4.72386 9 4.5 8.77614 4.5 8.5V6.5Z" stroke="currentColor" stroke-width="1.5"/>
-                <path d="M7.5 10.5C7.5 9.94772 7.94772 9.5 8.5 9.5H13.5C14.0523 9.5 14.5 9.94772 14.5 10.5V12.5C14.5 12.7761 14.2761 13 14 13H8C7.72386 13 7.5 12.7761 7.5 12.5V10.5Z" stroke="currentColor" stroke-width="1.5"/>
-              </svg>
-            </button>
-          </div>
-          <div class="haven-history-loading-initial" style="text-align: center; padding: 20px;">
-            <div class="loading-spinner"></div>
-            <div>Loading history...</div>
-          </div>
-        </div>`,
-    );
+(function () {
+  const { document } = window;
+  if (window.haven) {
+    console.log("[ZenHaven] Already initialized. Aborting.");
+    return;
+  }
+  console.log("[ZenHaven] Script loaded");
 
-    const loadingIndicator = parseElement(
-      `<div class="haven-history-loading" style="display: none; text-align: center; padding: 20px;">
-          <div class="loading-spinner"></div>
-          <div>Loading more history...</div>
-        </div>`,
-    );
+  class ZenHaven {
+    constructor() {
+      this.sections = new Map();
+      this.activeSectionId = null;
+      this.uiInitialized = false;
+      this.elements = {
+        toolbox: null,
+        customToolbar: null,
+        functionsContainer: null,
+        havenContainer: null,
+        bottomButtons: null,
+        mediaToolbar: null,
+      };
+      console.log("[ZenHaven] Core object created");
+    }
 
-    // Create filter menupopup (XUL, then inject HTML slider)
-    console.log('[ZenHaven] Creating filter menupopup...');
-    const filterPopup = parseElement(`<menupopup id="history-filter-popup" width="340"></menupopup>`, "xul");
-    document.getElementById("mainPopupSet")?.appendChild(filterPopup);
-    console.log('[ZenHaven] Filter menupopup appended:', filterPopup);
-
-    // Helper to append HTML into XUL
-    const appendXUL = (parentElement, htmlString, insertBefore = null) => {
-      const element = new DOMParser().parseFromString(htmlString, "text/html").body.children[0];
-      if (insertBefore) {
-        parentElement.insertBefore(element, insertBefore);
-      } else {
-        parentElement.appendChild(element);
+    addSection(config) {
+      if (
+        !config.id ||
+        !config.label ||
+        !config.icon ||
+        typeof config.init !== "function"
+      ) {
+        console.error(
+          "[ZenHaven] Invalid section config: id, label, icon, and init function are required.",
+          config
+        );
+        return;
       }
-      return element;
+      if (this.sections.has(config.id)) {
+        console.warn(
+          `[ZenHaven] Section with id "${config.id}" already exists. Overwriting.`
+        );
+      }
+
+      const conditionMet =
+        !config.condition ||
+        (typeof config.condition === "function" && config.condition());
+      if (conditionMet) {
+        this.sections.set(config.id, config);
+        console.log(`[ZenHaven] Section "${config.id}" registered.`);
+      } else {
+        console.log(
+          `[ZenHaven] Condition not met for section "${config.id}". Skipping registration.`
+        );
+      }
+    }
+
+    initializeUI() {
+      console.log("[ZenHaven] Setting up UI...");
+      this.elements.toolbox = document.getElementById("navigator-toolbox");
+      if (
+        !this.elements.toolbox ||
+        !this.elements.toolbox.hasAttribute("haven")
+      ) {
+        console.log(
+          "[ZenHaven] Toolbox not found or haven attribute is missing."
+        );
+        return;
+      }
+
+      console.log("[ZenHaven] Haven attribute found, proceeding with UI setup");
+
+      // Hide all children except the toolbox itself
+      Array.from(this.elements.toolbox.children).forEach((child) => {
+        child.style.display = "none";
+      });
+
+      // Create container for new UI elements
+      const customContainer = parseElement(`<div id="custom-toolbar">
+            <div id="toolbar-header">
+              <span class="toolbarbutton-1">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path fill-rule="evenodd" clip-rule="evenodd" d="M8 15C11.866 15 15 11.866 15 8C15 4.13401 11.866 1 8 1C4.13401 1 1 4.13401 1 8C1 11.866 4.13401 15 8 15ZM8 14C11.3137 14 14 11.3137 14 8C14 4.68629 11.3137 2 8 2C4.68629 2 2 4.68629 2 8C2 11.3137 4.68629 14 8 14Z" fill="currentColor"/>
+                </svg>
+              </span>
+              <span class="header-text">Haven</span>
+            </div>
+            <div id="functions-container"></div>
+          </div>`);
+      this.elements.customToolbar = customContainer;
+      this.elements.functionsContainer = customContainer.querySelector(
+        "#functions-container"
+      );
+      this.elements.toolbox.appendChild(customContainer);
+
+      // Create buttons from registered sections
+      this.sections.forEach((section) => this.createNavButton(section));
+
+      // Handle bottom buttons
+      this.elements.bottomButtons = document.getElementById(
+        "zen-sidebar-bottom-buttons"
+      );
+      this.elements.mediaToolbar = document.getElementById(
+        "zen-media-controls-toolbar"
+      );
+      const workspacesButton = this.elements.bottomButtons?.querySelector(
+        "#zen-workspaces-button"
+      );
+      if (this.elements.bottomButtons && workspacesButton) {
+        customContainer.appendChild(this.elements.bottomButtons);
+        workspacesButton.style.display = "none";
+      }
+
+      // Create sidebar container
+      const sidebarSplitter = document.getElementById("zen-sidebar-splitter");
+      if (sidebarSplitter) {
+        const sidebarContainer = parseElement(
+          `<div id="zen-haven-container" style="height: 100%; width: 60vw; position: relative; display: none; flex-direction: column;"></div>`
+        );
+        this.elements.havenContainer = sidebarContainer;
+        const tabbox = document.getElementById("tabbrowser-tabbox");
+        if (tabbox) {
+          tabbox.parentNode.insertBefore(sidebarContainer, tabbox);
+          console.log(
+            "[ZenHaven] Sidebar container added before tabbrowser-tabbox"
+          );
+        } else {
+          sidebarSplitter.parentNode.insertBefore(
+            sidebarContainer,
+            sidebarSplitter.nextSibling
+          );
+          console.log(
+            "[ZenHaven] Tabbox not found, sidebar container added after splitter"
+          );
+        }
+      }
+
+      this.uiInitialized = true;
+      console.log("[ZenHaven] UI setup complete");
+    }
+
+    destroyUI() {
+      console.log("[ZenHaven] Restoring original UI");
+
+      // Restore bottom buttons
+      if (this.elements.bottomButtons && this.elements.mediaToolbar) {
+        this.elements.mediaToolbar.parentNode.insertBefore(
+          this.elements.bottomButtons,
+          this.elements.mediaToolbar.nextSibling
+        );
+        const workspacesButton = this.elements.bottomButtons.querySelector(
+          "#zen-workspaces-button"
+        );
+        if (workspacesButton) {
+          workspacesButton.style.display = "";
+        }
+        console.log("[ZenHaven] Bottom buttons restored after media controls");
+      }
+
+      // Show all original toolbox children
+      if (this.elements.toolbox) {
+        Array.from(this.elements.toolbox.children).forEach((child) => {
+          if (child.id !== "custom-toolbar") {
+            child.style.display = "";
+          }
+        });
+      }
+
+      // Remove our custom elements
+      this.elements.customToolbar?.remove();
+      this.elements.havenContainer?.remove();
+
+      // Reset state
+      this.activeSectionId = null;
+      this.uiInitialized = false;
+      Object.keys(this.elements).forEach((key) => (this.elements[key] = null));
+    }
+
+    createNavButton(section) {
+      const customDiv =
+        parseElement(`<div class="custom-button" id="haven-${section.id}-button">
+            <span class="icon">${section.icon}</span>
+            <span class="label">${section.label}</span>
+          </div>`);
+
+      customDiv.addEventListener("click", () =>
+        this.activateSection(section.id)
+      );
+      customDiv.addEventListener("mousedown", () =>
+        customDiv.classList.add("clicked")
+      );
+      customDiv.addEventListener("mouseup", () =>
+        customDiv.classList.remove("clicked")
+      );
+      customDiv.addEventListener("mouseleave", () =>
+        customDiv.classList.remove("clicked")
+      );
+
+      this.elements.functionsContainer.appendChild(customDiv);
+    }
+
+    activateSection(id) {
+      if (!this.uiInitialized) return;
+
+      // If clicking the same button, toggle off
+      if (this.activeSectionId === id) {
+        this.deactivateCurrentSection();
+        return;
+      }
+
+      this.deactivateCurrentSection();
+
+      const section = this.sections.get(id);
+      if (!section) {
+        console.error(`[ZenHaven] No section found for id: ${id}`);
+        return;
+      }
+
+      console.log(`[ZenHaven] Activating section: ${id}`);
+      const contentElement = section.init();
+      if (contentElement instanceof HTMLElement) {
+        section.contentElement = contentElement;
+
+        this.elements.havenContainer.setAttribute(`haven-${id}`, "");
+        this.elements.havenContainer.appendChild(contentElement);
+        this.elements.havenContainer.style.display = "flex";
+
+        document.getElementById(`haven-${id}-button`)?.classList.add("active");
+        this.activeSectionId = id;
+      } else {
+        console.error(
+          `[ZenHaven] Section "${id}" init() did not return a valid DOM element.`
+        );
+      }
+    }
+
+    deactivateCurrentSection() {
+      if (!this.activeSectionId || !this.uiInitialized) return;
+
+      const oldSection = this.sections.get(this.activeSectionId);
+
+      if (oldSection && typeof oldSection.destroy === "function") {
+        oldSection.destroy();
+      }
+
+      if (oldSection && oldSection.contentElement) {
+        oldSection.contentElement.remove();
+        delete oldSection.contentElement;
+      }
+
+      Array.from(this.elements.havenContainer.attributes)
+        .filter((attr) => attr.name.startsWith("haven-"))
+        .forEach((attr) =>
+          this.elements.havenContainer.removeAttribute(attr.name)
+        );
+
+      this.elements.havenContainer.style.display = "none";
+
+      document
+        .getElementById(`haven-${this.activeSectionId}-button`)
+        ?.classList.remove("active");
+      this.activeSectionId = null;
+    }
+  }
+
+  window.haven = new ZenHaven();
+
+  // --- SECTION DEFINITIONS ---
+
+  window.haven.addSection(downloadsSection);
+  window.haven.addSection(workspacesSection);
+  window.haven.addSection(historySection);
+  window.haven.addSection(notesSection);
+
+  // --- INITIALIZATION & OBSERVER LOGIC ---
+
+  function handleHavenAttributeChange() {
+    const toolbox = document.getElementById("navigator-toolbox");
+    if (!toolbox) return;
+
+    console.log("[ZenHaven] Haven attribute changed");
+    if (toolbox.hasAttribute("haven")) {
+      if (!window.haven.uiInitialized) {
+        window.haven.initializeUI();
+      }
+    } else {
+      if (window.haven.uiInitialized) {
+        window.haven.destroyUI();
+      }
+    }
+  }
+
+  function createToolboxObserver() {
+    console.log("[ZenHaven] Setting up toolbox observer");
+    const toolbox = document.getElementById("navigator-toolbox");
+    if (!toolbox) return;
+
+    const observer = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        if (
+          mutation.type === "attributes" &&
+          mutation.attributeName === "haven"
+        ) {
+          handleHavenAttributeChange();
+          break;
+        }
+      }
+    });
+    observer.observe(toolbox, { attributes: true });
+    console.log("[ZenHaven] Toolbox observer active");
+
+    // Initial check in case attribute is already present on load
+    handleHavenAttributeChange();
+  }
+
+  function createHavenToggle() {
+    const iconSVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="3.048 2.032 500 500" fill="black" width="500px" height="500px"><path d="M 117.019 229.189 L 358.157 229.189 C 370.419 229.189 380.359 239.378 380.359 251.948 L 380.359 359.696 C 380.359 361.892 380.056 364.016 379.49 366.025 L 379.49 376.137 C 379.49 422.439 342.874 459.973 297.705 459.973 L 175.73 459.973 C 130.562 459.973 93.946 422.439 93.946 376.137 L 93.946 318.55 C 93.946 314.379 94.243 310.281 94.817 306.275 L 94.817 251.948 C 94.817 239.378 104.756 229.189 117.019 229.189 Z M 163.119 286.634 L 163.119 298.372 C 163.119 308.337 170.999 316.415 180.72 316.415 L 293.541 316.415 C 303.261 316.415 311.142 308.337 311.142 298.372 L 311.142 286.634 C 311.142 276.67 303.261 268.592 293.541 268.592 L 180.72 268.592 C 170.999 268.592 163.119 276.67 163.119 286.634 Z"/><path d="M -269.92 -189.491 Q -252.676 -214.41 -233.996 -189.491 L -204.641 -150.333 Q -185.961 -125.414 -221.885 -125.414 L -278.336 -125.414 Q -314.26 -125.414 -297.017 -150.333 Z" transform="matrix(-1, 0, 0, -1, 0, 0)"/><path d="M -192.578 148.485 Q -154.729 125.322 -114.7 148.485 L -53.312 184.008 Q -13.283 207.171 -91.161 207.171 L -210.592 207.171 Q -288.47 207.171 -250.621 184.008 Z" transform="matrix(-1, 0, 0, 1, 0, -0.000008)"/><path d="M -193.628 147.815 C -168.84 132.499 -142.9 132.494 -116.065 147.806 L -53.102 183.819 C -46.393 187.659 -42.055 191.078 -40.213 194.014 C -39.269 195.518 -38.936 197.044 -39.287 198.349 C -39.636 199.647 -40.695 200.872 -42.299 201.867 C -48.553 205.742 -64.621 207.669 -90.335 207.671 L -211.418 207.671 C -237.131 207.669 -253.446 205.744 -260.209 201.876 C -261.935 200.888 -263.133 199.69 -263.651 198.406 C -264.175 197.107 -264.045 195.573 -263.299 194.058 C -261.844 191.109 -257.946 187.673 -251.748 183.828 Z M -251.222 184.678 C -257.352 188.473 -261.031 191.721 -262.402 194.501 C -263.068 195.851 -263.163 196.943 -262.724 198.032 C -262.279 199.134 -261.325 200.085 -259.712 201.007 C -253.12 204.779 -237.073 206.673 -211.418 206.671 L -90.335 206.671 C -64.681 206.673 -48.901 204.781 -42.826 201.016 C -41.348 200.101 -40.545 199.177 -40.252 198.089 C -39.961 197.006 -40.206 195.906 -41.06 194.545 C -42.813 191.752 -46.951 188.486 -53.598 184.687 L -116.561 148.674 C -143.148 133.428 -168.577 133.424 -193.102 148.665 Z" transform="matrix(-1, 0, 0, 1, 0, -0.000008000000889296643)"/><path d="M 356.927 112.69 C 371.223 91.321 386.116 91.321 401.604 112.69 L 438.111 163.062 C 453.599 184.431 446.45 195.116 416.666 195.116 L 346.46 195.116 C 316.675 195.116 308.931 184.431 323.228 163.062 L 356.927 112.69 Z" style="transform-box: fill-box; transform-origin: 50% 50%;" transform="matrix(0, 1, -1, 0, 0.000004, -0.000051)"/><ellipse cx="278.361" cy="56.089" rx="35.604" ry="32.308"/><path d="M 123.465 146.514 L 140.608 128.052"/><path d="M 148.52 97.722 L 134.014 138.602"/><path d="M 137.763 85.801 Q 140.895 51.242 178.448 85.801 L 237.459 140.109 Q 275.012 174.668 234.327 174.668 L 170.392 174.668 Q 129.707 174.668 132.84 140.109 Z" transform="matrix(0.991726, 0.128375, -0.128375, 0.991726, -3.073037, -6.853564)"/></svg>`;
+    const image = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
+      iconSVG
+    )}`;
+    const openHaven = () => {
+      const toolbox = document.getElementById("navigator-toolbox");
+      if (toolbox) {
+        toolbox.toggleAttribute("haven");
+      }
     };
 
-    // HTML slider UI as a string (no inline styles)
-    const sliderHTML = `
-      <div id="history-time-filter">
-        <h1>Time</h1>
-        <h2>When was the tab open?</h2>
-        <div id="history-slider-labels">
-          <span id="history-slider-min-label">Start</span>
-          <span id="history-slider-max-label">End</span>
-        </div>
-        <div id="history-slider-container">
-          <input type="range" id="history-slider-min" min="0" max="100" value="0">
-          <input type="range" id="history-slider-max" min="0" max="100" value="100">
-          <div id="history-slider-track"></div>
-          <div id="history-slider-range"></div>
-          <div class="slider-tooltip" id="slider-tooltip-min"></div>
-          <div class="slider-tooltip" id="slider-tooltip-max"></div>
-        </div>
-      </div>
-    `;
-    appendXUL(filterPopup, sliderHTML);
+    console.log("[ZenHaven] Toggle button added to sidebar bottom buttons");
+    const widget = {
+      id: "zen-haven",
+      type: "toolbarbutton",
+      label: "Zen Haven",
+      tooltip: "Zen Haven",
+      class: "toolbarbutton-1",
+      image,
+      callback: openHaven,
+    };
+    UC_API.Utils.createWidget(widget);
+  }
 
-    // Select slider elements after HTML is injected (must be before any function uses them)
-    const sliderMin = filterPopup.querySelector('#history-slider-min');
-    const sliderMax = filterPopup.querySelector('#history-slider-max');
-    const sliderRange = filterPopup.querySelector('#history-slider-range');
-    const sliderTrack = filterPopup.querySelector('#history-slider-track');
-    const minLabel = filterPopup.querySelector('#history-slider-min-label');
-    const maxLabel = filterPopup.querySelector('#history-slider-max-label');
-    const sliderContainer = filterPopup.querySelector('#history-slider-container');
-    const tooltipMin = filterPopup.querySelector('#slider-tooltip-min');
-    const tooltipMax = filterPopup.querySelector('#slider-tooltip-max');
+  function startup() {
+    console.log("[ZenHaven] Startup sequence initiated.");
+    createToolboxObserver();
+    createHavenToggle();
+  }
 
-    // --- Time slider logic ---
-    // We'll use days since epoch for the slider range
-    // Select slider elements after HTML is injected
-    // Helper to get date from slider value (days ago)
-    function daysAgoToDate(daysAgo) {
-      const d = new Date();
-      d.setHours(0, 0, 0, 0);
-      d.setDate(d.getDate() - daysAgo);
-      return d;
-    }
-    // Helper to format date as dd/mm/yy
-    function formatDateDMY(d) {
-      return d.toLocaleDateString(undefined, { day: '2-digit', month: '2-digit', year: '2-digit' });
-    }
-
-    // Store the current filter range (in days ago)
-    let filterMinDays = 0;
-    let filterMaxDays = 0;
-
-    let earliestHistoryDate = null;
-    let maxDays = 365; // default, will update after fetching history
-
-    let allHistoryItems = [];
-
-    // Helper: check if a date is within the slider's selected range
-    function isDateInSliderRange(date) {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const daysAgo = Math.floor((today - date) / (1000 * 60 * 60 * 24));
-      return daysAgo >= filterMinDays && daysAgo <= filterMaxDays;
-    }
-
-    // Fetch and render history for the current slider range
-    async function renderFilteredHistory() {
-      const historyContent = historyContainer.querySelector('.haven-history-content') || historyContainer;
-      const searchContainer = historyContainer.querySelector('.history-search-container');
-      const loadingIndicator = historyContainer.querySelector('.haven-history-loading');
-      Array.from(historyContent.children).forEach(child => {
-        if (child !== searchContainer && child !== loadingIndicator) {
-          child.remove();
-        }
-      });
-
-      // Calculate date range from slider
-      const startDate = daysAgoToDate(filterMaxDays); // older
-      const endDate = daysAgoToDate(filterMinDays);   // newer
-
-      // Show loading
-      if (loadingIndicator) loadingIndicator.style.display = 'block';
-
-      try {
-        const { PlacesUtils } = ChromeUtils.importESModule("resource://gre/modules/PlacesUtils.sys.mjs");
-        const query = PlacesUtils.history.getNewQuery();
-        query.beginTime = startDate.getTime() * 1000;
-        query.endTime = endDate.getTime() * 1000;
-        const options = PlacesUtils.history.getNewQueryOptions();
-        options.sortingMode = options.SORT_BY_DATE_DESCENDING;
-        options.resultType = options.RESULTS_AS_URI;
-        options.maxResults = 200; // Limit to 200 items max
-        const result = PlacesUtils.history.executeQuery(query, options);
-        const root = result.root;
-        root.containerOpen = true;
-        const items = [];
-        for (let i = 0; i < root.childCount; i++) {
-          const node = root.getChild(i);
-          items.push(node);
-        }
-        root.containerOpen = false;
-
-        // Filter items to be strictly within the slider range (by date, not time)
-        const filteredItems = items.filter(node => {
-          const nodeDate = new Date(node.time / 1000);
-          nodeDate.setHours(0, 0, 0, 0);
-          return nodeDate >= startDate && nodeDate <= endDate;
-        });
-
-        if (loadingIndicator) loadingIndicator.style.display = 'none';
-
-        if (filteredItems.length > 0) {
-          const filteredSections = renderHistoryBatch(filteredItems, endDate);
-          historyContainer.insertBefore(filteredSections, loadingIndicator);
-        } else {
-          const noResults = parseElement(
-            `<div style="text-align: center; padding: 20px; color: #666;">No history in selected range</div>`
-          );
-          historyContainer.insertBefore(noResults, loadingIndicator);
-        }
-      } catch (e) {
-        if (loadingIndicator) loadingIndicator.style.display = 'none';
-        const errorMsg = parseElement(
-          `<div style="text-align: center; padding: 20px; color: #c00;">Error loading history</div>`
-        );
-        historyContainer.insertBefore(errorMsg, loadingIndicator);
+  if (gBrowserInit.delayedStartupFinished) {
+    console.log("[ZenHaven] Browser already started");
+    startup();
+  } else {
+    console.log("[ZenHaven] Waiting for browser startup");
+    let observer = new MutationObserver(() => {
+      if (gBrowserInit.delayedStartupFinished) {
+        console.log("[ZenHaven] Browser startup detected");
+        observer.disconnect();
+        startup();
       }
-    }
-
-    // Update slider visuals and label
-    function updateSliderUI() {
-      let minVal = Math.min(Number(sliderMin.value), Number(sliderMax.value));
-      let maxVal = Math.max(Number(sliderMin.value), Number(sliderMax.value));
-      sliderMin.value = minVal;
-      sliderMax.value = maxVal;
-      const minDate = daysAgoToDate(minVal); // Correct: min handle
-      const maxDate = daysAgoToDate(maxVal); // Correct: max handle
-
-      minLabel.textContent = 'Today';
-      maxLabel.textContent = earliestHistoryDate ? formatDateDMY(earliestHistoryDate) : formatDateDMY(maxDate);
-      // Update range highlight
-      const percentMin = (minVal / maxDays) * 100;
-      const percentMax = (maxVal / maxDays) * 100;
-      sliderRange.style.left = `${percentMin}%`;
-      sliderRange.style.width = `${percentMax - percentMin}%`;
-
-      // Tooltip logic (fix: show correct date for each handle)
-      updateTooltip(sliderMin, tooltipMin, minVal, minDate);
-      updateTooltip(sliderMax, tooltipMax, maxVal, maxDate);
-
-      // Update filter range and re-render history
-      filterMinDays = minVal;
-      filterMaxDays = maxVal;
-      renderFilteredHistory();
-    }
-
-    // On initial load, set filter range to full range
-    function setSliderToHistoryRange() {
-      try {
-        const { PlacesUtils } = ChromeUtils.importESModule("resource://gre/modules/PlacesUtils.sys.mjs");
-        // Query for the oldest history entry
-        const query = PlacesUtils.history.getNewQuery();
-        const options = PlacesUtils.history.getNewQueryOptions();
-        options.sortingMode = options.SORT_BY_DATE_ASCENDING;
-        options.maxResults = 1;
-        const result = PlacesUtils.history.executeQuery(query, options);
-        const root = result.root;
-        root.containerOpen = true;
-        if (root.childCount > 0) {
-          const node = root.getChild(0);
-          earliestHistoryDate = new Date(node.time / 1000);
-          earliestHistoryDate.setHours(0, 0, 0, 0);
-          // Calculate days between today and earliest history
-          const today = new Date();
-          today.setHours(0, 0, 0, 0);
-          maxDays = Math.max(1, Math.floor((today - earliestHistoryDate) / (1000 * 60 * 60 * 24)));
-        } else {
-          // No history, fallback to 365 days
-          earliestHistoryDate = daysAgoToDate(365);
-          maxDays = 365;
-        }
-        root.containerOpen = false;
-      } catch (e) {
-        console.error('[ZenHaven] Failed to get earliest history date:', e);
-        earliestHistoryDate = daysAgoToDate(365);
-        maxDays = 365;
-      }
-      // Update slider attributes
-      sliderMin.min = 0;
-      sliderMin.max = maxDays;
-      sliderMax.min = 0;
-      sliderMax.max = maxDays;
-      sliderMin.value = 0;
-      sliderMax.value = maxDays;
-      updateSliderUI();
-      filterMinDays = 0;
-      filterMaxDays = maxDays;
-      renderFilteredHistory();
-    }
-
-    function bringToFront(slider, otherSlider) {
-      slider.style.zIndex = 3;
-      otherSlider.style.zIndex = 2;
-    }
-
-    function resetZIndexes() {
-      sliderMin.style.zIndex = 2;
-      sliderMax.style.zIndex = 2;
-    }
-
-    // On mousedown/touchstart, bring the active slider to the front
-    sliderMin.addEventListener('mousedown', () => bringToFront(sliderMin, sliderMax));
-    sliderMax.addEventListener('mousedown', () => bringToFront(sliderMax, sliderMin));
-    sliderMin.addEventListener('touchstart', () => bringToFront(sliderMin, sliderMax));
-    sliderMax.addEventListener('touchstart', () => bringToFront(sliderMax, sliderMin));
-
-    // On mouseup/touchend anywhere, reset both z-indexes
-    window.addEventListener('mouseup', resetZIndexes);
-    window.addEventListener('touchend', resetZIndexes);
-
-    // Blur both sliders on mouseup/touchend to remove focus
-    function blurSliders() {
-      sliderMin.blur();
-      sliderMax.blur();
-    }
-    window.addEventListener('mouseup', blurSliders);
-    window.addEventListener('touchend', blurSliders);
-
-    // Initialize both sliders to the same z-index
-    sliderMin.style.zIndex = 2;
-    sliderMax.style.zIndex = 2;
-
-    sliderMin.addEventListener('input', updateSliderUI);
-    sliderMax.addEventListener('input', updateSliderUI);
-    setSliderToHistoryRange();
-
-    const DAYS_PER_BATCH = 2; // Smaller batch size - 2 days instead of 7 to prevent overloading Zen
-    let isLoading = false;
-    let noMoreHistory = false;
-    let currentStartDate = new Date();
-    let scrollThrottleTimer = null;
-    let searchQuery = "";
-
-    function getSectionLabel(date, referenceDate) {
-      const diffMs = referenceDate - date;
-      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-      if (diffDays === 0) return "Today";
-      if (diffDays === 1) return "1 day ago";
-      if (diffDays < 7) return `${diffDays} days ago`;
-      if (diffDays < 14) return "1 week ago";
-      if (diffDays < 28) return `${Math.floor(diffDays / 7)} weeks ago`;
-      if (diffDays < 60) return "1 month ago";
-      if (diffDays < 365) return `${Math.floor(diffDays / 30)} months ago`;
-      if (diffDays < 730) return "1 year ago";
-      return `${Math.floor(diffDays / 365)} years ago`;
-    }
-
-    // Helper: create history item row
-    function createHistoryItem(node) {
-      const url = node.uri;
-      const title = node.title || url;
-      const time = new Date(node.time / 1000);
-      const item = parseElement(`
-        <div class="haven-history-item">
-          <img class="history-icon" src="https://www.google.com/s2/favicons?sz=32&domain_url=${encodeURIComponent(url)}">
-          <div class="history-item-content">
-            <div class="history-title">${title}</div>
-            <div class="history-url">${url}</div>
-          </div>
-          <div class="history-time">${time.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</div>
-        </div>
-      `);
-      item.addEventListener("click", () => {
-        gBrowser.selectedTab = gBrowser.addTab(url, {
-          triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
-        });
-      });
-      return item;
-    }
-
-    // Load a batch of history items for a specific date range
-    function loadHistoryBatch(startDate, endDate) {
-      return new Promise((resolve, reject) => {
-        try {
-          const { PlacesUtils } = ChromeUtils.importESModule(
-            "resource://gre/modules/PlacesUtils.sys.mjs",
-          );
-          const query = PlacesUtils.history.getNewQuery();
-          query.beginTime = startDate.getTime() * 1000;
-          query.endTime = endDate.getTime() * 1000;
-          
-          console.log(`[ZenHaven] Loading history from ${startDate.toISOString()} to ${endDate.toISOString()}`);
-          
-          const options = PlacesUtils.history.getNewQueryOptions();
-          options.sortingMode = options.SORT_BY_DATE_DESCENDING;
-          options.resultType = options.RESULTS_AS_URI;
-          const result = PlacesUtils.history.executeQuery(query, options);
-          const root = result.root;
-          root.containerOpen = true;
-          const items = [];
-          for (let i = 0; i < root.childCount; i++) {
-            const node = root.getChild(i);
-            items.push(node);
-          }
-          root.containerOpen = false;
-          console.log(`[ZenHaven] Loaded ${items.length} items`);
-          resolve(items);
-        } catch (error) {
-          console.error("[ZenHaven] Error loading history batch:", error);
-          reject(error);
-        }
-      });
-    }
-
-    // Function to filter history items based on search query
-    function filterHistoryItems(items, query) {
-      if (!query.trim()) return items;
-      
-      const searchTerm = query.toLowerCase();
-      return items.filter(item => {
-        const title = (item.title || "").toLowerCase();
-        const url = item.uri.toLowerCase();
-        return title.includes(searchTerm) || url.includes(searchTerm);
-      });
-    }
-
-    // Function to perform search
-    function performSearch() {
-      const searchInput = historyContainer.querySelector('.history-search-input');
-      searchQuery = searchInput.value;
-      
-      // Clear current display
-      const historyContent = historyContainer.querySelector('.haven-history-content') || historyContainer;
-      const searchContainer = historyContainer.querySelector('.history-search-container');
-      const loadingIndicator = historyContainer.querySelector('.haven-history-loading');
-      
-      // Remove all content except search container and loading indicator
-      Array.from(historyContent.children).forEach(child => {
-        if (child !== searchContainer && child !== loadingIndicator) {
-          child.remove();
-        }
-      });
-      
-      if (searchQuery.trim()) {
-        // Filter and display search results
-        const filteredItems = filterHistoryItems(allHistoryItems, searchQuery);
-        if (filteredItems.length > 0) {
-          const searchResults = renderHistoryBatch(filteredItems, new Date()); // Pass current date as reference
-          historyContainer.insertBefore(searchResults, loadingIndicator);
-        } else {
-          const noResults = parseElement(
-            `<div style="text-align: center; padding: 20px; color: #666;">No results found for "${searchQuery}"</div>`
-          );
-          historyContainer.insertBefore(noResults, loadingIndicator);
-        }
-      } else {
-        // Show all items
-        const allResults = renderHistoryBatch(allHistoryItems, new Date()); // Pass current date as reference
-        historyContainer.insertBefore(allResults, loadingIndicator);
-      }
-    }
-
-    // Update renderHistoryBatch to accept referenceDate
-    function renderHistoryBatch(nodes, referenceDate) {
-      const fragment = document.createDocumentFragment();
-      // Use the referenceDate (endDate from slider) for section headers
-      const refDate = new Date(referenceDate);
-      refDate.setHours(0, 0, 0, 0);
-
-      // Group nodes by day
-      const visitsByDate = new Map();
-      for (const node of nodes) {
-        const visitTime = new Date(node.time / 1000);
-        visitTime.setHours(0, 0, 0, 0);
-        const dayKey = visitTime.getTime();
-        if (!visitsByDate.has(dayKey)) {
-          visitsByDate.set(dayKey, []);
-        }
-        visitsByDate.get(dayKey).push(node);
-      }
-
-      // Sort by most recent day first
-      const sortedDays = Array.from(visitsByDate.keys()).sort((a, b) => b - a);
-
-      for (const dayKey of sortedDays) {
-        const dayDate = new Date(Number(dayKey));
-        const label = getSectionLabel(dayDate, refDate);
-        const header = parseElement(`<div class="history-section-header">${label}</div>`);
-        fragment.appendChild(header);
-        // Sort visits in descending order (most recent first)
-        const visits = visitsByDate.get(dayKey).sort((a, b) => b.time - a.time);
-        for (const node of visits) {
-          fragment.appendChild(createHistoryItem(node));
-        }
-      }
-      return fragment;
-    }
-
-    // Update getSectionLabel to use referenceDate for 'Today'
-    function getSectionLabel(date, referenceDate) {
-      const diffMs = referenceDate - date;
-      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-      if (diffDays === 0) return "Today";
-      if (diffDays === 1) return "1 day ago";
-      if (diffDays < 7) return `${diffDays} days ago`;
-      if (diffDays < 14) return "1 week ago";
-      if (diffDays < 28) return `${Math.floor(diffDays / 7)} weeks ago`;
-      if (diffDays < 60) return "1 month ago";
-      if (diffDays < 365) return `${Math.floor(diffDays / 30)} months ago`;
-      if (diffDays < 730) return "1 year ago";
-      return `${Math.floor(diffDays / 365)} years ago`;
-    }
-
-    // Load more history
-    function loadMoreHistory() {
-      if (isLoading || noMoreHistory) return;
-      isLoading = true;
-      loadingIndicator.style.display = "block";
-      
-      // Calculate date range for next batch
-      const endDate = new Date(currentStartDate);
-      currentStartDate = new Date(currentStartDate);
-      currentStartDate.setDate(currentStartDate.getDate() - DAYS_PER_BATCH);
-      
-      console.log(`[ZenHaven] Loading more history from ${currentStartDate.toISOString()} to ${endDate.toISOString()}`);
-      
-      loadHistoryBatch(currentStartDate, endDate)
-        .then((nodes) => {
-          if (nodes.length === 0) {
-            noMoreHistory = true;
-            loadingIndicator.style.display = "none";
-            const endMessage = parseElement(
-              `<div class="haven-history-end-message">No more history available</div>`,
-            );
-            historyContainer.appendChild(endMessage);
-            return;
-          }
-          
-          // Render the new batch
-          const newSections = renderHistoryBatch(nodes, new Date()); // Pass current date as reference
-          historyContainer.insertBefore(newSections, loadingIndicator);
-          isLoading = false;
-        })
-        .catch((error) => {
-          console.error("[ZenHaven] Error loading more history:", error);
-          isLoading = false;
-          loadingIndicator.innerHTML = `
-              <div>Error loading history. <a href="#" id="retry-history-load">Retry</a></div>
-            `;
-          const retryLink = loadingIndicator.querySelector(
-            "#retry-history-load",
-          );
-          if (retryLink) {
-            retryLink.addEventListener("click", (e) => {
-              e.preventDefault();
-              loadingIndicator.innerHTML = `
-                  <div class="loading-spinner"></div>
-                  <div>Loading more history...</div>
-                `;
-              loadMoreHistory();
-            });
-          }
-        });
-    }
-
-    // Scroll event handler with throttling
-    function handleScroll() {
-      if (scrollThrottleTimer !== null) {
-        clearTimeout(scrollThrottleTimer);
-      }
-      scrollThrottleTimer = setTimeout(() => {
-        if (isLoading || noMoreHistory) return;
-        const containerHeight = historyContainer.clientHeight;
-        const scrollPosition = historyContainer.scrollTop;
-        const scrollHeight = historyContainer.scrollHeight;
-        // Load more when user scrolls near the bottom (within 200px)
-        if (scrollHeight - scrollPosition - containerHeight < 200) {
-          loadMoreHistory();
-        }
-      }, 100);
-    }
-
-    // Initialize history view
-    setTimeout(() => {
-      try {
-        // Clear only the history content, preserve search container
-        const searchContainer = historyContainer.querySelector('.history-search-container');
-        historyContainer.innerHTML = "";
-        
-        // Re-add the search container at the top
-        if (searchContainer) {
-          historyContainer.appendChild(searchContainer);
-        }
-        
-        historyContainer.appendChild(loadingIndicator);
-        historyContainer.addEventListener("scroll", handleScroll);
-        
-        // Initial load
-        const endDate = new Date();
-        currentStartDate = new Date();
-        currentStartDate.setDate(currentStartDate.getDate() - DAYS_PER_BATCH);
-        
-        loadHistoryBatch(currentStartDate, endDate)
-          .then((nodes) => {
-            if (nodes.length === 0) {
-              const noHistoryMessage = parseElement(
-                '<div style="text-align: center; padding: 20px;">No browsing history found</div>'
-              );
-              historyContainer.appendChild(noHistoryMessage);
-              return;
-            }
-            
-            // Render the initial history sections
-            const initialSections = renderHistoryBatch(nodes, new Date()); // Pass current date as reference
-            historyContainer.insertBefore(initialSections, loadingIndicator);
-            
-            // Add event listeners for search and filter after content is loaded
-            const searchInput = historyContainer.querySelector('.history-search-input');
-            const filterBtn = historyContainer.querySelector('.history-filter-btn');
-            
-            if (searchInput) {
-              // Search input event listener with debouncing
-              let searchTimeout;
-              searchInput.addEventListener('input', (e) => {
-                clearTimeout(searchTimeout);
-                searchTimeout = setTimeout(() => {
-                  performSearch();
-                }, 300); // 300ms delay for better performance
-              });
-            }
-            
-            if (filterBtn) {
-              filterBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                // Open/close menupopup anchored to the filter button
-                if (filterPopup.state === 'open') {
-                  filterPopup.hidePopup();
-                } else {
-                  filterPopup.openPopup(filterBtn, "after_start");
-                }
-              });
-            }
-            
-            // Trigger first scroll check after a short delay
-            setTimeout(() => {
-              handleScroll();
-            }, 500);
-          })
-          .catch((error) => {
-            console.error("[ZenHaven] Error initializing history:", error);
-            const errorMessage = parseElement(
-              '<div style="text-align: center; padding: 20px;">Error loading history</div>'
-            );
-            historyContainer.appendChild(errorMessage);
-          });
-      } catch (error) {
-        console.error("[ZenHaven] Error setting up history view:", error);
-        const errorMessage = parseElement(
-          '<div style="text-align: center; padding: 20px;">Error loading history</div>'
-        );
-        historyContainer.appendChild(errorMessage);
-      }
-    }, 100);
-
-    function updateTooltip(slider, tooltip, value, date) {
-      // Position the tooltip above the thumb
-      const sliderRect = slider.getBoundingClientRect();
-      const containerRect = sliderContainer.getBoundingClientRect();
-      const percent = (value / maxDays);
-      const thumbX = percent * sliderRect.width;
-      tooltip.textContent = formatDateDMY(date);
-      tooltip.style.left = `${thumbX}px`;
-    }
-
-    function showTooltip(tooltip) {
-      tooltip.classList.add('active');
-    }
-    function hideTooltip(tooltip) {
-      tooltip.classList.remove('active');
-    }
-
-    sliderMin.addEventListener('input', () => showTooltip(tooltipMin));
-    sliderMax.addEventListener('input', () => showTooltip(tooltipMax));
-    sliderMin.addEventListener('mousedown', () => showTooltip(tooltipMin));
-    sliderMax.addEventListener('mousedown', () => showTooltip(tooltipMax));
-    sliderMin.addEventListener('touchstart', () => showTooltip(tooltipMin));
-    sliderMax.addEventListener('touchstart', () => showTooltip(tooltipMax));
-
-    sliderMin.addEventListener('blur', () => hideTooltip(tooltipMin));
-    sliderMax.addEventListener('blur', () => hideTooltip(tooltipMax));
-    window.addEventListener('mouseup', () => { hideTooltip(tooltipMin); hideTooltip(tooltipMax); });
-    window.addEventListener('touchend', () => { hideTooltip(tooltipMin); hideTooltip(tooltipMax); });
-
-    sliderMin.addEventListener('mouseenter', () => showTooltip(tooltipMin));
-    sliderMax.addEventListener('mouseenter', () => showTooltip(tooltipMax));
-    sliderMin.addEventListener('mouseleave', () => hideTooltip(tooltipMin));
-    sliderMax.addEventListener('mouseleave', () => hideTooltip(tooltipMax));
-
-    return historyContainer;
-  },
-};
+    });
+    observer.observe(document, { childList: true, subtree: true });
+  }
+})();
