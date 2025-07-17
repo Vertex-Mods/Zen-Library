@@ -3,32 +3,23 @@ A new way to organize Zen [(PR](https://github.com/zen-browser/desktop/pull/7550
 ## To-Do
 An Optimistic To-Do list for Zen Haven
 ### Downloads
-* Functioning search
-* Image Preview
-* Media Player (MP3, MP4, etc.)
-* Vertical Time Slider
-* Rename Files
+- [ ] Functioning search
+- [ ] Image Preview
+- [ ] Media Player (MP3, MP4, etc.)
+- [ ] Vertical Time Slider
+- [ ] Rename Files
 ### Workspaces
-* Rearrange Workspaces by Drag-and-Drop
-* Tab Groups are Displayed in Haven
-* Copy Link Button (in place of reset pinned tab button)
-* intigration with other userChrome.js mods like [Tab Sorters](https://github.com/Darsh-A/Ai-TabGroups-ZenBrowser)
-* More Workspace Control Like Deltion, Creation, Renaming, etc.
+- [ ] Rearrange Workspaces by Drag-and-Drop
+- [ ] Tab Groups are Displayed in Haven
+- [ ] Copy Link Button (in place of reset pinned tab button)
+- [ ] intigration with other userChrome.js mods like [Tab Sorters](https://github.com/Darsh-A/Ai-TabGroups-ZenBrowser)
+- [ ] More Workspace Control Like Deltion, Creation, Renaming, etc.
 ### History
-* Functioning Search
-* Vertical Time Slider
-* Delete History Items
-### Notes
-* Create Notes That Can be Read/Written
-* Save Notes Across Sessions
-* Functioning Search
-* Create Note From Selected Text in Browser
-* Group Notes
-### URL Bar Intigration
-* Opens Haven For Downloads and History
-* Searchable Workspaces
-* Searchable Notes
-
+- [ ] Functioning Search
+- [ ] Vertical Time Slider
+- [ ] Delete History Items
+### Integration
+- [ ] Build a functioning mod store so people can submit there own sections to haven and incorperate addons
 ## Current
 [Anoms12](https://github.com/Anoms12)
 ![image](https://github.com/user-attachments/assets/f0b3fa70-dc28-4df7-ae19-895add558de8)
