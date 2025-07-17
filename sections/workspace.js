@@ -23,8 +23,12 @@ export const workspacesSection = {
         <path fill-rule="evenodd" clip-rule="evenodd" d="M3 2H13V14H3V2ZM2 2C2 1.44772 2.44772 1 3 1H13C13.5523 1 14 1.44772 14 2V14C14 14.5523 13.5523 15 13 15H3C2.44772 15 0.96814 14.5523 0.96814 14V2ZM4 4H12V5H4V4ZM4 7H12V8H4V7ZM12 10H4V11H12V10Z" fill="currentColor"/>
       </svg>`,
   init: function() {
-    const container = parseElement(`<div id="haven-workspace-outer-container"><div id = "haven-workspace-inner-container" ></div></div>`);
-    const innerContainer = container.querySelector('#haven-workspace-inner-container')
+    const container = parseElement(
+      `<div id="haven-workspace-outer-container"><div id = "haven-workspace-inner-container" ></div></div>`,
+    );
+    const innerContainer = container.querySelector(
+      "#haven-workspace-inner-container",
+    );
     // const outerContainer = container.querySelector('#haven-workspace-outer-container')
 
     const addWorkspaceButton =
@@ -57,13 +61,15 @@ export const workspacesSection = {
 
         allWorkspaces.forEach((workspace) => {
           const { uuid, theme, name, icon } = workspace;
+          // TODO: make renamable in douple click
+          // TODO: Icon picker
           const workspaceDiv = parseElement(
             `<div class="haven-workspace">
-                <div class="haven-workspace-header">
-                  <span class="workspace-icon">${icon}</span>
-                  <span class="workspace-name">${name}</span>
-                </div>
-              </div>`,
+                  <div class="haven-workspace-header">
+                    <span class="workspace-icon">${icon}</span>
+                    <span class="workspace-name">${name}</span>
+                  </div>
+                </div>`,
           );
 
           if (theme?.type === "gradient" && theme.gradientColors?.length) {
@@ -73,21 +79,27 @@ export const workspacesSection = {
           }
 
           const header = workspaceDiv.querySelector(".haven-workspace-header");
-          const popupOpenButton = parseElement(`
-            <toolbarbutton 
-              class="toolbarbutton-1
-              haven-workspace-options"
-              tooltiptext="Workspace options"
-              image="chrome://browser/skin/zen-icons/menu-bar.svg"
-            />`, 'xul');
-          const menuPopup = parseElement(`
-            <menupopup class="haven-workspace-actions-popup">
-              <menuitem class="rename" label="Rename (n)" tooltiptext="Rename" />
-              <menuitem class="switch" label="Go to workspace (n)" tooltiptext="switch to this workspace"/>
-              <menuitem class="change-theme" label="Change Theme (n)" tooltiptext="Change theme" />
-              <menuitem class="delete-workspace" label="Delete (n)" tooltiptext="Delete workspace" />
-            </menupopup>
-          `, 'xul');
+          const popupOpenButton = parseElement(
+            `
+              <toolbarbutton 
+                class="toolbarbutton-1
+                haven-workspace-options"
+                tooltiptext="Workspace options"
+                image="chrome://browser/skin/zen-icons/menu-bar.svg"
+              />`,
+            "xul",
+          );
+          const menuPopup = parseElement(
+            `
+              <menupopup class="haven-workspace-actions-popup">
+                <menuitem class="rename" label="Rename" tooltiptext="Rename" />
+                <menuitem class="switch" label="Go to workspace" tooltiptext="switch to this workspace"/>
+                <menuitem class="change-theme" label="Change Theme (n)" tooltiptext="Change theme" />
+                <menuitem class="delete-workspace" label="Delete" tooltiptext="Delete workspace" />
+              </menupopup>
+            `,
+            "xul",
+          );
           header.appendChild(popupOpenButton);
           container.appendChild(menuPopup);
 
@@ -95,6 +107,45 @@ export const workspacesSection = {
             event.stopPropagation();
             menuPopup.openPopup(popupOpenButton, "after_start");
           });
+
+          // TODO: after rename on douple click is implimented, this will not prompt
+          menuPopup
+            .querySelector(".rename")
+            .addEventListener("click", async () => {
+              const workspace = gZenWorkspaces.getWorkspaceFromId(uuid);
+              if (workspace) {
+                const newName = prompt(
+                  "Enter new name for workspace:",
+                  workspace.name,
+                );
+                if (newName?.trim()) {
+                  workspace.name = newName.trim();
+                  await gZenWorkspaces.saveWorkspace(workspace);
+                  workspaceDiv.querySelector(".workspace-name").textContent =
+                    workspace.name;
+                }
+              }
+            });
+
+          menuPopup
+            .querySelector(".switch")
+            .addEventListener("click", async () => {
+              await gZenWorkspaces.changeWorkspaceWithID(uuid);
+
+              // close haven
+              window.haven.destroyUI();
+            });
+
+          menuPopup
+            .querySelector(".delete-workspace")
+            .addEventListener("click", async () => {
+              if (
+                confirm(`Are you sure you want to delete workspace "${name}"?`)
+              ) {
+                await gZenWorkspaces.removeWorkspace(uuid);
+                workspaceDiv.remove();
+              }
+            });
 
           const contentDiv = parseElement(
             `<div class="haven-workspace-content"></div>`,
@@ -141,4 +192,3 @@ export const workspacesSection = {
     return container;
   },
 };
-
