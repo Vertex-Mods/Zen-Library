@@ -332,6 +332,10 @@
   z-index: 0;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
+.haven-dl-date-separator {
+  font-size: 24px;
+  font-weight: 800;
+}
 .haven-dl-category-tab {
   flex-grow: 1;
   padding: 6px 10px;
@@ -412,6 +416,57 @@
   }
   &:last-child {
     border-bottom: none;
+  }
+}
+#haven-dl-rename-dialog {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: 100000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  .rename-dialog {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    background: var(--zen-primary-color);
+    color: var(--arrowpanel-color, #fff);
+    border-radius: 8px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
+    padding: 20px;
+    min-width: 300px;
+
+    .rename-title {
+      width: 100%;
+      font-weight: bold;
+      font-size: 16px;
+      margin-bottom: 12px;
+    }
+
+    .rename-input {
+      width: 100%;
+      max-width: 100% !important;
+      border: none !important;
+    }
+
+    .rename-btn-row {
+      width: 100%;
+      padding-top: 5px;
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+
+      button {
+        background: light-dark(color-mix(in srgb, var(--zen-primary-color) 50%, white 50%), color-mix(in srgb, var(--zen-primary-color) 50%, black 50%));
+        border: none;
+        &:hover {
+        background: light-dark(color-mix(in srgb, var(--zen-primary-color) 30%, white 70%), color-mix(in srgb, var(--zen-primary-color) 30%, black 70%));
+        }
+      }
+    }
   }
 }
 .haven-dl-item-icon {
@@ -495,6 +550,9 @@
     background-color: yellow;
   }
   .status-failed {
+    background-color: red;
+  }
+  .status-unknown {
     background-color: red;
   }
 }
@@ -769,7 +827,7 @@
         }
 
 .history-section-header {
-  font-size: 32px;
+  font-size: 24px;
   font-weight: 800;
   color: var(--tab-selected-textcolor);
   margin-bottom: 5px;
