@@ -56,10 +56,15 @@ export const workspacesSection = {
         const allTabs = gZenWorkspaces.allStoredTabs || [];
 
         allWorkspaces.forEach((workspace) => {
-          const workspaceDiv = parseElement(
-            `<div class="haven-workspace"></div>`,
-          );
           const { uuid, theme, name, icon } = workspace;
+          const workspaceDiv = parseElement(
+            `<div class="haven-workspace">
+                <div class="haven-workspace-header">
+                  <span class="workspace-icon">${icon}</span>
+                  <span class="workspace-name">${name}</span>
+                </div>
+              </div>`,
+          );
 
           if (theme?.type === "gradient" && theme.gradientColors?.length) {
             workspaceDiv.style.background = getGradientCSS(theme);
@@ -67,13 +72,29 @@ export const workspacesSection = {
             workspaceDiv.style.background = "var(--zen-colors-border)";
           }
 
-          const headerDiv = parseElement(
-            `<div class="haven-workspace-header">
-              <span class="workspace-icon">${icon}</span>
-              <span class="workspace-name">${name}</span>
-            </div>`,
-          );
-          workspaceDiv.appendChild(headerDiv);
+          const header = workspaceDiv.querySelector(".haven-workspace-header");
+          const popupOpenButton = parseElement(`
+            <toolbarbutton 
+              class="toolbarbutton-1
+              haven-workspace-options"
+              tooltiptext="Workspace options"
+              image="chrome://browser/skin/zen-icons/menu-bar.svg"
+            />`, 'xul');
+          const menuPopup = parseElement(`
+            <menupopup class="haven-workspace-actions-popup">
+              <menuitem class="rename" label="Rename (n)" tooltiptext="Rename" />
+              <menuitem class="switch" label="Go to workspace (n)" tooltiptext="switch to this workspace"/>
+              <menuitem class="change-theme" label="Change Theme (n)" tooltiptext="Change theme" />
+              <menuitem class="delete-workspace" label="Delete (n)" tooltiptext="Delete workspace" />
+            </menupopup>
+          `, 'xul');
+          header.appendChild(popupOpenButton);
+          container.appendChild(menuPopup);
+
+          popupOpenButton.addEventListener("click", (event) => {
+            event.stopPropagation();
+            menuPopup.openPopup(popupOpenButton, "after_start");
+          });
 
           const contentDiv = parseElement(
             `<div class="haven-workspace-content"></div>`,
