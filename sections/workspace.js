@@ -130,19 +130,21 @@ export const workspacesSection = {
                   </div>
                 </div>`,
           );
-          
+
           workspaceDiv.dataset.uuid = uuid;
 
-          const dragHandle = workspaceDiv.querySelector('.workspace-drag-handle');
+          const dragHandle = workspaceDiv.querySelector(
+            ".workspace-drag-handle",
+          );
 
           dragHandle.addEventListener("dragstart", (e) => {
-            const workspaceElement = e.target.closest('.haven-workspace');
+            const workspaceElement = e.target.closest(".haven-workspace");
             workspaceElement.classList.add("dragging");
             e.dataTransfer.effectAllowed = "move";
           });
 
           dragHandle.addEventListener("dragend", (e) => {
-            const workspaceElement = e.target.closest('.haven-workspace');
+            const workspaceElement = e.target.closest(".haven-workspace");
             workspaceElement.classList.remove("dragging");
           });
 
@@ -230,7 +232,7 @@ export const workspacesSection = {
             workspaceNameEl.addEventListener("blur", handleBlur);
             workspaceNameEl.addEventListener("keydown", handleKeyDown);
           };
-          
+
           workspaceNameEl.addEventListener("dblclick", enableRename);
 
           menuPopup
