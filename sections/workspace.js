@@ -277,6 +277,33 @@ export const workspacesSection = {
               }
             });
 
+          menuPopup
+            .querySelector(".change-theme")
+            .addEventListener("click", async (event) => {
+              try {
+                // Switch to the selected workspace first
+                await gZenWorkspaces.changeWorkspaceWithID(uuid);
+
+                // Create or select an anchor element for the popup
+                let anchor = workspaceDiv.querySelector('.haven-workspace-header');
+                if (!anchor) {
+                  // fallback: use the menu button itself
+                  anchor = popupOpenButton;
+                }
+
+                // Open the theme picker panel at the anchor
+                if (typeof PanelMultiView !== "undefined" && gZenThemePicker?.panel) {
+                  PanelMultiView.openPopup(gZenThemePicker.panel, anchor, {
+                    position: "bottomcenter topright", // or another position as needed
+                  });
+                } else {
+                  throw new Error("PanelMultiView or gZenThemePicker.panel is not available");
+                }
+              } catch (e) {
+                console.error("Error opening theme picker:", e);
+              }
+            });
+
           const contentDiv = parseElement(
             `<div class="haven-workspace-content"></div>`,
           );
