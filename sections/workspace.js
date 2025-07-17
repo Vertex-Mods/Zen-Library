@@ -31,6 +31,56 @@ export const workspacesSection = {
     );
     // const outerContainer = container.querySelector('#haven-workspace-outer-container')
 
+    function getDragAfterElement(container, x) {
+      const draggableElements = [
+        ...container.querySelectorAll(".haven-workspace:not(.dragging)"),
+      ];
+
+      return draggableElements.reduce(
+        (closest, child) => {
+          const box = child.getBoundingClientRect();
+          const offset = x - box.left - box.width / 2;
+          if (offset < 0 && offset > closest.offset) {
+            return { offset: offset, element: child };
+          } else {
+            return closest;
+          }
+        },
+        { offset: Number.NEGATIVE_INFINITY },
+      ).element;
+    }
+
+    innerContainer.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      const afterElement = getDragAfterElement(innerContainer, e.clientX);
+      const dragging = innerContainer.querySelector(".dragging");
+      if (dragging) {
+        if (afterElement == null) {
+          innerContainer.appendChild(dragging);
+        } else {
+          innerContainer.insertBefore(dragging, afterElement);
+        }
+      }
+    });
+
+    innerContainer.addEventListener("drop", async (e) => {
+      e.preventDefault();
+      const draggedElement = innerContainer.querySelector(".dragging");
+      if (!draggedElement) return;
+
+      const draggedUuid = draggedElement.dataset.uuid;
+      const workspaceElements = [
+        ...innerContainer.querySelectorAll(".haven-workspace"),
+      ];
+      const newIndex = workspaceElements.findIndex(
+        (el) => el === draggedElement,
+      );
+
+      if (newIndex !== -1) {
+        await gZenWorkspaces.reorderWorkspace(draggedUuid, newIndex);
+      }
+    });
+
     const addWorkspaceButton =
       parseElement(`<div class="haven-workspace-add-button"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M8 3V13M3 8H13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
@@ -79,6 +129,18 @@ export const workspacesSection = {
                   </div>
                 </div>`,
           );
+
+          workspaceDiv.draggable = true;
+          workspaceDiv.dataset.uuid = uuid;
+
+          workspaceDiv.addEventListener("dragstart", (e) => {
+            e.target.classList.add("dragging");
+            e.dataTransfer.effectAllowed = "move";
+          });
+
+          workspaceDiv.addEventListener("dragend", (e) => {
+            e.target.classList.remove("dragging");
+          });
 
           if (theme?.type === "gradient" && theme.gradientColors?.length) {
             workspaceDiv.style.background = getGradientCSS(theme);
