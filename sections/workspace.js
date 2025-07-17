@@ -119,7 +119,6 @@ export const workspacesSection = {
 
         allWorkspaces.forEach((workspace) => {
           const { uuid, theme, name, icon } = workspace;
-          // TODO: make renamable in douple click
           // TODO: Icon picker
           const workspaceDiv = parseElement(
             `<div class="haven-workspace">
@@ -183,24 +182,60 @@ export const workspacesSection = {
             menuPopup.openPopup(popupOpenButton, "after_start");
           });
 
-          // TODO: after rename on douple click is implimented, this will not prompt
+          const workspaceNameEl = workspaceDiv.querySelector(".workspace-name");
+
+          const enableRename = () => {
+            const originalName = workspace.name;
+            workspaceNameEl.contentEditable = true;
+            workspaceNameEl.style.cursor = "text";
+            workspaceNameEl.focus();
+
+            const selection = window.getSelection();
+            const range = document.createRange();
+            range.selectNodeContents(workspaceNameEl);
+            selection.removeAllRanges();
+            selection.addRange(range);
+
+            const cleanup = () => {
+              workspaceNameEl.removeEventListener("blur", handleBlur);
+              workspaceNameEl.removeEventListener("keydown", handleKeyDown);
+              workspaceNameEl.contentEditable = false;
+              workspaceNameEl.style.cursor = "";
+            };
+
+            const handleBlur = async () => {
+              cleanup();
+              const newName = workspaceNameEl.textContent.trim();
+              const currentWorkspace = gZenWorkspaces.getWorkspaceFromId(uuid);
+              if (currentWorkspace && newName && newName !== originalName) {
+                currentWorkspace.name = newName;
+                await gZenWorkspaces.saveWorkspace(currentWorkspace);
+                workspace.name = newName;
+              } else {
+                workspaceNameEl.textContent = originalName;
+              }
+            };
+
+            const handleKeyDown = (e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                workspaceNameEl.blur();
+              } else if (e.key === "Escape") {
+                e.preventDefault();
+                workspaceNameEl.textContent = originalName;
+                workspaceNameEl.blur();
+              }
+            };
+
+            workspaceNameEl.addEventListener("blur", handleBlur);
+            workspaceNameEl.addEventListener("keydown", handleKeyDown);
+          };
+          
+          workspaceNameEl.addEventListener("dblclick", enableRename);
+
           menuPopup
             .querySelector(".rename")
-            .addEventListener("click", async () => {
-              const workspace = gZenWorkspaces.getWorkspaceFromId(uuid);
-              if (workspace) {
-                const newName = prompt(
-                  "Enter new name for workspace:",
-                  workspace.name,
-                );
-                if (newName?.trim()) {
-                  workspace.name = newName.trim();
-                  await gZenWorkspaces.saveWorkspace(workspace);
-                  workspaceDiv.querySelector(".workspace-name").textContent =
-                    workspace.name;
-                }
-              }
-            });
+            .addEventListener("click", enableRename);
 
           menuPopup
             .querySelector(".switch")
@@ -267,4 +302,3 @@ export const workspacesSection = {
     return container;
   },
 };
-
