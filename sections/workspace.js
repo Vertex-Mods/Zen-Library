@@ -37,11 +37,19 @@ export const workspacesSection = {
           </svg></div>`);
     addWorkspaceButton.addEventListener("click", () => {
       try {
-        if (typeof ZenWorkspaces?.openSaveDialog === "function") {
-          console.log("[ZenHaven] Attempting to open workspace save dialog...");
-          ZenWorkspaces.openSaveDialog();
+        if (typeof gZenWorkspaces?.openWorkspaceCreation === "function") {
+          console.log(
+            "[ZenHaven] Attempting to open workspace creation dialog...",
+          );
+
+          // close haven
+          window.haven.destroyUI();
+
+          gZenWorkspaces.openWorkspaceCreation();
         } else {
-          throw new Error("ZenWorkspaces.openSaveDialog is not available");
+          throw new Error(
+            "gZenWorkspaces.openWorkspaceCreation is not available",
+          );
         }
       } catch (error) {
         console.error("[ZenHaven] Error opening workspace dialog:", error);
