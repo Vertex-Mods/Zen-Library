@@ -1,6 +1,5 @@
 :root:has(#navigator-toolbox[haven]) {
   #custom-toolbar {
-    width: 15vw;
     height: 100%;
     display: flex;
     flex-direction: column;
@@ -66,7 +65,6 @@
     &:hover {
       background-color: var(--toolbarbutton-hover-background);
     }
-    &.clicked
   }
   .custom-button.active {
     background-color: var(--toolbarbutton-active-background);
@@ -694,6 +692,14 @@
     }
     .slider-tooltip.active {
       opacity: 1;
+    }
+  }
+  .history-slider-reset-btn {
+    background-color: transparent;
+    border: none;
+    color: var(--tab-selected-textcolor);
+    &:hover {
+      background-color: var(--tab-hover-background-color);
     }
   }
 }
