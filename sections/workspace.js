@@ -22,7 +22,9 @@ export const workspacesSection = {
         <path fill-rule="evenodd" clip-rule="evenodd" d="M3 2H13V14H3V2ZM2 2C2 1.44772 2.44772 1 3 1H13C13.5523 1 14 1.44772 14 2V14C14 14.5523 13.5523 15 13 15H3C2.44772 15 0.96814 14.5523 0.96814 14V2ZM4 4H12V5H4V4ZM4 7H12V8H4V7ZM12 10H4V11H12V10Z" fill="currentColor"/>
       </svg>`,
   init: function() {
-    const container = parseElement(`<div style="display: contents;"></div>`);
+    const container = parseElement(`<div id="haven-workspace-outer-container"><div id = "haven-workspace-inner-container" ></div></div>`);
+    const innerContainer = container.querySelector('#haven-workspace-inner-container')
+    // const outerContainer = container.querySelector('#haven-workspace-outer-container')
 
     const addWorkspaceButton =
       parseElement(`<div class="haven-workspace-add-button"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -41,103 +43,73 @@ export const workspacesSection = {
       }
     });
 
-    const workspacesButton = document.getElementById("zen-workspaces-button");
-    if (workspacesButton) {
-      console.log("[ZenHaven] Found workspace button:", workspacesButton);
-      const workspaceElements = Array.from(workspacesButton.children);
-      console.log("[ZenHaven] Workspace elements:", workspaceElements);
+    if (typeof gZenWorkspaces === "undefined") {
+      console.error("[ZenHaven] gZenWorkspaces is not available.");
+      innerContainer.appendChild(addWorkspaceButton);
+      return innerContainer;
+    }
 
-      workspaceElements.forEach((workspace) => {
-        // Create base workspace div
-        const workspaceDiv = parseElement(
-          `<div class="haven-workspace"></div>`,
-        );
-        const uuid = workspace.getAttribute("zen-workspace-id");
+    gZenWorkspaces
+      ._workspaces()
+      .then(({ workspaces: allWorkspaces }) => {
+        const allTabs = gZenWorkspaces.allStoredTabs || [];
 
-        ZenWorkspacesStorage.getWorkspaces().then((allWorkspaces) => {
-          const data = allWorkspaces.find((ws) => ws.uuid === uuid);
-          if (
-            data?.theme?.type === "gradient" &&
-            data.theme.gradientColors?.length
-          ) {
-            workspaceDiv.style.background = getGradientCSS(data.theme);
-            workspaceDiv.style.opacity = data.theme.opacity ?? 1;
+        allWorkspaces.forEach((workspace) => {
+          const workspaceDiv = parseElement(
+            `<div class="haven-workspace"></div>`,
+          );
+          const { uuid, theme } = workspace;
+
+          if (theme?.type === "gradient" && theme.gradientColors?.length) {
+            workspaceDiv.style.background = getGradientCSS(theme);
+            workspaceDiv.style.opacity = theme.opacity ?? 1;
           } else {
             workspaceDiv.style.background = "var(--zen-colors-border)";
             workspaceDiv.style.opacity = 1;
           }
-        });
 
-        // Create content container
-        const contentDiv = parseElement(
-          `<div class="haven-workspace-content"></div>`,
-        );
-
-        // Find workspace sections using the workspace's own ID
-        const sections = document.querySelectorAll(
-          `.zen-workspace-tabs-section[zen-workspace-id="${workspace.getAttribute(
-            "zen-workspace-id",
-          )}"]`,
-        );
-
-        sections.forEach((section) => {
-          const root = section.shadowRoot || section;
-          const sectionWrapper = parseElement(
-            `<div class="haven-workspace-section"></div>`,
+          const contentDiv = parseElement(
+            `<div class="haven-workspace-content"></div>`,
+          );
+          const pinnedTabsContainer = parseElement(
+            `<div class="haven-workspace-pinned-tabs"></div>`,
+          );
+          const regularTabsContainer = parseElement(
+            `<div class="haven-workspace-regular-tabs"></div>`,
           );
 
-          // Copy computed styles from original section
-          const computedStyle = window.getComputedStyle(section);
-          sectionWrapper.style.cssText = Array.from(computedStyle).reduce(
-            (str, property) => {
-              return `${str}${property}:${computedStyle.getPropertyValue(
-                property,
-              )};`;
-            },
-            "",
-          );
+          allTabs
+            .filter(
+              (tabEl) =>
+                tabEl &&
+                tabEl.getAttribute("zen-workspace-id") === uuid &&
+                !tabEl.hasAttribute("zen-essential"),
+            )
+            .forEach((tabEl) => {
+              const clonedTab = tabEl.cloneNode(true);
+              if (clonedTab.hasAttribute("pinned")) {
+                pinnedTabsContainer.appendChild(clonedTab);
+              } else {
+                regularTabsContainer.appendChild(clonedTab);
+              }
+            });
 
-          // Clone tab groups with their styles
-          const tabGroups = root.querySelectorAll("tab-group");
-          tabGroups.forEach((group) => {
-            const groupClone = group.cloneNode(true);
-            const groupStyle = window.getComputedStyle(group);
-            groupClone.style.cssText = Array.from(groupStyle).reduce(
-              (str, property) => {
-                return `${str}${property}:${groupStyle.getPropertyValue(
-                  property,
-                )};`;
-              },
-              "",
-            );
-            sectionWrapper.appendChild(groupClone);
-          });
+          if (pinnedTabsContainer.hasChildNodes()) {
+            contentDiv.appendChild(pinnedTabsContainer);
+          }
+          if (regularTabsContainer.hasChildNodes()) {
+            contentDiv.appendChild(regularTabsContainer);
+          }
 
-          // Clone remaining children with their styles
-          Array.from(root.children).forEach((child) => {
-            if (!child.classList.contains("zen-tab-group")) {
-              const clone = child.cloneNode(true);
-              const childStyle = window.getComputedStyle(child);
-              clone.style.cssText = Array.from(childStyle).reduce(
-                (str, property) => {
-                  return `${str}${property}:${childStyle.getPropertyValue(
-                    property,
-                  )};`;
-                },
-                "",
-              );
-              sectionWrapper.appendChild(clone);
-            }
-          });
-          contentDiv.appendChild(sectionWrapper);
+          workspaceDiv.appendChild(contentDiv);
+          innerContainer.insertBefore(workspaceDiv, addWorkspaceButton);
         });
-
-        workspaceDiv.appendChild(contentDiv);
-        container.appendChild(workspaceDiv);
+      })
+      .catch((error) => {
+        console.error("[ZenHaven] Error building workspaces section:", error);
       });
-    }
 
-    container.appendChild(addWorkspaceButton);
+    innerContainer.appendChild(addWorkspaceButton);
     return container;
   },
 };
