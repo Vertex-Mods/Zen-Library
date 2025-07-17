@@ -119,7 +119,6 @@ export const workspacesSection = {
 
         allWorkspaces.forEach((workspace) => {
           const { uuid, theme, name, icon } = workspace;
-          // TODO: Icon picker
           const workspaceDiv = parseElement(
             `<div class="haven-workspace">
                   <div class="haven-workspace-header">
@@ -136,6 +135,25 @@ export const workspacesSection = {
           const dragHandle = workspaceDiv.querySelector(
             ".workspace-drag-handle",
           );
+
+          const iconEl = workspaceDiv.querySelector(".workspace-icon");
+          iconEl.addEventListener("click", () => {
+            gZenEmojiPicker
+              .open(iconEl)
+              .then(async (newIcon) => {
+                console.log("Selected emoji:", newIcon);
+                iconEl.innerText = newIcon;
+                const currentWorkspace =
+                  gZenWorkspaces.getWorkspaceFromId(uuid);
+                if (currentWorkspace && newIcon && newIcon !== icon) {
+                  currentWorkspace.icon = newIcon;
+                  await gZenWorkspaces.saveWorkspace(currentWorkspace);
+                } else {
+                  workspaceNameEl.textContent = originalName;
+                }
+              })
+              .catch((e) => console.error(e));
+          });
 
           dragHandle.addEventListener("dragstart", (e) => {
             const workspaceElement = e.target.closest(".haven-workspace");
