@@ -135,6 +135,7 @@
       align-items: start !important;
       justify-content: start !important;
       padding: 10px !important;
+      position: relative !important;
 
       .tab-reset-pin-button {
         display: none;
@@ -173,6 +174,15 @@
           border-bottom:2px solid rgba(0,0,0,0.3) !important;
         }
       }
+      
+      .workspace-drag-handle{
+        width: 50% !important;
+        height: 20px !important;
+        background: red !important;
+        position: absolute !important;
+        bottom:0 !important;
+      }
+    
     }
   }
 }

@@ -124,22 +124,27 @@ export const workspacesSection = {
           const workspaceDiv = parseElement(
             `<div class="haven-workspace">
                   <div class="haven-workspace-header">
+                    <span class="workspace-drag-handle" draggable="true" style="cursor: grab;">
+                    </span>
                     <span class="workspace-icon">${icon}</span>
                     <span class="workspace-name">${name}</span>
                   </div>
                 </div>`,
           );
-
-          workspaceDiv.draggable = true;
+          
           workspaceDiv.dataset.uuid = uuid;
 
-          workspaceDiv.addEventListener("dragstart", (e) => {
-            e.target.classList.add("dragging");
+          const dragHandle = workspaceDiv.querySelector('.workspace-drag-handle');
+
+          dragHandle.addEventListener("dragstart", (e) => {
+            const workspaceElement = e.target.closest('.haven-workspace');
+            workspaceElement.classList.add("dragging");
             e.dataTransfer.effectAllowed = "move";
           });
 
-          workspaceDiv.addEventListener("dragend", (e) => {
-            e.target.classList.remove("dragging");
+          dragHandle.addEventListener("dragend", (e) => {
+            const workspaceElement = e.target.closest('.haven-workspace');
+            workspaceElement.classList.remove("dragging");
           });
 
           if (theme?.type === "gradient" && theme.gradientColors?.length) {
@@ -262,3 +267,4 @@ export const workspacesSection = {
     return container;
   },
 };
+
