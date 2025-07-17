@@ -370,12 +370,13 @@ export const workspacesSection = {
           });
           innerContainer.appendChild(workspaceDiv);
         });
+        // After all workspaces are rendered, append the add workspace button
+        innerContainer.appendChild(addWorkspaceButton);
       })
       .catch((error) => {
         console.error("[ZenHaven] Error building workspaces section:", error);
       });
 
-    innerContainer.appendChild(addWorkspaceButton);
     return container;
   },
 };
