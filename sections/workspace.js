@@ -46,7 +46,7 @@ export const workspacesSection = {
     if (typeof gZenWorkspaces === "undefined") {
       console.error("[ZenHaven] gZenWorkspaces is not available.");
       innerContainer.appendChild(addWorkspaceButton);
-      return innerContainer;
+      return container;
     }
 
     gZenWorkspaces
@@ -58,7 +58,7 @@ export const workspacesSection = {
           const workspaceDiv = parseElement(
             `<div class="haven-workspace"></div>`,
           );
-          const { uuid, theme } = workspace;
+          const { uuid, theme, name, icon } = workspace;
 
           if (theme?.type === "gradient" && theme.gradientColors?.length) {
             workspaceDiv.style.background = getGradientCSS(theme);
@@ -67,6 +67,14 @@ export const workspacesSection = {
             workspaceDiv.style.background = "var(--zen-colors-border)";
             workspaceDiv.style.opacity = 1;
           }
+
+          const headerDiv = parseElement(
+            `<div class="haven-workspace-header">
+              <span class="workspace-icon">${icon}</span>
+              <span class="workspace-name">${name}</span>
+            </div>`,
+          );
+          workspaceDiv.appendChild(headerDiv);
 
           const contentDiv = parseElement(
             `<div class="haven-workspace-content"></div>`,
@@ -102,7 +110,7 @@ export const workspacesSection = {
           }
 
           workspaceDiv.appendChild(contentDiv);
-          innerContainer.insertBefore(workspaceDiv, addWorkspaceButton);
+          innerContainer.appendChild(workspaceDiv);
         });
       })
       .catch((error) => {

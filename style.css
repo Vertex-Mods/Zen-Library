@@ -130,7 +130,8 @@
       background-color: var(--zen-primary-color);
       border-radius: 8px;
       border: 2px solid var(--zen-colors-border);
-      display: block !important;
+      display: flex !important;
+      flex-direction: column !important;
       align-items: start !important;
       justify-content: start !important;
       padding: 10px !important;
@@ -144,6 +145,7 @@
       }
 
       .haven-workspace-header {
+        height: fit-content !important;
         margin: 2px !important;
 
         .workspace-icon {
