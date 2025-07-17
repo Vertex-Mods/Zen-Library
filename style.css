@@ -21,7 +21,7 @@
     height: 24px;
     align-items: center;
     justify-content: center;
-    margin-right: 5px;
+    margin-right: 10px;
   }
 
   #toolbar-header .header-icon svg {
@@ -73,26 +73,28 @@
 
 /* --- Workspaces --- */
 .haven-workspace-add-button {
-  position: sticky;
-  bottom: 16px;
-  right: 16px;
-  width: 32px;
-  height: 32px;
+  min-height: 32px !important;
+  min-width: 32px !important;
+  max-width: 32px !important;
+  max-height: 32px !important;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--toolbar-bgcolor);
-  border-radius: 6px;
-  cursor: pointer;
+  background: light-dark(color-mix(in srgb, var(--zen-primary-color) 50%, white 50%), color-mix(in srgb, var(--zen-primary-color) 50%, black 50%));
+  border-radius: 50%;
+  cursor: auto;
   transition: background 0.2s;
   margin-left: auto;
-  z-index: 100;
+  &:hover {
+    background: light-dark(color-mix(in srgb, var(--zen-primary-color) 30%, white 70%), color-mix(in srgb, var(--zen-primary-color) 30%, black 70%));
+  }
 }
 
 :root:has(#navigator-toolbox[haven]) {
 
   #zen-haven-container {
-  overflow: hidden;
+    height: unset !important;
+    overflow: hidden;
     padding: 20px !important;
     display: flex !important;
     flex-direction: column !important;
@@ -108,7 +110,8 @@
       div {
         display: flex !important;
         align-items: center !important;
-        height: 100%
+        height: 100%;
+        gap: 60px;
       }
     }
 
@@ -123,17 +126,14 @@
     
     .haven-workspace {
       height: 85% !important;
-      max-height: 85% !important;
-      min-width: 150px;
+      min-width: 225px;
       background-color: var(--zen-primary-color);
       border-radius: 8px;
-      border: 2px solid var(--zen-colors-border);
-      display: flex !important;
-      flex-direction: column !important;
-      align-items: start !important;
-      justify-content: start !important;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
       padding: 10px !important;
-      position: relative !important;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35);
 
       .tab-reset-pin-button {
         display: none;
@@ -183,13 +183,6 @@
     
     }
   }
-}
-
-.haven-workspace {
-  width: 20%;
-  height: 100%;
-  display: none;
-  padding: 16px;
 }
 
 .haven-workspace-header {
@@ -349,6 +342,10 @@
   z-index: 0;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
+.haven-dl-date-separator {
+  font-size: 24px;
+  font-weight: 800;
+}
 .haven-dl-category-tab {
   flex-grow: 1;
   padding: 6px 10px;
@@ -429,6 +426,57 @@
   }
   &:last-child {
     border-bottom: none;
+  }
+}
+#haven-dl-rename-dialog {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: 100000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  .rename-dialog {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    background: var(--zen-primary-color);
+    color: var(--arrowpanel-color, #fff);
+    border-radius: 8px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
+    padding: 20px;
+    min-width: 300px;
+
+    .rename-title {
+      width: 100%;
+      font-weight: bold;
+      font-size: 16px;
+      margin-bottom: 12px;
+    }
+
+    .rename-input {
+      width: 100%;
+      max-width: 100% !important;
+      border: none !important;
+    }
+
+    .rename-btn-row {
+      width: 100%;
+      padding-top: 5px;
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+
+      button {
+        background: light-dark(color-mix(in srgb, var(--zen-primary-color) 50%, white 50%), color-mix(in srgb, var(--zen-primary-color) 50%, black 50%));
+        border: none;
+        &:hover {
+        background: light-dark(color-mix(in srgb, var(--zen-primary-color) 30%, white 70%), color-mix(in srgb, var(--zen-primary-color) 30%, black 70%));
+        }
+      }
+    }
   }
 }
 .haven-dl-item-icon {
@@ -512,6 +560,9 @@
     background-color: yellow;
   }
   .status-failed {
+    background-color: red;
+  }
+  .status-unknown {
     background-color: red;
   }
 }
@@ -786,7 +837,7 @@
         }
 
 .history-section-header {
-  font-size: 32px;
+  font-size: 24px;
   font-weight: 800;
   color: var(--tab-selected-textcolor);
   margin-bottom: 5px;

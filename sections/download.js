@@ -19,6 +19,8 @@ export const downloadsSection = {
     let currentCategoryFilter = "all";
     let currentSearchTerm = "";
     let categoryActiveIndicatorEl;
+    let downloadsRefreshInterval = null;
+    let lastDownloadsHash = null;
 
     // --- All helper functions from original script ---
     function formatBytes(bytes, decimals = 2) {
@@ -197,12 +199,14 @@ export const downloadsSection = {
       // const searchInput = searchBox.querySelector(".haven-dl-search-input");
       searchFilterRow.appendChild(searchBox);
 
-      const optionsHTML = ["all", "completed", "paused", "failed"]
+      const optionsHTML = ["all", "completed", "paused", "failed", "deleted"]
         .map(
           (val) =>
             `<option value="${val}" ${val === currentStatusFilter ? "selected" : ""
             }>${val === "paused"
               ? "Paused/Interrupted"
+              : val === "deleted"
+                ? "Deleted"
               : val.charAt(0).toUpperCase() + val.slice(1)
             }</option>`,
         )
@@ -212,13 +216,14 @@ export const downloadsSection = {
       );
       searchFilterRow.appendChild(statusFilter);
 
-      const viewToggle = parseElement(`<div class="haven-dl-view-toggle">
-              <button class="haven-dl-view-btn ${currentViewMode === "recent" ? "active" : ""
-        }" data-view="recent" title="Recent Downloads">Recent</button>
-              <button class="haven-dl-view-btn ${currentViewMode === "history" ? "active" : ""
-        }" data-view="history" title="Download History">History</button>
-            </div>`);
-      searchFilterRow.appendChild(viewToggle);
+      // Remove view toggle and related logic
+      // const viewToggle = parseElement(`<div class="haven-dl-view-toggle">
+      //         <button class="haven-dl-view-btn ${currentViewMode === "recent" ? "active" : ""}"
+      //   data-view="recent" title="Recent Downloads">Recent</button>
+      //         <button class="haven-dl-view-btn ${currentViewMode === "history" ? "active" : ""}"
+      //   data-view="history" title="Download History">History</button>
+      //       </div>`);
+      // searchFilterRow.appendChild(viewToggle);
       controls.appendChild(searchFilterRow);
 
       const categories = [
@@ -249,7 +254,7 @@ export const downloadsSection = {
 
       const stats = parseElement(`<div class="haven-dl-stats-bar">
               <div class="haven-dl-stats-counts">Total: <strong id="totalCount">0</strong> Active: <strong id="activeCount">0</strong> Completed: <strong id="completedCount">0</strong></div>
-              <div class="haven-dl-view-info" id="viewInfoText">Showing recent downloads</div>
+              <div class="haven-dl-view-info" id="viewInfoText">All downloads grouped by date</div>
             </div>`);
 
       downloadsViewContainer.appendChild(header);
@@ -313,10 +318,7 @@ export const downloadsSection = {
           (d) => d.status === "completed",
         ).length;
       if (viewInfoTextEl)
-        viewInfoTextEl.textContent =
-          currentViewMode === "recent"
-            ? "Showing recent downloads"
-            : "Showing download history";
+        viewInfoTextEl.textContent = "All downloads grouped by date";
       if (filteredDisplayDownloads.length === 0) {
         const emptyState = parseElement(`<div class="haven-dl-empty-state">
                 <span class="haven-dl-empty-icon-placeholder">📥</span>
@@ -325,7 +327,7 @@ export const downloadsSection = {
         listArea.appendChild(emptyState);
         return;
       }
-      if (currentViewMode === "history") {
+      // Always group by date, no matter what
         const groupedByDate = groupDownloadsByDate(filteredDisplayDownloads);
         Object.keys(groupedByDate)
           .sort((a, b) => {
@@ -354,13 +356,6 @@ export const downloadsSection = {
                 listArea.appendChild(createDownloadItemElement(item)),
               );
           });
-      } else {
-        filteredDisplayDownloads
-          .sort((a, b) => b.timestamp - a.timestamp)
-          .forEach((item) =>
-            listArea.appendChild(createDownloadItemElement(item)),
-          );
-      }
     }
     function groupDownloadsByDate(downloads) {
       const groups = {};
@@ -426,44 +421,66 @@ export const downloadsSection = {
             )
             : 0;
 
-      const el = parseElement(`<div class="haven-dl-item ${item.status === "failed" ? "failed-item" : ""
-        } ${item.status === "paused" ? "paused-item" : ""}">
-              <div class="haven-dl-item-icon ${iconDetails.className}">${iconDetails.text
-        }</div>
+      // Image preview logic
+      let iconHtml = iconDetails.text;
+      if (iconDetails.className === "img-icon" && item.status !== "deleted") {
+        // Use previewData if available
+        if (item.previewData && item.previewData.type === 'image' && item.previewData.src) {
+          iconHtml = `<img src="${item.previewData.src}" style="width:100%;height:100%;object-fit:cover;border-radius:6px;" alt="preview" onerror="this.style.display='none'" />`;
+        } else {
+          // fallback: check file existence at render time
+          let fileUrl = null;
+          try {
+            if (item.targetPath) {
+              let file = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsIFile);
+              file.initWithPath(item.targetPath);
+              if (file.exists()) {
+                let Services = window.Services || (window.globalThis && window.globalThis.Services);
+                if (Services && Services.io && typeof Services.io.newFileURI === "function") {
+                  fileUrl = Services.io.newFileURI(file).spec;
+                } else {
+                  fileUrl = file.path.startsWith("/") ? "file://" + file.path : "file:///" + file.path.replace(/\\/g, "/");
+                }
+              }
+            }
+          } catch (e) {}
+          if (fileUrl) {
+            iconHtml = `<img src="${fileUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:6px;" alt="preview" onerror="this.style.display='none'" />`;
+          } else {
+            // Fallback: show generic image icon if file is missing or not accessible
+            iconHtml = iconDetails.text;
+          }
+        }
+      }
+      // NOTE: If you want previews to persist even if the file is deleted, you must cache a thumbnail at download time.
+      const el = parseElement(`<div class="haven-dl-item ${item.status === "failed" ? "failed-item" : ""}
+        ${item.status === "paused" ? "paused-item" : ""} ${item.status === "deleted" ? "deleted-item" : ""}">
+              <div class="haven-dl-item-icon ${iconDetails.className}">${iconHtml}</div>
               <div class="haven-dl-item-info">
-                <div class="haven-dl-item-name" title="${item.filename || "Unknown Filename"
-        }\n${item.url || "Unknown URL"}">${item.filename || "Unknown Filename"
-        }</div>
+                <div class="haven-dl-item-name" title="${item.filename || "Unknown Filename"}
+        ${item.url || "Unknown URL"}">${item.filename || "Unknown Filename"}</div>
                 <div class="haven-dl-item-details">
                   <span>${formatBytes(item.totalBytes)}</span>
                   <span>•</span>
                   <span>${timeAgo(new Date(item.timestamp))}</span>
-                  <span class="haven-dl-item-url" title="${item.url || "Unknown URL"
-        }">${item.url || "Unknown URL"}</span>
+                  <span class="haven-dl-item-url" title="${item.url || "Unknown URL"}">${item.url || "Unknown URL"}</span>
                 </div>
               </div>
               <div class="haven-dl-item-status-section">
                 <div class="haven-dl-item-progress-bar">
-                  <div class="haven-dl-item-progress-fill ${statusInfo.className
-        }" style="width: ${progressPercent}%;"></div>
+                  <div class="haven-dl-item-progress-fill ${statusInfo.className}" style="width: ${progressPercent}%;"></div>
                 </div>
-                <div class="haven-dl-item-status-text ${statusInfo.className
-        }">${statusInfo.text}</div>
+                <div class="haven-dl-item-status-text ${statusInfo.className}">${item.status === "deleted" ? "Deleted" : statusInfo.text}</div>
               </div>
-              <div class="haven-dl-item-actions"></div>
             </div>`);
 
-      const itemActionsDiv = el.querySelector(".haven-dl-item-actions");
-      const actionButtons = getActionButtonsDOM(item);
-      actionButtons.forEach((button) => itemActionsDiv.appendChild(button));
-
-      const itemInfoDiv = el.querySelector(".haven-dl-item-info");
-
-      itemActionsDiv.addEventListener("click", (e) => {
-        const action = e.target.closest("button")?.dataset.action;
-        if (action) handleItemAction(item, action, e);
+      // Context menu event
+      el.addEventListener("contextmenu", (e) => {
+        e.preventDefault();
+        showXULContextMenu(item, e.screenX, e.screenY);
       });
-      itemInfoDiv.addEventListener("click", (e) => {
+      // Double-click to open file if completed
+      el.querySelector(".haven-dl-item-info").addEventListener("dblclick", (e) => {
         if (item.status === "completed") handleItemAction(item, "open", e);
       });
       return el;
@@ -492,7 +509,8 @@ export const downloadsSection = {
       const RETRY_DOWNLOAD_PATH =
         "M3 12C3 13.78 3.52784 15.5201 4.51677 17.0001C5.50571 18.4802 6.91131 19.6337 8.55585 20.3149C10.2004 20.9961 12.01 21.1743 13.7558 20.8271C15.5016 20.4798 17.1053 19.6226 18.364 18.364C19.6226 17.1053 20.4798 15.5016 20.8271 13.7558C21.1743 12.01 20.9961 10.2004 20.3149 8.55585C19.6337 6.91131 18.4802 5.50571 17.0001 4.51677C15.5201 3.52784 13.78 3 12 3C9.48395 3.00947 7.06897 3.99122 5.26 5.74L3 8M3 8V3M3 8H8";
       const RESUME_DOWNLOAD_PATH = "M6 3L20 12L6 21V3Z";
-      if (item.status === "completed")
+      // Only show 'show' button if not deleted
+      if (item.status === "completed" && item.status !== "deleted")
         buttons.push(
           createActionButton("show", "Show in Folder", OPEN_FOLDER_PATH),
         );
@@ -504,8 +522,9 @@ export const downloadsSection = {
         buttons.push(
           createActionButton("resume", "Resume Download", RESUME_DOWNLOAD_PATH),
         );
+      // Change 'copy' to 'open-url' and update icon/title
       buttons.push(
-        createActionButton("copy", "Copy Download Link", OPEN_ORIGIN_PATH),
+        createActionButton("open-url", "Open Download Link in New Tab", OPEN_ORIGIN_PATH),
       );
       buttons.push(
         createActionButton("remove", "Delete File", DELETE_FILE_PATH),
@@ -514,6 +533,16 @@ export const downloadsSection = {
     }
     function handleItemAction(item, action, event) {
       event.stopPropagation();
+      // Use nsIFile logic from zen-stuff.uc.js for open/show
+      function getFileInstance(path) {
+        try {
+          const file = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsIFile);
+          file.initWithPath(path);
+          return file;
+        } catch (e) {
+          return null;
+        }
+      }
       switch (action) {
         case "open":
           try {
@@ -521,8 +550,8 @@ export const downloadsSection = {
               alert("File path not available.");
               return;
             }
-            let file = new FileUtils.File(item.targetPath);
-            if (file.exists()) file.launch();
+            let file = getFileInstance(item.targetPath);
+            if (file && file.exists()) file.launch();
             else alert(`File not found: ${item.filename}`);
           } catch (e) {
             console.error("Error opening file:", e);
@@ -535,8 +564,8 @@ export const downloadsSection = {
               alert("File path not available.");
               return;
             }
-            let file = new FileUtils.File(item.targetPath);
-            if (file.exists()) file.reveal();
+            let file = getFileInstance(item.targetPath);
+            if (file && file.exists()) file.reveal();
             else alert(`File not found: ${item.filename}`);
           } catch (e) {
             console.error("Error showing file:", e);
@@ -544,19 +573,48 @@ export const downloadsSection = {
           }
           break;
         case "retry":
-          alert(`Retry download: ${item.filename} (Conceptual)`);
+          // No alert, just a placeholder for retry logic
           break;
         case "resume":
-          alert(`Resume download: ${item.filename} (Conceptual)`);
+          // No alert, just a placeholder for resume logic
           break;
-        case "copy":
+        case "open-url":
           try {
-            Cc["@mozilla.org/widget/clipboardhelper;1"]
-              .getService(Ci.nsIClipboardHelper)
-              .copyString(item.url);
+            if (item.url) {
+              let Services = window.Services || (window.globalThis && window.globalThis.Services);
+              let win = null;
+              try {
+                if (Services && Services.wm && typeof Services.wm.getMostRecentWindow === "function") {
+                  win = Services.wm.getMostRecentWindow("navigator:browser");
+                }
+              } catch (e) {}
+              if (
+                win &&
+                win.gBrowser &&
+                typeof win.gBrowser.addTab === "function" &&
+                Services &&
+                Services.scriptSecurityManager
+              ) {
+                win.gBrowser.selectedTab = win.gBrowser.addTab(item.url, {
+                  triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
+                });
+              } else if (
+                typeof gBrowser !== "undefined" &&
+                gBrowser.addTab &&
+                Services &&
+                Services.scriptSecurityManager
+              ) {
+                gBrowser.selectedTab = gBrowser.addTab(item.url, {
+                  triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
+                });
+              } else if (typeof window.openTrustedLinkIn === "function") {
+                window.openTrustedLinkIn(item.url, "tab");
+              } else {
+                window.open(item.url, "_blank");
+              }
+            }
           } catch (e) {
-            console.error("Error copying link:", e);
-            alert("Could not copy link.");
+            console.error("Error opening URL in new tab:", e, item.url);
           }
           break;
         case "remove":
@@ -566,21 +624,160 @@ export const downloadsSection = {
           }
           if (
             confirm(
-              `Are you sure you want to permanently delete "${item.filename}" from your system?\n\nThis action cannot be undone.`,
+              `Are you sure you want to permanently delete \"${item.filename}\" from your system?\n\nThis action cannot be undone.`,
             )
           ) {
             try {
-              let file = new FileUtils.File(item.targetPath);
-              if (file.exists()) {
+              let file = getFileInstance(item.targetPath);
+              if (file && file.exists()) {
                 file.remove(false);
                 item.deleted = true;
-                allFetchedDownloads = allFetchedDownloads.filter(
-                  (d) => d.id !== item.id,
-                );
-                updateAndRenderDownloadsList();
-                alert(`File "${item.filename}" was successfully deleted.`);
+                alert(`File \"${item.filename}\" was successfully deleted.`);
+                // Immediately refresh the downloads list from history
+                if (typeof refreshDownloadsFromHistory === 'function') {
+                  refreshDownloadsFromHistory();
+                } else if (typeof fetchAndRenderDownloads === 'function') {
+                  fetchAndRenderDownloads();
+                } else {
+                  // fallback: reload the section by re-running the async IIFE
+                  (async () => {
+                    try {
+                      const { DownloadHistory } = ChromeUtils.importESModule(
+                        "resource://gre/modules/DownloadHistory.sys.mjs",
+                      );
+                      const { Downloads } = ChromeUtils.importESModule(
+                        "resource://gre/modules/Downloads.sys.mjs",
+                      );
+                      const { PrivateBrowsingUtils } = ChromeUtils.importESModule(
+                        "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
+                      );
+                      const { FileUtils } = ChromeUtils.importESModule(
+                        "resource://gre/modules/FileUtils.sys.mjs",
+                      );
+                      const isPrivate = PrivateBrowsingUtils.isContentWindowPrivate(window);
+                      const list = await DownloadHistory.getList({
+                        type: isPrivate ? Downloads.ALL : Downloads.PUBLIC,
+                      });
+                      const allDownloadsRaw = await list.getAll();
+                      allFetchedDownloads = allDownloadsRaw
+                        .map((d) => {
+                          let filename = "Unknown Filename";
+                          let targetPath = "";
+                          let fileExists = false;
+                          if (d.target && d.target.path) {
+                            try {
+                              let file = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsIFile);
+                              file.initWithPath(d.target.path);
+                              fileExists = file.exists();
+                              filename = file.leafName;
+                              targetPath = d.target.path;
+                            } catch (e) {
+                              const pathParts = String(d.target.path).split(/[\\/]/);
+                              filename = pathParts.pop() || "ErrorInPathUtil";
+                            }
+                          }
+                          if (
+                            (filename === "Unknown Filename" ||
+                              filename === "ErrorInPathUtil") &&
+                            d.source &&
+                            d.source.url
+                          ) {
+                            try {
+                              const decodedUrl = decodeURIComponent(d.source.url);
+                              let urlObj;
+                              try {
+                                urlObj = new URL(decodedUrl);
+                                const pathSegments = urlObj.pathname.split("/");
+                                filename =
+                                  pathSegments.pop() ||
+                                  pathSegments.pop() ||
+                                  "Unknown from URL Path";
+                              } catch (urlParseError) {
+                                const urlPartsDirect = String(d.source.url).split("/");
+                                const lastPartDirect =
+                                  urlPartsDirect.pop() || urlPartsDirect.pop();
+                                filename =
+                                  lastPartDirect.split("?")[0] || "Invalid URL Filename";
+                              }
+                            } catch (e) {
+                              const urlPartsDirect = String(d.source.url).split("/");
+                              const lastPartDirect =
+                                urlPartsDirect.pop() || urlPartsDirect.pop();
+                              filename =
+                                lastPartDirect.split("?")[0] || "Invalid URL Filename";
+                            }
+                          }
+                          let status = "unknown";
+                          let progressBytes = Number(d.bytesTransferredSoFar) || 0;
+                          let totalBytes = Number(d.totalBytes) || 0;
+                          if (d.succeeded) {
+                            status = "completed";
+                            if (
+                              d.target &&
+                              d.target.size &&
+                              Number(d.target.size) > totalBytes
+                            ) {
+                              totalBytes = Number(d.target.size);
+                            }
+                            progressBytes = totalBytes;
+                          } else if (d.error) {
+                            status = "failed";
+                          } else if (d.canceled) {
+                            status = "failed";
+                          } else if (
+                            d.stopped ||
+                            d.hasPartialData ||
+                            d.state === Downloads.STATE_PAUSED ||
+                            d.state === Downloads.STATE_SCANNING ||
+                            d.state === Downloads.STATE_BLOCKED_PARENTAL ||
+                            d.state === Downloads.STATE_BLOCKED_POLICY ||
+                            d.state === Downloads.STATE_BLOCKED_SECURITY ||
+                            d.state === Downloads.STATE_DIRTY
+                          ) {
+                            status = "paused";
+                          } else if (d.state === Downloads.STATE_DOWNLOADING) {
+                            status = "paused";
+                          }
+                          if (
+                            status === "completed" &&
+                            totalBytes === 0 &&
+                            progressBytes > 0
+                          ) {
+                            totalBytes = progressBytes;
+                          }
+                          if (d.target && d.target.path && !fileExists) {
+                            status = "deleted";
+                          }
+                          return {
+                            id: d.id,
+                            filename: String(filename || "FN_MISSING"),
+                            size: formatBytes(totalBytes),
+                            totalBytes: totalBytes,
+                            progressBytes: progressBytes,
+                            type: getFileIconDetails(
+                              String(filename || "tmp.file"),
+                            ).text.toLowerCase(),
+                            category: getFileCategory(String(filename || "tmp.file")),
+                            status: status,
+                            url: String(d.source?.url || "URL_MISSING"),
+                            timestamp: d.endTime || d.startTime || Date.now(),
+                            targetPath: String(targetPath || ""),
+                            historicalData: d,
+                          };
+                        })
+                        .filter((d) => d.timestamp);
+                      renderUI();
+                    } catch (err) {
+                      console.error(
+                        "[ZenHaven Downloads] Error fetching or processing download history:",
+                        err,
+                      );
+                      downloadsViewContainer.innerHTML = `<div class="haven-dl-empty-state"><p>Error loading download history.</p><pre>${err.message}\n${err.stack}</pre></div>`;
+                    }
+                  })();
+                }
               } else {
-                alert(`File "${item.filename}" not found on disk.`);
+                alert(`File \"${item.filename}\" not found on disk.`);
               }
             } catch (e) {
               console.error("Error deleting file:", e);
@@ -594,14 +791,13 @@ export const downloadsSection = {
     }
     function applyAllFilters() {
       const searchTermLower = currentSearchTerm.toLowerCase();
-      const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
       filteredDisplayDownloads = allFetchedDownloads.filter((item) => {
-        if (currentViewMode === "recent" && item.timestamp < sevenDaysAgo)
-          return false;
-        if (currentViewMode === "history" && item.timestamp >= sevenDaysAgo)
+        // Hide deleted files unless filter is set to 'deleted'
+        if (currentStatusFilter !== "deleted" && item.status === "deleted")
           return false;
         if (
           currentStatusFilter !== "all" &&
+          currentStatusFilter !== "deleted" &&
           item.status !== currentStatusFilter
         )
           return false;
@@ -640,18 +836,19 @@ export const downloadsSection = {
           currentStatusFilter = e.target.value;
           updateAndRenderDownloadsList();
         });
-      downloadsViewContainer
-        .querySelectorAll(".haven-dl-view-btn")
-        .forEach((btn) => {
-          btn.addEventListener("click", (e) => {
-            currentViewMode = e.currentTarget.dataset.view;
-            downloadsViewContainer
-              .querySelectorAll(".haven-dl-view-btn")
-              .forEach((b) => b.classList.remove("active"));
-            e.currentTarget.classList.add("active");
-            updateAndRenderDownloadsList();
-          });
-        });
+      // Remove all currentViewMode logic and state
+      // downloadsViewContainer
+      //   .querySelectorAll(".haven-dl-view-btn")
+      //   .forEach((btn) => {
+      //     btn.addEventListener("click", (e) => {
+      //       currentViewMode = e.currentTarget.dataset.view;
+      //       downloadsViewContainer
+      //         .querySelectorAll(".haven-dl-view-btn")
+      //         .forEach((b) => b.classList.remove("active"));
+      //       e.currentTarget.classList.add("active");
+      //       updateAndRenderDownloadsList();
+      //     });
+      //   });
       const categoryTabsContainerEl = downloadsViewContainer.querySelector(
         ".haven-dl-category-tabs-container",
       );
@@ -676,6 +873,161 @@ export const downloadsSection = {
         updateCategoryIndicatorPosition(initialActiveCatTab);
       }
     }
+
+    // Helper to hash downloads for change detection
+    function hashDownloads(downloads) {
+      return downloads.map(d => d.id + d.status + d.timestamp + d.filename).join("|");
+    }
+
+    // Function to fetch and update downloads, only update UI if changed
+    async function fetchAndMaybeUpdateDownloads() {
+      try {
+        const { DownloadHistory } = ChromeUtils.importESModule(
+          "resource://gre/modules/DownloadHistory.sys.mjs",
+        );
+        const { Downloads } = ChromeUtils.importESModule(
+          "resource://gre/modules/Downloads.sys.mjs",
+        );
+        const { PrivateBrowsingUtils } = ChromeUtils.importESModule(
+          "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
+        );
+        const isPrivate = PrivateBrowsingUtils.isContentWindowPrivate(window);
+        const list = await DownloadHistory.getList({
+          type: isPrivate ? Downloads.ALL : Downloads.PUBLIC,
+        });
+        const allDownloadsRaw = await list.getAll();
+        let newDownloads = allDownloadsRaw
+          .map((d) => {
+            let filename = "Unknown Filename";
+            let targetPath = "";
+            let fileExists = false;
+            let previewData = null;
+            if (d.target && d.target.path) {
+              try {
+                let file = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsIFile);
+                file.initWithPath(d.target.path);
+                fileExists = file.exists();
+                filename = file.leafName;
+                targetPath = d.target.path;
+                // If image, generate previewData
+                const ext = filename.split('.').pop().toLowerCase();
+                if (["png","jpg","jpeg","gif","bmp","svg","webp","heic","avif"].includes(ext) && fileExists) {
+                  let Services = window.Services || (window.globalThis && window.globalThis.Services);
+                  if (Services && Services.io && typeof Services.io.newFileURI === "function") {
+                    previewData = { type: 'image', src: Services.io.newFileURI(file).spec };
+                  }
+                }
+              } catch (e) {
+                const pathParts = String(d.target.path).split(/[\\/]/);
+                filename = pathParts.pop() || "ErrorInPathUtil";
+              }
+            }
+            if (
+              (filename === "Unknown Filename" ||
+                filename === "ErrorInPathUtil") &&
+              d.source &&
+              d.source.url
+            ) {
+              try {
+                const decodedUrl = decodeURIComponent(d.source.url);
+                let urlObj;
+                try {
+                  urlObj = new URL(decodedUrl);
+                  const pathSegments = urlObj.pathname.split("/");
+                  filename =
+                    pathSegments.pop() ||
+                    pathSegments.pop() ||
+                    "Unknown from URL Path";
+                } catch (urlParseError) {
+                  const urlPartsDirect = String(d.source.url).split("/");
+                  const lastPartDirect =
+                    urlPartsDirect.pop() || urlPartsDirect.pop();
+                  filename =
+                    lastPartDirect.split("?")[0] || "Invalid URL Filename";
+                }
+              } catch (e) {
+                const urlPartsDirect = String(d.source.url).split("/");
+                const lastPartDirect =
+                  urlPartsDirect.pop() || urlPartsDirect.pop();
+                filename =
+                  lastPartDirect.split("?")[0] || "Invalid URL Filename";
+              }
+            }
+            let status = "unknown";
+            let progressBytes = Number(d.bytesTransferredSoFar) || 0;
+            let totalBytes = Number(d.totalBytes) || 0;
+            if (d.succeeded) {
+              status = "completed";
+              if (
+                d.target &&
+                d.target.size &&
+                Number(d.target.size) > totalBytes
+              ) {
+                totalBytes = Number(d.target.size);
+              }
+              progressBytes = totalBytes;
+            } else if (d.error) {
+              status = "failed";
+            } else if (d.canceled) {
+              status = "failed";
+            } else if (
+              d.stopped ||
+              d.hasPartialData ||
+              d.state === Downloads.STATE_PAUSED ||
+              d.state === Downloads.STATE_SCANNING ||
+              d.state === Downloads.STATE_BLOCKED_PARENTAL ||
+              d.state === Downloads.STATE_BLOCKED_POLICY ||
+              d.state === Downloads.STATE_BLOCKED_SECURITY ||
+              d.state === Downloads.STATE_DIRTY
+            ) {
+              status = "paused";
+            } else if (d.state === Downloads.STATE_DOWNLOADING) {
+              status = "paused";
+            }
+            if (
+              status === "completed" &&
+              totalBytes === 0 &&
+              progressBytes > 0
+            ) {
+              totalBytes = progressBytes;
+            }
+            if (d.target && d.target.path && !fileExists) {
+              status = "deleted";
+            }
+            return {
+              id: d.id,
+              filename: String(filename || "FN_MISSING"),
+              size: formatBytes(totalBytes),
+              totalBytes: totalBytes,
+              progressBytes: progressBytes,
+              type: getFileIconDetails(
+                String(filename || "tmp.file"),
+              ).text.toLowerCase(),
+              category: getFileCategory(String(filename || "tmp.file")),
+              status: status,
+              url: String(d.source?.url || "URL_MISSING"),
+              timestamp: d.endTime || d.startTime || Date.now(),
+              targetPath: String(targetPath || ""),
+              historicalData: d,
+              previewData: previewData,
+            };
+          })
+          .filter((d) => d.timestamp);
+        const newHash = hashDownloads(newDownloads);
+        if (newHash !== lastDownloadsHash) {
+          allFetchedDownloads = newDownloads;
+          lastDownloadsHash = newHash;
+          renderUI();
+        }
+      } catch (err) {
+        console.error("[ZenHaven Downloads] Error polling downloads:", err);
+      }
+    }
+
+    // Start periodic polling
+    downloadsRefreshInterval = setInterval(fetchAndMaybeUpdateDownloads, 5000);
+    // Also do an initial fetch right away
+    fetchAndMaybeUpdateDownloads();
 
     (async () => {
       try {
@@ -702,14 +1054,26 @@ export const downloadsSection = {
           .map((d) => {
             let filename = "Unknown Filename";
             let targetPath = "";
+            let fileExists = false;
+            let previewData = null;
             if (d.target && d.target.path) {
               try {
-                let file = new FileUtils.File(d.target.path);
+                let file = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsIFile);
+                file.initWithPath(d.target.path);
+                fileExists = file.exists();
                 filename = file.leafName;
                 targetPath = d.target.path;
+                // If image, generate previewData
+                const ext = filename.split('.').pop().toLowerCase();
+                if (["png","jpg","jpeg","gif","bmp","svg","webp","heic","avif"].includes(ext) && fileExists) {
+                  let Services = window.Services || (window.globalThis && window.globalThis.Services);
+                  if (Services && Services.io && typeof Services.io.newFileURI === "function") {
+                    previewData = { type: 'image', src: Services.io.newFileURI(file).spec };
+                  }
+                }
               } catch (e) {
                 console.warn(
-                  "[ZenHaven Downloads] Error creating FileUtils.File or getting leafName from path:",
+                  "[ZenHaven Downloads] Error creating nsIFile or getting leafName from path:",
                   d.target.path,
                   e,
                 );
@@ -791,6 +1155,10 @@ export const downloadsSection = {
             ) {
               totalBytes = progressBytes;
             }
+            // If file is missing, mark as deleted
+            if (d.target && d.target.path && !fileExists) {
+              status = "deleted";
+            }
             return {
               id: d.id,
               filename: String(filename || "FN_MISSING"),
@@ -806,6 +1174,7 @@ export const downloadsSection = {
               timestamp: d.endTime || d.startTime || Date.now(),
               targetPath: String(targetPath || ""),
               historicalData: d,
+              previewData: previewData,
             };
           })
           .filter((d) => d.timestamp);
@@ -823,6 +1192,153 @@ export const downloadsSection = {
         downloadsViewContainer.innerHTML = `<div class="haven-dl-empty-state"><p>Error loading download history.</p><pre>${err.message}\n${err.stack}</pre></div>`;
       }
     })();
+
+    // --- XUL Menupopup Context Menu Setup ---
+    let xulContextMenu = null;
+    let xulContextMenuTargetItem = null;
+    function ensureXULContextMenu() {
+      if (xulContextMenu) return xulContextMenu;
+      const menuXML = `
+        <menupopup id="haven-dl-xul-context-menu">
+          <menuitem label="Rename" id="dl-menu-rename"/>
+          <menuitem label="Open in Folder" id="dl-menu-open-folder"/>
+          <menuitem label="Open Download Link in New Tab" id="dl-menu-open-url"/>
+          <menuseparator/>
+          <menuitem label="Delete File" id="dl-menu-delete"/>
+        </menupopup>
+      `;
+      const frag = window.MozXULElement.parseXULToFragment(menuXML);
+      xulContextMenu = frag.firstElementChild;
+      document.getElementById("mainPopupSet")?.appendChild(xulContextMenu) || document.body.appendChild(xulContextMenu);
+      // Wire up menu actions
+      xulContextMenu.querySelector("#dl-menu-rename").addEventListener("command", () => {
+        if (xulContextMenuTargetItem) showRenameDialog(xulContextMenuTargetItem);
+      });
+      xulContextMenu.querySelector("#dl-menu-open-folder").addEventListener("command", (e) => {
+        if (xulContextMenuTargetItem) handleItemAction(xulContextMenuTargetItem, "show", e);
+      });
+      xulContextMenu.querySelector("#dl-menu-open-url").addEventListener("command", (e) => {
+        if (xulContextMenuTargetItem) handleItemAction(xulContextMenuTargetItem, "open-url", e);
+      });
+      xulContextMenu.querySelector("#dl-menu-delete").addEventListener("command", (e) => {
+        if (xulContextMenuTargetItem) handleItemAction(xulContextMenuTargetItem, "remove", e);
+      });
+      return xulContextMenu;
+    }
+    function showXULContextMenu(item, x, y) {
+      const menu = ensureXULContextMenu();
+      xulContextMenuTargetItem = item;
+      // Hide Open in Folder if deleted
+      const openFolder = menu.querySelector("#dl-menu-open-folder");
+      if (item.status === "deleted") openFolder.setAttribute("hidden", "true");
+      else openFolder.removeAttribute("hidden");
+      // Open at mouse position
+      if (typeof menu.openPopupAtScreen === "function") {
+        menu.openPopupAtScreen(x, y, true);
+      } else {
+        // fallback: open at item
+        menu.openPopup(item, 'after_start', 0, 0, true, false, null);
+      }
+    }
+    // --- End XUL Menupopup Context Menu Setup ---
+
+    // --- Rename Dialog ---
+    function showRenameDialog(item) {
+      // Remove any existing dialog
+      const existing = document.getElementById('haven-dl-rename-dialog');
+      if (existing) existing.remove();
+      const overlay = parseElement(`
+        <div id="haven-dl-rename-dialog">
+          <div class="rename-dialog">
+            <div class="rename-title">Rename File</div>
+            <input type="text" class="rename-input" />
+            <div class="rename-btn-row">
+              <button class="rename-cancel">Cancel</button>
+              <button class="rename-ok">Rename</button>
+            </div>
+          </div>
+        </div>
+      `);
+      const dialog = overlay.querySelector('.rename-dialog');
+      const input = overlay.querySelector('.rename-input');
+      const cancel = overlay.querySelector('.rename-cancel');
+      const ok = overlay.querySelector('.rename-ok');
+      input.value = item.filename;
+      // Select filename without extension
+      const lastDot = item.filename.lastIndexOf('.')
+      if (lastDot > 0) {
+        setTimeout(() => {
+          input.setSelectionRange(0, lastDot);
+          input.focus();
+        }, 100);
+      } else {
+        setTimeout(() => {
+          input.select();
+          input.focus();
+        }, 100);
+      }
+      cancel.onclick = () => overlay.remove();
+      ok.onclick = async () => {
+        const newName = input.value.trim();
+        if (!newName || newName === item.filename) {
+          overlay.remove();
+          return;
+        }
+        try {
+          // Safe rename logic (auto-increment if needed)
+          let file = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsIFile);
+          file.initWithPath(item.targetPath);
+          const parentDir = file.parent;
+          let base = newName, ext = '';
+          const dot = newName.lastIndexOf('.');
+          if (dot > 0) { base = newName.slice(0, dot); ext = newName.slice(dot); }
+          let candidate = base + ext, counter = 1;
+          let newFile = parentDir.clone(); newFile.append(candidate);
+          while (newFile.exists()) {
+            candidate = `${base} (${counter++})${ext}`;
+            newFile = parentDir.clone(); newFile.append(candidate);
+          }
+          const oldPath = item.targetPath;
+          file.moveTo(parentDir, candidate);
+          // Update the item in UI state
+          item.filename = candidate;
+          item.targetPath = newFile.path;
+          // If image, update previewData
+          const extNew = candidate.split('.').pop().toLowerCase();
+          if (["png","jpg","jpeg","gif","bmp","svg","webp","heic","avif"].includes(extNew)) {
+            let Services = window.Services || (window.globalThis && window.globalThis.Services);
+            if (Services && Services.io && typeof Services.io.newFileURI === "function") {
+              item.previewData = { type: 'image', src: Services.io.newFileURI(newFile).spec };
+            }
+          } else {
+            item.previewData = null;
+          }
+          // --- Update the download manager record ---
+          try {
+            const { Downloads } = ChromeUtils.import("resource://gre/modules/Downloads.jsm");
+            let list = await Downloads.getList(Downloads.ALL);
+            let downloads = await list.getAll();
+            let download = downloads.find(d => d.target && d.target.path === oldPath);
+            if (download && download.target) {
+              download.target.path = newFile.path;
+            }
+          } catch (e) {
+            // Ignore if we can't update the download manager
+          }
+          overlay.remove();
+          // Refresh downloads list
+          if (typeof fetchAndMaybeUpdateDownloads === 'function') fetchAndMaybeUpdateDownloads();
+        } catch (e) {
+          alert('Rename failed: ' + e);
+        }
+      };
+      overlay.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') ok.click();
+        if (e.key === 'Escape') cancel.click();
+      });
+      document.body.appendChild(overlay);
+    }
+    // --- End Rename Dialog ---
 
     return downloadsViewContainer;
   },
