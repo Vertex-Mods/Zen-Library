@@ -5,10 +5,11 @@ function getGradientCSS(theme) {
     return "transparent";
 
   const angle = Math.round(theme.rotation || 0);
+  const opacity = theme.opacity ?? 1;
   const stops = theme.gradientColors
     .map(({ c }) => {
       const [r, g, b] = c;
-      return `rgb(${r}, ${g}, ${b})`;
+      return `rgba(${r}, ${g}, ${b}, ${opacity})`;
     })
     .join(", ");
 
@@ -62,10 +63,8 @@ export const workspacesSection = {
 
           if (theme?.type === "gradient" && theme.gradientColors?.length) {
             workspaceDiv.style.background = getGradientCSS(theme);
-            workspaceDiv.style.opacity = theme.opacity ?? 1;
           } else {
             workspaceDiv.style.background = "var(--zen-colors-border)";
-            workspaceDiv.style.opacity = 1;
           }
 
           const headerDiv = parseElement(
@@ -121,3 +120,4 @@ export const workspacesSection = {
     return container;
   },
 };
+
