@@ -296,6 +296,15 @@ export const workspacesSection = {
             )
             .forEach((tabEl) => {
               const clonedTab = tabEl.cloneNode(true);
+              let url;
+              try {
+                const browser = gBrowser.getBrowserForTab(tabEl);
+                url = browser.currentURI.spec;
+                // save url in tab
+                clonedTab.setAttribute("data-url", url);
+              } catch (e) {
+                console.error("Could not get tab URL", e);
+              }
               if (clonedTab.hasAttribute("pinned")) {
                 pinnedTabsContainer.appendChild(clonedTab);
               } else {
@@ -311,6 +320,27 @@ export const workspacesSection = {
           }
 
           workspaceDiv.appendChild(contentDiv);
+          const closeButtons =
+            workspaceDiv.querySelectorAll(".tab-close-button");
+          closeButtons.forEach((btn) => {
+            btn.addEventListener("click", (e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              const tab = e.target.closest("tab.tabbrowser-tab");
+              // get saved url
+              const url = tab.getAttribute("data-url");
+              if (url) {
+                try {
+                  navigator.clipboard.writeText(url);
+                  gZenUIManager.showToast("zen-copy-current-url-confirmation");
+                } catch {
+                  (err) => {
+                    console.error("Failed to copy URL:", err);
+                  };
+                }
+              }
+            });
+          });
           innerContainer.appendChild(workspaceDiv);
         });
       })
