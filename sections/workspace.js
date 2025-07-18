@@ -122,8 +122,6 @@ export const workspacesSection = {
           const workspaceDiv = parseElement(
             `<div class="haven-workspace">
                   <div class="haven-workspace-header">
-                    <span class="workspace-drag-handle" draggable="true" style="cursor: grab;">
-                    </span>
                     <span class="workspace-icon">${icon}</span>
                     <span class="workspace-name">${name}</span>
                   </div>
@@ -132,8 +130,9 @@ export const workspacesSection = {
 
           workspaceDiv.dataset.uuid = uuid;
 
-          const dragHandle = workspaceDiv.querySelector(
-            ".workspace-drag-handle",
+          // Create the drag handle early so it can be referenced by event listeners
+          const dragHandle = parseElement(
+            `<span class="workspace-drag-handle" draggable="true" style="cursor: grab;"></span>`
           );
 
           const iconEl = workspaceDiv.querySelector(".workspace-icon");
@@ -347,6 +346,7 @@ export const workspacesSection = {
           }
 
           workspaceDiv.appendChild(contentDiv);
+          workspaceDiv.appendChild(dragHandle);
           const closeButtons =
             workspaceDiv.querySelectorAll(".tab-close-button");
           closeButtons.forEach((btn) => {
@@ -380,3 +380,4 @@ export const workspacesSection = {
     return container;
   },
 };
+ 

@@ -173,12 +173,13 @@
         }
       }
       
-      .workspace-drag-handle{
-        width: 50% !important;
+      .workspace-drag-handle {
+        display: flex !important;
+        width: 50px !important;
         height: 20px !important;
-        background: red !important;
-        position: absolute !important;
-        bottom:0 !important;
+        background-color: red !important;
+        position: relative !important;
+        bottom: 0 !important;
       }
     
     }
