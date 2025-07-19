@@ -8,6 +8,9 @@
   &:hover {
     background-color: var(--tab-hover-background-color);
   }
+  &[drag-tab] {
+    background-color: var(--tab-hover-background-color);
+  }
   .tab-icon {
     height: 16px;
     width: 16px;
@@ -144,6 +147,7 @@
     max-height:94vh !important;
 
       #haven-workspace-outer-container{
+        height: 100%;
         width: 100% !important;
         overflow-x: auto !important;
         position: relative !important;

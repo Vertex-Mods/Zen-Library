@@ -310,7 +310,12 @@ export const workspacesSection = {
                 <div class="haven-tab" draggable="true">
                   <span class="tab-icon">${faviconUrl ? `<img src="${faviconUrl}" style="width:16px;height:16px;vertical-align:middle;">` : ''}</span>
                   <span class="tab-title">${tabTitle}</span>
-                  <button class="copy-link" title="Copy tab URL">🔗</button>
+                  <button class="copy-link" title="Copy tab URL" aria-label="Copy tab URL">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M10.5 2.5a3 3 0 0 1 4.24 4.24l-5.5 5.5a3 3 0 0 1-4.24-4.24l1.5-1.5" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                      <rect x="2.5" y="9.5" width="6" height="4" rx="2" stroke="currentColor" stroke-width="1.5" fill="none"/>
+                    </svg>
+                  </button>
                 </div>
               `);
               // Tab click: switch to this tab
@@ -338,12 +343,21 @@ export const workspacesSection = {
               });
               tabProxy.querySelector('.copy-link').addEventListener('click', (e) => {
                 e.stopPropagation();
+                console.log(`[ZenHaven] Copying URL for tab: ${tabTitle} (${tabUrl})`);
                 if (tabUrl) {
-                  navigator.clipboard.writeText(tabUrl).then(() => {
-                    if (typeof gZenUIManager !== 'undefined' && gZenUIManager.showToast) {
-                      gZenUIManager.showToast('zen-copy-current-url-confirmation');
-                    }
-                  });
+                  // Try modern clipboard API first
+                  if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(tabUrl).then(() => {
+                      if (typeof gZenUIManager !== 'undefined' && gZenUIManager.showToast) {
+                        gZenUIManager.showToast('zen-copy-current-url-confirmation');
+                      }
+                    }).catch(() => {
+                      // Fallback if clipboard API fails
+                      console.error(`[ZenHaven] Clipboard API failed, falling back to execCommand for tab: ${tabTitle} (${tabUrl})`);
+                    });
+                  } else {
+                    console.error(`[ZenHaven] Clipboard API failed, falling back to execCommand for tab: ${tabTitle} (${tabUrl})`);
+                  }
                 }
               });
               // --- Drag-and-drop logic for tabs ---
@@ -464,19 +478,20 @@ export const workspacesSection = {
               let dragMouseOffset = 0;
               let placeholder = null;
               let lastContainer = null;
+              let dragHoldTimeout = null;
 
+              // --- Drag-and-drop logic for tabProxy ---
               tabProxy.addEventListener('mousedown', async (e) => {
                 if (e.button !== 0) return; // Only left click
+                if (e.target.closest('.copy-link')) return; // Don't start drag on copy-link button
                 const isPinned = tabEl && tabEl.hasAttribute('pinned');
                 const workspaceEl = gZenWorkspaces.workspaceElement(uuid);
                 if (workspaceEl && !workspaceEl.hasAttribute('active')) {
                   // Switch to the workspace, then re-trigger drag
                   await gZenWorkspaces.changeWorkspaceWithID(uuid);
-                  // Optionally, re-open Haven UI if it closes on workspace switch
                   if (window.haven && typeof window.haven.initializeUI === 'function' && !window.haven.uiInitialized) {
                     window.haven.initializeUI();
                   }
-                  // Simulate another mousedown to start drag after switch
                   setTimeout(() => {
                     tabProxy.dispatchEvent(new MouseEvent('mousedown', {
                       bubbles: true,
@@ -485,12 +500,10 @@ export const workspacesSection = {
                       clientY: e.clientY,
                       button: 0
                     }));
-                  }, 100); // Give the UI a moment to update
+                  }, 100);
                   return;
                 }
-                // --- Only allow pinned tab reordering if workspace is active ---
                 if (isPinned) {
-                  // Find the workspace element for this tab
                   const workspaceEl = gZenWorkspaces.workspaceElement(uuid);
                   if (!workspaceEl || !workspaceEl.hasAttribute('active')) {
                     if (window.gZenUIManager && gZenUIManager.showToast) {
@@ -501,47 +514,59 @@ export const workspacesSection = {
                     return;
                   }
                 }
-                // --- Assign a unique, persistent id to the real tab element if missing ---
                 if (tabEl && !tabEl.hasAttribute('id')) {
                   tabEl.setAttribute('id', 'zen-real-tab-' + Math.random().toString(36).slice(2));
                 }
                 e.preventDefault();
-                isDragging = true;
-                dragTab = tabProxy;
-                const tabRect = tabProxy.getBoundingClientRect();
-                dragStartY = tabRect.top;
-                dragStartX = tabRect.left;
-                dragMouseOffset = e.clientY - tabRect.top;
-                dragOffsetY = 0;
-                dragOffsetX = e.clientX - tabRect.left;
-                lastContainer = tabProxy.parentNode;
-                dragTab._dragSection = isPinned ? 'pinned' : 'regular';
-                // --- Insert placeholder BEFORE moving tab out of DOM ---
-                placeholder = document.createElement('div');
-                placeholder.className = 'haven-tab drag-placeholder';
-                placeholder.style.height = `${tabProxy.offsetHeight}px`;
-                placeholder.style.width = `${tabProxy.offsetWidth}px`;
-                tabProxy.parentNode.insertBefore(placeholder, tabProxy);
-                // --- Now move tab out of flow: fixed position at its original screen position ---
-                tabProxy.style.position = 'fixed';
-                tabProxy.style.top = `${tabRect.top}px`;
-                tabProxy.style.left = `${tabRect.left}px`;
-                tabProxy.style.width = `${tabRect.width}px`;
-                tabProxy.style.height = `${tabRect.height}px`;
-                tabProxy.style.zIndex = 1000;
-                tabProxy.style.pointerEvents = 'none';
-                tabProxy.style.transition = 'none';
-                tabProxy.classList.add('dragging-tab');
-                document.body.appendChild(tabProxy);
-                document.body.style.userSelect = 'none';
-                // Animate all tabs
-                getAllTabProxies().forEach(tab => {
-                  if (tab !== dragTab) {
-                    tab.style.transition = 'transform 0.18s cubic-bezier(.4,1.3,.5,1)';
-                  }
-                });
-                window.addEventListener('mousemove', onDragMove);
-                window.addEventListener('mouseup', onDragEnd);
+                let dragStarted = false;
+                dragHoldTimeout = setTimeout(() => {
+                  dragStarted = true;
+                  isDragging = true;
+                  dragTab = tabProxy;
+                  const tabRect = tabProxy.getBoundingClientRect();
+                  dragStartY = tabRect.top;
+                  dragStartX = tabRect.left;
+                  dragMouseOffset = e.clientY - tabRect.top;
+                  dragOffsetY = 0;
+                  dragOffsetX = e.clientX - tabRect.left;
+                  lastContainer = tabProxy.parentNode;
+                  dragTab._dragSection = isPinned ? 'pinned' : 'regular';
+                  // --- Insert placeholder BEFORE moving tab out of DOM ---
+                  placeholder = document.createElement('div');
+                  placeholder.className = 'haven-tab drag-placeholder';
+                  placeholder.style.height = `${tabProxy.offsetHeight}px`;
+                  placeholder.style.width = `${tabProxy.offsetWidth}px`;
+                  tabProxy.parentNode.insertBefore(placeholder, tabProxy);
+                  // --- Now move tab out of flow: fixed position at its original screen position ---
+                  tabProxy.style.position = 'fixed';
+                  tabProxy.style.top = `${tabRect.top}px`;
+                  tabProxy.style.left = `${tabRect.left}px`;
+                  tabProxy.style.width = `${tabRect.width}px`;
+                  tabProxy.style.height = `${tabRect.height}px`;
+                  tabProxy.style.zIndex = 1000;
+                  tabProxy.style.pointerEvents = 'none';
+                  tabProxy.style.transition = 'transform 0.18s cubic-bezier(.4,1.3,.5,1), scale 0.18s cubic-bezier(.4,1.3,.5,1)';
+                  tabProxy.style.transform = 'scale(0.92)';
+                  tabProxy.setAttribute('drag-tab', '');
+                  tabProxy.classList.add('dragging-tab');
+                  document.body.appendChild(tabProxy);
+                  document.body.style.userSelect = 'none';
+                  getAllTabProxies().forEach(tab => {
+                    if (tab !== dragTab) {
+                      tab.style.transition = 'transform 0.18s cubic-bezier(.4,1.3,.5,1)';
+                    }
+                  });
+                  window.addEventListener('mousemove', onDragMove);
+                  window.addEventListener('mouseup', onDragEnd);
+                }, 500);
+                // If mouse is released before 0.5s, cancel drag
+                function cancelHold(e2) {
+                  clearTimeout(dragHoldTimeout);
+                  window.removeEventListener('mouseup', cancelHold);
+                  window.removeEventListener('mouseleave', cancelHold);
+                }
+                window.addEventListener('mouseup', cancelHold);
+                window.addEventListener('mouseleave', cancelHold);
               });
 
               // Helper: Sync the custom UI with the real Firefox tab order
@@ -578,14 +603,14 @@ export const workspacesSection = {
                 // Only consider tabs in the same section
                 // Move placeholder to correct position within section
                 if (section === 'pinned') {
-                  // Only allow placeholder to be inserted before/after other pinned tabs, never after the last pinned tab
                   const pinnedTabs = Array.from(pinnedTabsContainer.querySelectorAll('.haven-tab'));
                   let insertBefore = null;
                   for (let i = 0; i < pinnedTabs.length; i++) {
                     const tab = pinnedTabs[i];
                     if (tab === dragTab) continue;
                     const rect = tab.getBoundingClientRect();
-                    if (e.clientY < rect.top + rect.height / 2) {
+                    // Use a small deadzone to avoid jitter
+                    if (e.clientY < rect.top + rect.height / 2 - 2) {
                       insertBefore = tab;
                       break;
                     }
@@ -593,9 +618,13 @@ export const workspacesSection = {
                   // Prevent inserting after the last pinned tab (which would unpin)
                   if (!insertBefore) {
                     // Always insert before the last pinned tab (not after)
-                    pinnedTabsContainer.insertBefore(placeholder, pinnedTabs[pinnedTabs.length - 1]);
+                    if (placeholder !== pinnedTabs[pinnedTabs.length - 1]) {
+                      pinnedTabsContainer.insertBefore(placeholder, pinnedTabs[pinnedTabs.length - 1]);
+                    }
                   } else {
-                    pinnedTabsContainer.insertBefore(placeholder, insertBefore);
+                    if (placeholder !== insertBefore) {
+                      pinnedTabsContainer.insertBefore(placeholder, insertBefore);
+                    }
                   }
                 } else {
                   // Regular tabs logic (unchanged)
@@ -603,15 +632,19 @@ export const workspacesSection = {
                   for (const tab of regularTabsContainer.querySelectorAll('.haven-tab')) {
                     if (tab === dragTab) continue;
                     const rect = tab.getBoundingClientRect();
-                    if (e.clientY < rect.top + rect.height / 2) {
+                    if (e.clientY < rect.top + rect.height / 2 - 2) {
                       insertBefore = tab;
                       break;
                     }
                   }
                   if (insertBefore) {
-                    regularTabsContainer.insertBefore(placeholder, insertBefore);
+                    if (placeholder !== insertBefore) {
+                      regularTabsContainer.insertBefore(placeholder, insertBefore);
+                    }
                   } else {
-                    regularTabsContainer.appendChild(placeholder);
+                    if (placeholder !== regularTabsContainer.lastChild) {
+                      regularTabsContainer.appendChild(placeholder);
+                    }
                   }
                 }
                 // Animate other tabs to move out of the way
@@ -632,6 +665,10 @@ export const workspacesSection = {
               }
 
               function onDragEnd(e) {
+                if (dragHoldTimeout) {
+                  clearTimeout(dragHoldTimeout);
+                  dragHoldTimeout = null;
+                }
                 if (!isDragging || !dragTab) return;
                 // Insert tab at placeholder
                 placeholder.parentNode.insertBefore(dragTab, placeholder);
@@ -645,6 +682,8 @@ export const workspacesSection = {
                 dragTab.style.pointerEvents = '';
                 dragTab.style.transition = '';
                 dragTab.classList.remove('dragging-tab');
+                dragTab.removeAttribute('drag-tab');
+                dragTab.style.transform = '';
                 // Update pin state if moved between containers (should never happen now)
                 const isPinnedTarget = placeholder.parentNode === pinnedTabsContainer;
                 const tabEl = dragTab.tabEl;
@@ -739,6 +778,7 @@ export const workspacesSection = {
                 }
                 document.body.style.userSelect = '';
                 if (placeholder && placeholder.parentNode) placeholder.parentNode.removeChild(placeholder);
+                // After drop, reset all transforms and transitions immediately
                 getAllTabProxies().forEach(tab => {
                   tab.style.transition = '';
                   tab.style.transform = '';
