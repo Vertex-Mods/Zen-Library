@@ -465,10 +465,30 @@ export const workspacesSection = {
               let placeholder = null;
               let lastContainer = null;
 
-              tabProxy.addEventListener('mousedown', (e) => {
+              tabProxy.addEventListener('mousedown', async (e) => {
                 if (e.button !== 0) return; // Only left click
-                // --- Only allow pinned tab reordering if workspace is active ---
                 const isPinned = tabEl && tabEl.hasAttribute('pinned');
+                const workspaceEl = gZenWorkspaces.workspaceElement(uuid);
+                if (workspaceEl && !workspaceEl.hasAttribute('active')) {
+                  // Switch to the workspace, then re-trigger drag
+                  await gZenWorkspaces.changeWorkspaceWithID(uuid);
+                  // Optionally, re-open Haven UI if it closes on workspace switch
+                  if (window.haven && typeof window.haven.initializeUI === 'function' && !window.haven.uiInitialized) {
+                    window.haven.initializeUI();
+                  }
+                  // Simulate another mousedown to start drag after switch
+                  setTimeout(() => {
+                    tabProxy.dispatchEvent(new MouseEvent('mousedown', {
+                      bubbles: true,
+                      cancelable: true,
+                      clientX: e.clientX,
+                      clientY: e.clientY,
+                      button: 0
+                    }));
+                  }, 100); // Give the UI a moment to update
+                  return;
+                }
+                // --- Only allow pinned tab reordering if workspace is active ---
                 if (isPinned) {
                   // Find the workspace element for this tab
                   const workspaceEl = gZenWorkspaces.workspaceElement(uuid);
@@ -694,7 +714,15 @@ export const workspacesSection = {
                   }
                 }
                 if (section === 'pinned') {
-                  reorderFirefoxPinnedTabs(order);
+                  // Update the workspace's pinned tab order in the data model
+                  if (typeof gZenWorkspaces?.updateWorkspacePinnedOrder === 'function') {
+                    gZenWorkspaces.updateWorkspacePinnedOrder(uuid, order);
+                  }
+                  // If this workspace is active, also update the real tab strip
+                  const workspaceEl = gZenWorkspaces.workspaceElement(uuid);
+                  if (workspaceEl && workspaceEl.hasAttribute('active')) {
+                    reorderFirefoxPinnedTabs(order);
+                  }
                 } else {
                   reorderFirefoxRegularTabs(order);
                 }
