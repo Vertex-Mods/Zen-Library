@@ -8,7 +8,7 @@ import { parseElement } from "./utils/parse.js";
 import { downloadsSection } from "./sections/download.js";
 import { workspacesSection } from "./sections/workspace.js";
 import { historySection } from "./sections/history.js";
-import { notesSection } from "./sections/notes.js";
+// import { notesSection } from "./sections/notes.js";
 
 (function () {
   const { document } = window;
@@ -358,7 +358,7 @@ import { notesSection } from "./sections/notes.js";
   window.haven.addSection(downloadsSection);
   window.haven.addSection(workspacesSection);
   window.haven.addSection(historySection);
-  window.haven.addSection(notesSection);
+  //  window.haven.addSection(notesSection);
 
   // --- INITIALIZATION LOGIC ---
 
