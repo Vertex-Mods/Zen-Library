@@ -42,6 +42,29 @@ function restoreZenWorkspace(uuid) {
   }
 }
 
+// Helper for appending XUL or HTML elements
+const appendXUL = (parentElement, xulString, insertBefore = null, XUL = false) => {
+  let element;
+  if (XUL) {
+    element = window.MozXULElement.parseXULToFragment(xulString);
+    element = element.firstElementChild || element;
+  } else {
+    element = new DOMParser().parseFromString(xulString, "text/html");
+    if (element.body.children.length) {
+      element = element.body.firstChild;
+    } else {
+      element = element.head.firstChild;
+    }
+  }
+  element = parentElement.ownerDocument.importNode(element, true);
+  if (insertBefore) {
+    parentElement.insertBefore(element, insertBefore);
+  } else {
+    parentElement.appendChild(element);
+  }
+  return element;
+};
+
 export const workspacesSection = {
   id: "workspaces",
   label: "Workspaces",
@@ -573,18 +596,27 @@ export const workspacesSection = {
               if (!faviconUrl && tabUrl.startsWith('http')) {
                 faviconUrl = `https://www.google.com/s2/favicons?sz=32&domain_url=${encodeURIComponent(tabUrl)}`;
               }
+              // HTML part (tabProxy)
               const tabProxy = parseElement(`
                 <div class="haven-tab" draggable="true">
-                  <span class="tab-icon">${faviconUrl ? `<img src="${faviconUrl}" style="width:16px;height:16px;vertical-align:middle;">` : ''}</span>
+                  <span class="tab-icon">
+                    ${faviconUrl ? `<img src="${faviconUrl}" style="width:16px;height:16px;vertical-align:middle;">` : ''}
+                  </span>
                   <span class="tab-title">${tabTitle}</span>
-                  <button class="copy-link" title="Copy tab URL" aria-label="Copy tab URL">
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M10.5 2.5a3 3 0 0 1 4.24 4.24l-5.5 5.5a3 3 0 0 1-4.24-4.24l1.5-1.5" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-                      <rect x="2.5" y="9.5" width="6" height="4" rx="2" stroke="currentColor" stroke-width="1.5" fill="none"/>
-                    </svg>
-                  </button>
                 </div>
               `);
+
+              // XUL part (copy-link button)
+              appendXUL(
+                tabProxy,
+                `<toolbarbutton xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+                  class="toolbarbutton-1 copy-link"
+                  tooltiptext="Copy tab URL"
+                  image="chrome://userscripts/content/zen-library/icons/copy-url.svg"
+                  aria-label="Copy tab URL"/>`,
+                null,
+                true
+              );
               // Tab click: switch to this tab
               tabProxy.addEventListener('click', (e) => {
                 if (e.target.classList.contains('copy-link')) return;

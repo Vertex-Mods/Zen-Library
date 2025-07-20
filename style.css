@@ -1,11 +1,14 @@
 body[library="true"] {
-  #tabbrowser-tabbox {
+  #tabbrowser-tabpanels {
     min-width: calc(100vw - 176px) !important;
-    margin-right: calc(-53vw - 176px) !important;
   }
   #navigator-toolbox {
     padding-left: 0 !important;
-    background-color: rgba(255,255,255,0.1) !important;
+    background-color: rgba(255, 255, 255, 0.1) !important;
+  }
+  #zen-tabbox-wrapper {
+    max-height: 100vh !important;
+    padding-bottom: 8.1px !important;
   }
 }
 
@@ -45,11 +48,25 @@ body[library="true"] {
   }
 
   .copy-link {
-    margin: 5px;
-    margin-left: auto;
+    -moz-context-properties: fill;
+    fill: currentColor;
+    -moz-appearance: none !important;
+    width: 20px;
+    height: 20px;
+    padding: 3px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--tab-selected-textcolor) !important;
+    border-radius: 6px;
+    margin-right: 5px !important;
+    margin-left: auto !important;
     border: none;
-    -moz-appearance: none;
-    background-color: none !important;
+    background: transparent !important;
+    cursor: pointer;
+    &:hover {
+      background-color: var(--tab-hover-background-color) !important;
+    }
   }
 }
 
@@ -173,9 +190,9 @@ body[library="true"] {
 
 /* Workspace drag and drop styles */
 .haven-workspace {
-  transition: transform 0.15s cubic-bezier(.4,1.3,.5,1);
+  transition: transform 0.15s cubic-bezier(0.4, 1.3, 0.5, 1);
   will-change: transform; /* Optimize for animations */
-  
+
   &.dragging-workspace {
     cursor: grabbing !important;
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4) !important;
@@ -185,13 +202,14 @@ body[library="true"] {
     border-radius: 8px !important;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35) !important;
   }
-  
+
   &.workspace-placeholder {
     background: transparent !important;
-    border: 5px dashed light-dark(
-    color-mix(in srgb, var(--zen-primary-color) 50%, white 50%),
-    color-mix(in srgb, var(--zen-primary-color) 50%, black 50%)
-  ) !important;
+    border: 5px dashed
+      light-dark(
+        color-mix(in srgb, var(--zen-primary-color) 50%, white 50%),
+        color-mix(in srgb, var(--zen-primary-color) 50%, black 50%)
+      ) !important;
     opacity: 1;
     pointer-events: none;
     transition: none !important; /* Disable transitions for placeholder */
@@ -211,6 +229,8 @@ body[library="true"] {
 
 :root:has(#navigator-toolbox) {
   #zen-haven-container {
+    min-width: 60vw !important;
+    flex: 1 0 !important;
     height: unset !important;
     overflow: hidden;
     padding: 20px !important;
@@ -220,6 +240,7 @@ body[library="true"] {
     overflow-y: hidden !important;
 
     #haven-workspace-outer-container {
+      display: flex;
       height: 100%;
       width: 100% !important;
       overflow-x: auto !important;
@@ -235,7 +256,7 @@ body[library="true"] {
 
     .haven-workspace {
       height: 85% !important;
-      min-width: 200px;
+      width: 200px !important;
       background-color: var(--zen-primary-color);
       border-radius: 8px;
       display: flex;
@@ -269,7 +290,13 @@ body[library="true"] {
         }
 
         .haven-workspace-options {
+          -moz-appearance: none !important;
           margin-left: auto !important;
+          background-color: transparent !important;
+          border-radius: 4px;
+          &:hover {
+            background-color: var(--tab-hover-background-color) !important;
+          }
         }
       }
 
@@ -300,7 +327,7 @@ body[library="true"] {
         bottom: 0 !important;
         border-radius: 2px;
         transition: background-color 0.2s, transform 0.1s;
-        
+
         &:hover {
           background-color: var(--zen-primary-color) !important;
           transform: scaleY(1.5);
@@ -1297,8 +1324,7 @@ body[library="true"] {
   color: var(--toolbar-color);
   opacity: 0.7;
 }
-/* Zen Haven Library Icon (themed) */
-#zen-haven {
-  list-style-image: url("chrome://userscripts/content/zen-library/icons/haven.svg") !important;
-}
 
+#zen-library {
+  list-style-image: url("chrome://userscripts/content/zen-library/icons/library.svg") !important;
+}

@@ -369,7 +369,7 @@ import { historySection } from "./sections/history.js";
 
     console.log("[ZenHaven] Toggle button added to sidebar bottom buttons");
     const widget = {
-      id: "zen-haven",
+      id: "zen-library",
       type: "toolbarbutton",
       label: "Zen Library",
       tooltip: "Toggle Library",
