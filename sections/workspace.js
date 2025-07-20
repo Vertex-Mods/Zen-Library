@@ -150,7 +150,7 @@ export const workspacesSection = {
             // Insert before this workspace
             insertBefore = workspace;
             break;
-          } else {
+        } else {
             // Insert after this workspace, but continue checking for better position
             insertBefore = workspace.nextElementSibling;
             targetWorkspace = workspace;
@@ -245,7 +245,7 @@ export const workspacesSection = {
       const workspaceElements = getAllWorkspaces();
       const newIndex = workspaceElements.findIndex(el => el === dragWorkspace);
       const draggedUuid = dragWorkspace.dataset.uuid;
-      
+
       if (newIndex !== -1 && draggedUuid) {
         gZenWorkspaces.reorderWorkspace(draggedUuid, newIndex);
       }
@@ -410,6 +410,40 @@ export const workspacesSection = {
           } else {
             workspaceDiv.style.background = "var(--zen-colors-border)";
           }
+
+          // Add hover functionality to switch workspaces
+          let hoverTimeout = null;
+          workspaceDiv.addEventListener('mouseenter', () => {
+            // Don't switch workspaces if any workspace is being dragged
+            if (isDraggingWorkspace) {
+              return;
+            }
+            
+            // Clear any existing timeout
+            if (hoverTimeout) {
+              clearTimeout(hoverTimeout);
+            }
+            
+            // Set a small delay to prevent accidental switches
+            hoverTimeout = setTimeout(async () => {
+              const workspaceEl = gZenWorkspaces.workspaceElement(uuid);
+              if (workspaceEl && !workspaceEl.hasAttribute('active')) {
+                // Switch to the workspace in the background
+                await gZenWorkspaces.changeWorkspaceWithID(uuid);
+                if (window.haven && typeof window.haven.initializeUI === 'function' && !window.haven.uiInitialized) {
+                  window.haven.initializeUI();
+                }
+              }
+            }, 200); // 200ms delay before switching
+          });
+
+          workspaceDiv.addEventListener('mouseleave', () => {
+            // Clear the timeout if mouse leaves before switching
+            if (hoverTimeout) {
+              clearTimeout(hoverTimeout);
+              hoverTimeout = null;
+            }
+          });
 
           // Proxy menu and actions
           const header = workspaceDiv.querySelector(".haven-workspace-header");
@@ -718,24 +752,8 @@ export const workspacesSection = {
                 if (e.button !== 0) return; // Only left click
                 if (e.target.closest('.copy-link')) return; // Don't start drag on copy-link button
                 const isPinned = tabEl && tabEl.hasAttribute('pinned');
-                const workspaceEl = gZenWorkspaces.workspaceElement(uuid);
-                if (workspaceEl && !workspaceEl.hasAttribute('active')) {
-                  // Switch to the workspace, then re-trigger drag
-                  await gZenWorkspaces.changeWorkspaceWithID(uuid);
-                  if (window.haven && typeof window.haven.initializeUI === 'function' && !window.haven.uiInitialized) {
-                    window.haven.initializeUI();
-                  }
-                  setTimeout(() => {
-                    tabProxy.dispatchEvent(new MouseEvent('mousedown', {
-                      bubbles: true,
-                      cancelable: true,
-                      clientX: e.clientX,
-                      clientY: e.clientY,
-                      button: 0
-                    }));
-                  }, 100);
-                  return;
-                }
+                
+                // Check if workspace is active for pinned tabs
                 if (isPinned) {
                   const workspaceEl = gZenWorkspaces.workspaceElement(uuid);
                   if (!workspaceEl || !workspaceEl.hasAttribute('active')) {
@@ -747,6 +765,7 @@ export const workspacesSection = {
                     return;
                   }
                 }
+                
                 if (tabEl && !tabEl.hasAttribute('id')) {
                   tabEl.setAttribute('id', 'zen-real-tab-' + Math.random().toString(36).slice(2));
                 }
@@ -833,24 +852,61 @@ export const workspacesSection = {
                 // --- Restrict drag to section ---
                 const section = dragTab._dragSection;
                 const sectionContainer = section === 'pinned' ? pinnedTabsContainer : regularTabsContainer;
-                // Only consider tabs in the same section
-                // Move placeholder to correct position within section
-                if (section === 'pinned') {
-                  const pinnedTabs = Array.from(pinnedTabsContainer.querySelectorAll('.haven-tab'));
-                  let insertBefore = null;
-                  for (let i = 0; i < pinnedTabs.length; i++) {
-                    const tab = pinnedTabs[i];
+                
+                // Get all non-dragging tabs in the same section
+                const otherTabs = Array.from(sectionContainer.querySelectorAll('.haven-tab')).filter(tab => tab !== dragTab);
+                
+                // Find the tab that the dragged tab is touching
+                let targetTab = null;
+                let insertBefore = null;
+                
+                for (const tab of otherTabs) {
+                  const tabRect = tab.getBoundingClientRect();
+                  const draggedRect = dragTab.getBoundingClientRect();
+                  
+                  // Check if the dragged tab is touching this tab
+                  // Use a small overlap threshold for more responsive behavior
+                  const overlapThreshold = 5; // pixels of overlap required
+                  const isTouching = !(draggedRect.bottom < tabRect.top + overlapThreshold || 
+                                     draggedRect.top > tabRect.bottom - overlapThreshold);
+                  
+                  if (isTouching) {
+                    // Determine if we should insert before or after this tab
+                    const draggedCenter = draggedRect.top + draggedRect.height / 2;
+                    const tabCenter = tabRect.top + tabRect.height / 2;
+                    
+                    if (draggedCenter < tabCenter) {
+                      // Insert before this tab
+                      insertBefore = tab;
+                      break;
+                    } else {
+                      // Insert after this tab, but continue checking for better position
+                      insertBefore = tab.nextElementSibling;
+                      targetTab = tab;
+                    }
+                  }
+                }
+                
+                // If no specific tab is being touched, determine position based on mouse position
+                if (!insertBefore) {
+                  // Use the original getTabAfterElement logic as fallback
+                  let insertBeforeFallback = null;
+                  for (const tab of sectionContainer.querySelectorAll('.haven-tab')) {
                     if (tab === dragTab) continue;
                     const rect = tab.getBoundingClientRect();
-                    // Use a small deadzone to avoid jitter
                     if (e.clientY < rect.top + rect.height / 2 - 2) {
-                      insertBefore = tab;
+                      insertBeforeFallback = tab;
                       break;
                     }
                   }
-                  // Prevent inserting after the last pinned tab (which would unpin)
-                  if (!insertBefore) {
+                  insertBefore = insertBeforeFallback;
+                }
+                
+                // Move placeholder to correct position within section
+                if (section === 'pinned') {
+                  if (insertBefore == null) {
                     // Always insert before the last pinned tab (not after)
+                    const pinnedTabs = Array.from(pinnedTabsContainer.querySelectorAll('.haven-tab'));
                     if (placeholder !== pinnedTabs[pinnedTabs.length - 1]) {
                       pinnedTabsContainer.insertBefore(placeholder, pinnedTabs[pinnedTabs.length - 1]);
                     }
@@ -860,16 +916,7 @@ export const workspacesSection = {
                     }
                   }
                 } else {
-                  // Regular tabs logic (unchanged)
-                  let insertBefore = null;
-                  for (const tab of regularTabsContainer.querySelectorAll('.haven-tab')) {
-                    if (tab === dragTab) continue;
-                    const rect = tab.getBoundingClientRect();
-                    if (e.clientY < rect.top + rect.height / 2 - 2) {
-                      insertBefore = tab;
-                      break;
-                    }
-                  }
+                  // Regular tabs logic
                   if (insertBefore) {
                     if (placeholder !== insertBefore) {
                       regularTabsContainer.insertBefore(placeholder, insertBefore);
@@ -880,19 +927,41 @@ export const workspacesSection = {
                     }
                   }
                 }
-                // Animate other tabs to move out of the way
+                
+                // Only move tabs that are actually being touched by the dragged tab
                 getAllTabProxies().forEach(tab => {
                   if (tab === dragTab) return;
-                  tab.style.transition = 'transform 0.18s cubic-bezier(.4,1.3,.5,1)';
-                  tab.style.transform = '';
-                  if (tab.parentNode === sectionContainer) {
-                    const tabRect = tab.getBoundingClientRect();
-                    const placeholderRect = placeholder.getBoundingClientRect();
-                    if (tabRect.top < placeholderRect.top && tabRect.bottom > newY) {
-                      tab.style.transform = `translateY(-${placeholderRect.height}px)`;
-                    } else if (tabRect.top > placeholderRect.top) {
-                      tab.style.transform = `translateY(${placeholderRect.height}px)`;
+                  
+                  const tabRect = tab.getBoundingClientRect();
+                  const draggedRect = dragTab.getBoundingClientRect();
+                  
+                  // Check if this tab is being touched by the dragged tab
+                  const overlapThreshold = 5;
+                  const isTouching = !(draggedRect.bottom < tabRect.top + overlapThreshold || 
+                                     draggedRect.top > tabRect.bottom - overlapThreshold);
+                  
+                  if (isTouching) {
+                    // Add transition for smooth movement only when touching
+                    if (!tab.style.transition) {
+                      tab.style.transition = 'transform 0.15s cubic-bezier(.4,1.3,.5,1)';
                     }
+                    
+                    const placeholderRect = placeholder.getBoundingClientRect();
+                    
+                    // Move tab slightly to make room for the dragged tab
+                    if (tabRect.top < placeholderRect.top) {
+                      // Tab is above placeholder, move it slightly up
+                      const moveDistance = Math.min(15, Math.abs(tabRect.bottom - placeholderRect.top));
+                      tab.style.transform = `translateY(-${moveDistance}px)`;
+                    } else if (tabRect.top > placeholderRect.top) {
+                      // Tab is below placeholder, move it slightly down
+                      const moveDistance = Math.min(15, Math.abs(tabRect.top - placeholderRect.bottom));
+                      tab.style.transform = `translateY(${moveDistance}px)`;
+                    }
+                  } else {
+                    // Reset transform if not touching
+                    tab.style.transform = '';
+                    tab.style.transition = '';
                   }
                 });
               }

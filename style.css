@@ -179,17 +179,11 @@ body[library="true"] {
   &.dragging-workspace {
     cursor: grabbing !important;
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4) !important;
+    pointer-events: none !important;
     /* Preserve original styling during drag */
     padding: 10px !important;
     border-radius: 8px !important;
-    background-color: var(--zen-primary-color) !important;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35) !important;
-    
-    /* Keep drag handle visible and interactive */
-    .workspace-drag-handle {
-      pointer-events: auto !important;
-      cursor: grabbing !important;
-    }
   }
   
   &.workspace-placeholder {
@@ -305,6 +299,12 @@ body[library="true"] {
         position: relative !important;
         bottom: 0 !important;
         border-radius: 2px;
+        transition: background-color 0.2s, transform 0.1s;
+        
+        &:hover {
+          background-color: var(--zen-primary-color) !important;
+          transform: scaleY(1.5);
+        }
       }
     }
   }
