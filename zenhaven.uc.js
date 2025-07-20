@@ -107,6 +107,9 @@ import { notesSection } from "./sections/notes.js";
       // Create buttons from registered sections
       this.sections.forEach((section) => this.createNavButton(section));
 
+      // Create exit button (always visible)
+      this.createExitButton();
+
       // Handle bottom buttons
       this.elements.bottomButtons = document.getElementById(
         "zen-sidebar-bottom-buttons"
@@ -210,6 +213,28 @@ import { notesSection } from "./sections/notes.js";
       this.elements.functionsContainer.appendChild(customDiv);
     }
 
+    createExitButton() {
+      // Remove existing exit button if it exists
+      const existingExitButton = this.elements.customToolbar.querySelector("#haven-exit-button");
+      if (existingExitButton) {
+        existingExitButton.remove();
+      }
+
+      const exitButton = parseElement(`<div id="haven-exit-button">
+        <span style="display: flex; align-items: center; gap: 6px;">← Exit</span>
+      </div>`);
+
+      exitButton.addEventListener("click", () => {
+        // Close haven mode by removing the haven attribute
+        const toolbox = document.getElementById("navigator-toolbox");
+        if (toolbox) {
+          toolbox.removeAttribute("haven");
+        }
+      });
+
+      this.elements.customToolbar.appendChild(exitButton);
+    }
+
     activateSection(id) {
       if (!this.uiInitialized) return;
 
@@ -236,6 +261,8 @@ import { notesSection } from "./sections/notes.js";
         this.elements.havenContainer.appendChild(contentElement);
         this.elements.havenContainer.style.display = "flex";
 
+
+
         document.getElementById(`haven-${id}-button`)?.classList.add("active");
         this.activeSectionId = id;
       } else {
@@ -258,6 +285,8 @@ import { notesSection } from "./sections/notes.js";
         oldSection.contentElement.remove();
         delete oldSection.contentElement;
       }
+
+
 
       Array.from(this.elements.havenContainer.attributes)
         .filter((attr) => attr.name.startsWith("haven-"))
