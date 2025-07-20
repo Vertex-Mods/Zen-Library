@@ -167,7 +167,7 @@ import { notesSection } from "./sections/notes.js";
       
       // Show custom toolbar
       if (this.elements.customToolbar) {
-        this.elements.customToolbar.style.display = "flex";
+        this.elements.customToolbar.style.setProperty("display", "flex", "important");
       }
       
       // Auto-open workspace section
@@ -192,7 +192,7 @@ import { notesSection } from "./sections/notes.js";
       
       // Hide custom toolbar
       if (this.elements.customToolbar) {
-        this.elements.customToolbar.style.display = "none";
+        this.elements.customToolbar.style.setProperty("display", "none", "important");
       }
       
       // Deactivate current section

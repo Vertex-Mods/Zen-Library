@@ -38,7 +38,6 @@
 
   #zen-library-sidebar {
     height: 100%;
-    display: flex !important;
     flex-direction: column;
     
     #haven-exit-button {
