@@ -340,15 +340,32 @@ export const workspacesSection = {
           );
           workspaceDiv.dataset.uuid = uuid;
 
+          // Restore: Clickable icon to change workspace icon (emoji picker)
+          const iconEl = workspaceDiv.querySelector(".workspace-icon");
+          if (iconEl && typeof gZenEmojiPicker?.open === "function") {
+            iconEl.style.cursor = "pointer";
+            iconEl.title = "Change workspace icon";
+            iconEl.addEventListener("click", () => {
+              gZenEmojiPicker
+                .open(iconEl)
+                .then(async (newIcon) => {
+                  console.log("Selected emoji:", newIcon);
+                  iconEl.innerText = newIcon;
+                  const currentWorkspace =
+                    gZenWorkspaces.getWorkspaceFromId(uuid);
+                  if (currentWorkspace && newIcon && newIcon !== icon) {
+                    currentWorkspace.icon = newIcon;
+                    await gZenWorkspaces.saveWorkspace(currentWorkspace);
+                  }
+                })
+                .catch((e) => console.error(e));
+            });
+          }
+
           // Enhanced drag handle with hold-to-drag
           const dragHandle = parseElement(
             `<span class="workspace-drag-handle" style="cursor: grab;"></span>`
           );
-          
-          // Remove the old draggable attribute and event listeners
-          // dragHandle.setAttribute('draggable', 'true');
-          // dragHandle.addEventListener("dragstart", ...);
-          // dragHandle.addEventListener("dragend", ...);
           
           // New reactive drag system
           dragHandle.addEventListener('mousedown', (e) => {
@@ -484,6 +501,7 @@ export const workspacesSection = {
             `
               <menupopup class="haven-workspace-actions-popup">
                 <menuitem class="rename" label="Rename" tooltiptext="Rename" />
+                <menuitem class="change-icon" label="Change Icon" tooltiptext="Change workspace icon" />
                 <menuitem class="switch" label="Go to workspace" tooltiptext="switch to this workspace"/>
                 <menuitem class="change-theme" label="Change Theme (n)" tooltiptext="Change theme" />
                 <menuitem class="delete-workspace" label="Delete" tooltiptext="Delete workspace" />
@@ -544,6 +562,25 @@ export const workspacesSection = {
           };
           workspaceNameEl.addEventListener("dblclick", enableRename);
           menuPopup.querySelector(".rename").addEventListener("click", enableRename);
+
+          // Add context menu action for changing icon
+          menuPopup.querySelector(".change-icon").addEventListener("click", async () => {
+            if (typeof gZenEmojiPicker?.open === "function") {
+              const iconEl = workspaceDiv.querySelector(".workspace-icon");
+              gZenEmojiPicker
+                .open(iconEl)
+                .then(async (newIcon) => {
+                  if (!newIcon) return;
+                  iconEl.innerText = newIcon;
+                  const currentWorkspace = gZenWorkspaces.getWorkspaceFromId(uuid);
+                  if (currentWorkspace && newIcon && newIcon !== icon) {
+                    currentWorkspace.icon = newIcon;
+                    await gZenWorkspaces.saveWorkspace(currentWorkspace);
+                  }
+                })
+                .catch((e) => console.error(e));
+            }
+          });
 
           // Proxy switch workspace
           menuPopup.querySelector(".switch").addEventListener("click", async () => {
@@ -617,13 +654,6 @@ export const workspacesSection = {
                 null,
                 true
               );
-              // Tab click: switch to this tab
-              // tabProxy.addEventListener('click', (e) => {
-              //   if (e.target.classList.contains('copy-link')) return;
-              //   if (typeof gBrowser !== 'undefined' && gBrowser.selectedTab !== tabEl) {
-              //     gBrowser.selectedTab = tabEl;
-              //   }
-              // });
               tabProxy.addEventListener('contextmenu', (e) => {
                 e.preventDefault();
                 if (tabEl && typeof tabEl.dispatchEvent === 'function') {

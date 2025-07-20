@@ -8,7 +8,7 @@ body[library="true"] {
   }
   #zen-tabbox-wrapper {
     max-height: 100vh !important;
-    padding-bottom: 8.1px !important;
+    padding-bottom: 5px !important;
   }
 }
 
