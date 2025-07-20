@@ -63,19 +63,29 @@ export const workspacesSection = {
     const innerContainer = container.querySelector(
       "#haven-workspace-inner-container",
     );
-    // const outerContainer = container.querySelector('#haven-workspace-outer-container')
 
-    function getDragAfterElement(container, x) {
-      const draggableElements = [
-        ...container.querySelectorAll(".haven-workspace:not(.dragging)"),
+    // Workspace drag and drop variables
+    let isDraggingWorkspace = false;
+    let dragWorkspace = null;
+    let dragStartX = 0;
+    let dragStartY = 0;
+    let dragMouseOffset = 0;
+    let workspacePlaceholder = null;
+    let dragHoldTimeout = null;
+    let lastDragX = 0; // Track last drag position to reduce jitter
+    let dragThreshold = 1; // Reduced threshold for more responsive movement
+
+    function getWorkspaceAfterElement(container, x) {
+      const draggableWorkspaces = [
+        ...container.querySelectorAll(".haven-workspace:not(.dragging-workspace)"),
       ];
 
-      return draggableElements.reduce(
-        (closest, child) => {
-          const box = child.getBoundingClientRect();
+      return draggableWorkspaces.reduce(
+        (closest, workspace) => {
+          const box = workspace.getBoundingClientRect();
           const offset = x - box.left - box.width / 2;
           if (offset < 0 && offset > closest.offset) {
-            return { offset: offset, element: child };
+            return { offset: offset, element: workspace };
           } else {
             return closest;
           }
@@ -84,36 +94,186 @@ export const workspacesSection = {
       ).element;
     }
 
-    innerContainer.addEventListener("dragover", (e) => {
-      e.preventDefault();
-      const afterElement = getDragAfterElement(innerContainer, e.clientX);
-      const dragging = innerContainer.querySelector(".dragging");
-      if (dragging) {
-        if (afterElement == null) {
-          innerContainer.appendChild(dragging);
-        } else {
-          innerContainer.insertBefore(dragging, afterElement);
+    function getAllWorkspaces() {
+      return Array.from(innerContainer.querySelectorAll('.haven-workspace'));
+    }
+
+    function onWorkspaceDragMove(e) {
+      if (!isDraggingWorkspace || !dragWorkspace) return;
+      
+      // Check if movement is significant enough to update
+      const currentX = e.clientX;
+      if (Math.abs(currentX - lastDragX) < dragThreshold) {
+        return;
+      }
+      lastDragX = currentX;
+      
+      // Move the workspace visually with the mouse (horizontal only)
+      const newX = e.clientX - dragMouseOffset;
+      const newY = dragStartY; // lock Y axis
+      dragWorkspace.style.left = `${newX}px`;
+      dragWorkspace.style.top = `${newY}px`;
+      
+      // Get the add button to prevent dragging past it
+      const addButton = innerContainer.querySelector('.haven-workspace-add-button');
+      const addButtonRect = addButton ? addButton.getBoundingClientRect() : null;
+      
+      // Check if we're trying to drag past the add button
+      if (addButtonRect && e.clientX > addButtonRect.left) {
+        // Don't allow dragging past the add button
+        return;
+      }
+      
+      // Get all non-dragging workspaces
+      const otherWorkspaces = getAllWorkspaces().filter(ws => ws !== dragWorkspace);
+      
+      // Find the workspace that the dragged workspace is touching
+      let targetWorkspace = null;
+      let insertBefore = null;
+      
+      for (const workspace of otherWorkspaces) {
+        const workspaceRect = workspace.getBoundingClientRect();
+        const draggedRect = dragWorkspace.getBoundingClientRect();
+        
+        // Check if the dragged workspace is touching this workspace
+        // Use a smaller overlap threshold for more responsive behavior
+        const overlapThreshold = 5; // pixels of overlap required
+        const isTouching = !(draggedRect.right < workspaceRect.left + overlapThreshold || 
+                           draggedRect.left > workspaceRect.right - overlapThreshold);
+        
+        if (isTouching) {
+          // Determine if we should insert before or after this workspace
+          const draggedCenter = draggedRect.left + draggedRect.width / 2;
+          const workspaceCenter = workspaceRect.left + workspaceRect.width / 2;
+          
+          if (draggedCenter < workspaceCenter) {
+            // Insert before this workspace
+            insertBefore = workspace;
+            break;
+          } else {
+            // Insert after this workspace, but continue checking for better position
+            insertBefore = workspace.nextElementSibling;
+            targetWorkspace = workspace;
+          }
         }
       }
-    });
-
-    innerContainer.addEventListener("drop", async (e) => {
-      e.preventDefault();
-      const draggedElement = innerContainer.querySelector(".dragging");
-      if (!draggedElement) return;
-
-      const draggedUuid = draggedElement.dataset.uuid;
-      const workspaceElements = [
-        ...innerContainer.querySelectorAll(".haven-workspace"),
-      ];
-      const newIndex = workspaceElements.findIndex(
-        (el) => el === draggedElement,
-      );
-
-      if (newIndex !== -1) {
-        await gZenWorkspaces.reorderWorkspace(draggedUuid, newIndex);
+      
+      // If no specific workspace is being touched, determine position based on mouse position
+      if (!insertBefore) {
+        const afterElement = getWorkspaceAfterElement(innerContainer, e.clientX);
+        insertBefore = afterElement;
       }
-    });
+      
+      // Move placeholder to correct position
+      if (insertBefore == null) {
+        // Check if we should append before the add button
+        if (addButton && workspacePlaceholder !== addButton) {
+          innerContainer.insertBefore(workspacePlaceholder, addButton);
+        } else if (workspacePlaceholder !== innerContainer.lastChild) {
+          innerContainer.appendChild(workspacePlaceholder);
+        }
+      } else {
+        if (workspacePlaceholder !== insertBefore) {
+          innerContainer.insertBefore(workspacePlaceholder, insertBefore);
+        }
+      }
+      
+      // Immediately animate other workspaces to move out of the way
+      getAllWorkspaces().forEach(workspace => {
+        if (workspace === dragWorkspace) return;
+        
+        // Add transition for smooth movement
+        if (!workspace.style.transition) {
+          workspace.style.transition = 'transform 0.15s cubic-bezier(.4,1.3,.5,1)';
+        }
+        
+        const workspaceRect = workspace.getBoundingClientRect();
+        const placeholderRect = workspacePlaceholder.getBoundingClientRect();
+        
+        // Calculate the distance to move based on actual overlap
+        const workspaceCenter = workspaceRect.left + workspaceRect.width / 2;
+        const placeholderCenter = placeholderRect.left + placeholderRect.width / 2;
+        
+        // Move workspaces immediately when they need to shift
+        // Fixed logic: workspace should move in the opposite direction of the drag
+        if (workspaceRect.left < placeholderRect.left) {
+          // Workspace is to the left of placeholder, move it slightly left to make room
+          const moveDistance = Math.min(20, Math.abs(workspaceRect.right - placeholderRect.left));
+          workspace.style.transform = `translateX(-${moveDistance}px)`;
+        } else if (workspaceRect.left > placeholderRect.left) {
+          // Workspace is to the right of placeholder, move it slightly right to make room
+          const moveDistance = Math.min(20, Math.abs(workspaceRect.left - placeholderRect.right));
+          workspace.style.transform = `translateX(${moveDistance}px)`;
+        } else {
+          // Reset transform if no movement needed
+          workspace.style.transform = '';
+        }
+      });
+    }
+
+    function onWorkspaceDragEnd(e) {
+      if (dragHoldTimeout) {
+        clearTimeout(dragHoldTimeout);
+        dragHoldTimeout = null;
+      }
+      
+      if (!isDraggingWorkspace || !dragWorkspace) return;
+      
+      // Insert workspace at placeholder position
+      workspacePlaceholder.parentNode.insertBefore(dragWorkspace, workspacePlaceholder);
+      
+      // Restore workspace styles
+      dragWorkspace.style.position = '';
+      dragWorkspace.style.top = '';
+      dragWorkspace.style.left = '';
+      dragWorkspace.style.width = '';
+      dragWorkspace.style.height = '';
+      dragWorkspace.style.zIndex = '';
+      dragWorkspace.style.pointerEvents = '';
+      dragWorkspace.style.transition = '';
+      dragWorkspace.classList.remove('dragging-workspace');
+      dragWorkspace.removeAttribute('drag-workspace');
+      dragWorkspace.style.transform = '';
+      
+      // Restore drag handle cursor
+      const dragHandle = dragWorkspace.querySelector('.workspace-drag-handle');
+      if (dragHandle) {
+        dragHandle.style.cursor = 'grab';
+      }
+      
+      // Update workspace order
+      const workspaceElements = getAllWorkspaces();
+      const newIndex = workspaceElements.findIndex(el => el === dragWorkspace);
+      const draggedUuid = dragWorkspace.dataset.uuid;
+      
+      if (newIndex !== -1 && draggedUuid) {
+        gZenWorkspaces.reorderWorkspace(draggedUuid, newIndex);
+      }
+      
+      // Clean up
+      document.body.style.userSelect = '';
+      if (workspacePlaceholder && workspacePlaceholder.parentNode) {
+        workspacePlaceholder.parentNode.removeChild(workspacePlaceholder);
+      }
+      
+      // Reset all transforms and transitions
+      getAllWorkspaces().forEach(workspace => {
+        workspace.style.transition = '';
+        workspace.style.transform = '';
+      });
+      
+      // Reset drag state
+      isDraggingWorkspace = false;
+      dragWorkspace = null;
+      workspacePlaceholder = null;
+      lastDragX = 0; // Reset position tracking
+      window.removeEventListener('mousemove', onWorkspaceDragMove);
+      window.removeEventListener('mouseup', onWorkspaceDragEnd);
+    }
+
+    // Remove the old dragover and drop event listeners
+    // innerContainer.addEventListener("dragover", (e) => { ... });
+    // innerContainer.addEventListener("drop", async (e) => { ... });
 
     const addWorkspaceButton =
       parseElement(`<div class="haven-workspace-add-button"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -157,18 +317,91 @@ export const workspacesSection = {
           );
           workspaceDiv.dataset.uuid = uuid;
 
-          // Drag handle
+          // Enhanced drag handle with hold-to-drag
           const dragHandle = parseElement(
-            `<span class="workspace-drag-handle" draggable="true" style="cursor: grab;"></span>`
+            `<span class="workspace-drag-handle" style="cursor: grab;"></span>`
           );
-          dragHandle.addEventListener("dragstart", (e) => {
-            const workspaceElement = e.target.closest(".haven-workspace");
-            workspaceElement.classList.add("dragging");
-            e.dataTransfer.effectAllowed = "move";
-          });
-          dragHandle.addEventListener("dragend", (e) => {
-            const workspaceElement = e.target.closest(".haven-workspace");
-            workspaceElement.classList.remove("dragging");
+          
+          // Remove the old draggable attribute and event listeners
+          // dragHandle.setAttribute('draggable', 'true');
+          // dragHandle.addEventListener("dragstart", ...);
+          // dragHandle.addEventListener("dragend", ...);
+          
+          // New reactive drag system
+          dragHandle.addEventListener('mousedown', (e) => {
+            if (e.button !== 0) return; // Only left click
+            
+            e.preventDefault();
+            
+            // Add visual feedback immediately
+            dragHandle.style.cursor = 'grabbing';
+            workspaceDiv.style.transform = 'scale(0.98)';
+            workspaceDiv.style.transition = 'transform 0.1s ease';
+            
+            let dragStarted = false;
+            dragHoldTimeout = setTimeout(() => {
+              dragStarted = true;
+              isDraggingWorkspace = true;
+              dragWorkspace = workspaceDiv;
+              const workspaceRect = workspaceDiv.getBoundingClientRect();
+              dragStartX = workspaceRect.left;
+              dragStartY = workspaceRect.top;
+              dragMouseOffset = e.clientX - workspaceRect.left;
+              lastDragX = e.clientX; // Initialize position tracking
+              
+              // Create placeholder
+              workspacePlaceholder = document.createElement('div');
+              workspacePlaceholder.className = 'haven-workspace workspace-placeholder';
+              workspacePlaceholder.style.height = `${workspaceDiv.offsetHeight}px`;
+              workspacePlaceholder.style.width = `${workspaceDiv.offsetWidth}px`;
+              workspacePlaceholder.style.opacity = '0.3';
+              workspacePlaceholder.style.border = '2px dashed var(--zen-primary-color)';
+              workspacePlaceholder.style.borderRadius = '8px';
+              workspaceDiv.parentNode.insertBefore(workspacePlaceholder, workspaceDiv);
+              
+              // Move workspace out of flow
+              workspaceDiv.style.position = 'fixed';
+              workspaceDiv.style.top = `${workspaceRect.top}px`;
+              workspaceDiv.style.left = `${workspaceRect.left}px`;
+              workspaceDiv.style.width = `${workspaceRect.width}px`;
+              workspaceDiv.style.height = `${workspaceRect.height}px`;
+              workspaceDiv.style.zIndex = 1000;
+              workspaceDiv.style.pointerEvents = 'none';
+              workspaceDiv.style.transition = 'transform 0.18s cubic-bezier(.4,1.3,.5,1), scale 0.18s cubic-bezier(.4,1.3,.5,1)';
+              workspaceDiv.style.transform = 'scale(0.95)';
+              // Preserve original styling
+              workspaceDiv.style.padding = workspaceDiv.style.padding || '10px';
+              workspaceDiv.style.borderRadius = workspaceDiv.style.borderRadius || '8px';
+              workspaceDiv.style.backgroundColor = workspaceDiv.style.backgroundColor || 'var(--zen-primary-color)';
+              workspaceDiv.style.boxShadow = workspaceDiv.style.boxShadow || '0 4px 10px rgba(0, 0, 0, 0.35)';
+              workspaceDiv.setAttribute('drag-workspace', '');
+              workspaceDiv.classList.add('dragging-workspace');
+              document.body.appendChild(workspaceDiv);
+              document.body.style.userSelect = 'none';
+              
+              // Add transitions to other workspaces
+              getAllWorkspaces().forEach(ws => {
+                if (ws !== dragWorkspace) {
+                  ws.style.transition = 'transform 0.18s cubic-bezier(.4,1.3,.5,1)';
+                }
+              });
+              
+              window.addEventListener('mousemove', onWorkspaceDragMove);
+              window.addEventListener('mouseup', onWorkspaceDragEnd);
+            }, 300); // Shorter hold time for workspaces (300ms vs 500ms for tabs)
+            
+            // Cancel drag if mouse is released before timeout
+            function cancelHold(e2) {
+              clearTimeout(dragHoldTimeout);
+              // Restore visual state
+              dragHandle.style.cursor = 'grab';
+              workspaceDiv.style.transform = '';
+              workspaceDiv.style.transition = '';
+              window.removeEventListener('mouseup', cancelHold);
+              window.removeEventListener('mouseleave', cancelHold);
+            }
+            window.addEventListener('mouseup', cancelHold);
+            window.addEventListener('mouseleave', cancelHold);
           });
 
           // Theme background
@@ -545,7 +778,7 @@ export const workspacesSection = {
                   tabProxy.style.height = `${tabRect.height}px`;
                   tabProxy.style.zIndex = 1000;
                   tabProxy.style.pointerEvents = 'none';
-                  tabProxy.style.transition = 'transform 0.18s cubic-bezier(.4,1.3,.5,1), scale 0.18s cubic-bezier(.4,1.3,.5,1)';
+                  tabProxy.style.transition = 'transform 0.18s cubic-bezier(.4,1.3,.5,1)';
                   tabProxy.style.transform = 'scale(0.92)';
                   tabProxy.setAttribute('drag-tab', '');
                   tabProxy.classList.add('dragging-tab');

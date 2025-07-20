@@ -171,6 +171,50 @@ body[library="true"] {
   }
 }
 
+/* Workspace drag and drop styles */
+.haven-workspace {
+  transition: transform 0.15s cubic-bezier(.4,1.3,.5,1);
+  will-change: transform; /* Optimize for animations */
+  
+  &.dragging-workspace {
+    cursor: grabbing !important;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4) !important;
+    /* Preserve original styling during drag */
+    padding: 10px !important;
+    border-radius: 8px !important;
+    background-color: var(--zen-primary-color) !important;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35) !important;
+    
+    /* Keep drag handle visible and interactive */
+    .workspace-drag-handle {
+      pointer-events: auto !important;
+      cursor: grabbing !important;
+    }
+  }
+  
+  &.workspace-placeholder {
+    background: transparent !important;
+    border: 5px dashed light-dark(
+    color-mix(in srgb, var(--zen-primary-color) 50%, white 50%),
+    color-mix(in srgb, var(--zen-primary-color) 50%, black 50%)
+  ) !important;
+    opacity: 1;
+    pointer-events: none;
+    transition: none !important; /* Disable transitions for placeholder */
+    padding: 10px !important;
+    border-radius: 8px !important;
+  }
+}
+
+.workspace-drag-handle {
+  cursor: grab;
+  transition: background-color 0.2s;
+  user-select: none; /* Prevent text selection during drag */
+  &:active {
+    cursor: grabbing;
+  }
+}
+
 :root:has(#navigator-toolbox) {
   #zen-haven-container {
     height: unset !important;
@@ -260,6 +304,7 @@ body[library="true"] {
         background-color: light-dark(#333, #fff) !important;
         position: relative !important;
         bottom: 0 !important;
+        border-radius: 2px;
       }
     }
   }
