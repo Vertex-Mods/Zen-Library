@@ -156,6 +156,9 @@ import { notesSection } from "./sections/notes.js";
       
       console.log("[ZenHaven] Opening Haven");
       
+      // Add library attribute to body
+      document.body.setAttribute("library", "true");
+      
       // Hide all children except the toolbox itself and our custom toolbar
       if (this.elements.toolbox) {
         Array.from(this.elements.toolbox.children).forEach((child) => {
@@ -180,6 +183,9 @@ import { notesSection } from "./sections/notes.js";
       if (!this.isOpen) return;
       
       console.log("[ZenHaven] Closing Haven");
+      
+      // Remove library attribute from body
+      document.body.removeAttribute("library");
       
       // Show all original toolbox children
       if (this.elements.toolbox) {
@@ -283,9 +289,8 @@ import { notesSection } from "./sections/notes.js";
     activateSection(id) {
       if (!this.uiInitialized) return;
 
-      // If clicking the same button, toggle off
+      // If clicking the same button, do nothing (already active)
       if (this.activeSectionId === id) {
-        this.deactivateCurrentSection();
         return;
       }
 
@@ -305,8 +310,6 @@ import { notesSection } from "./sections/notes.js";
         this.elements.havenContainer.setAttribute(`haven-${id}`, "");
         this.elements.havenContainer.appendChild(contentElement);
         this.elements.havenContainer.style.display = "flex";
-
-
 
         document.getElementById(`haven-${id}-button`)?.classList.add("active");
         this.activeSectionId = id;
