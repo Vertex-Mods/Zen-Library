@@ -1297,3 +1297,8 @@ body[library="true"] {
   color: var(--toolbar-color);
   opacity: 0.7;
 }
+/* Zen Haven Library Icon (themed) */
+#zen-haven {
+  list-style-image: url("chrome://userscripts/content/zen-library/icons/haven.svg") !important;
+}
+
