@@ -36,10 +36,9 @@
   }
 }
 
-:root:has(#navigator-toolbox[haven]) {
-  #custom-toolbar {
+  #zen-library-sidebar {
     height: 100%;
-    display: flex;
+    display: flex !important;
     flex-direction: column;
     
     #haven-exit-button {
@@ -94,21 +93,23 @@
   }
 
   .custom-button {
-    display: flex;
-    flex-direction: column;
+
     width: 100px;
     height: 100px;
-    margin-top: auto;
-    margin-bottom: auto;
-    align-items: center;
-    justify-content: center;
+    margin-top: auto !important;
+    margin-bottom: auto !important;
     transition: transform 0.1s ease-in-out, background-color 0.2s ease;
     cursor: pointer;
     padding: 8px;
     border-radius: 4px;
-    position: relative;
-
-
+    position: relative; 
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      justify-content: center !important;
+      .icon {
+        width: 24px;
+      }
     & .icon svg {
       height: 24px !important;
     }
@@ -119,13 +120,16 @@
       text-align: center;
     }
     &:hover {
-      background-color: var(--toolbarbutton-hover-background);
+      background-color: var(--toolbarbutton-hover-background) !important;
     }
+    .custom-button.active {
+      background-color: var(--toolbarbutton-active-background);
+    }
+    
+    }
+
   }
-  .custom-button.active {
-    background-color: var(--toolbarbutton-active-background);
-  }
-}
+
 
 /* --- Workspaces --- */
 .haven-workspace-add-button {
@@ -148,13 +152,12 @@
   }
 }
 
-:root:has(#navigator-toolbox[haven]) {
+:root:has(#navigator-toolbox) {
 
   #zen-haven-container {
     height: unset !important;
     overflow: hidden;
     padding: 20px !important;
-    display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
     overflow-x: scroll !important;
