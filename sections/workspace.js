@@ -618,12 +618,12 @@ export const workspacesSection = {
                 true
               );
               // Tab click: switch to this tab
-              tabProxy.addEventListener('click', (e) => {
-                if (e.target.classList.contains('copy-link')) return;
-                if (typeof gBrowser !== 'undefined' && gBrowser.selectedTab !== tabEl) {
-                  gBrowser.selectedTab = tabEl;
-                }
-              });
+              // tabProxy.addEventListener('click', (e) => {
+              //   if (e.target.classList.contains('copy-link')) return;
+              //   if (typeof gBrowser !== 'undefined' && gBrowser.selectedTab !== tabEl) {
+              //     gBrowser.selectedTab = tabEl;
+              //   }
+              // });
               tabProxy.addEventListener('contextmenu', (e) => {
                 e.preventDefault();
                 if (tabEl && typeof tabEl.dispatchEvent === 'function') {

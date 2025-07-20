@@ -28,6 +28,9 @@ body[library="true"] {
   background-color: transparent;
   &:hover {
     background-color: var(--tab-hover-background-color);
+    .copy-link {
+      opacity: 1 !important;
+    }
   }
   &[drag-tab] {
     background-color: var(--tab-hover-background-color);
@@ -48,8 +51,9 @@ body[library="true"] {
   }
 
   .copy-link {
+    opacity: 0 !important;
     -moz-context-properties: fill;
-    fill: currentColor;
+    fill: var(--zen-primary-color, currentColor);
     -moz-appearance: none !important;
     width: 20px;
     height: 20px;
