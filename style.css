@@ -7,9 +7,10 @@ body[library="true"] {
     background-color: rgba(255, 255, 255, 0.1) !important;
   }
   #zen-tabbox-wrapper {
-    max-height: 100vh !important;
-    padding-bottom: 5px !important;
+    max-height: calc(100vh - 16px) !important;
   }
+   --zen-main-browser-background: transparant !important;
+   --zen-main-browser-background-old: transparant !important;
 }
 
 #browser,
