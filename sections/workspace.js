@@ -891,14 +891,14 @@ export const workspacesSection = {
                 const workspaceEl = gZenWorkspaces.workspaceElement(uuid);
                 if (!workspaceEl) return;
                 // Pinned
-                const pinnedContainer = workspaceEl.pinnedTabsContainer;
+                const pinnedContainer = workspaceEl.querySelector(".haven-workspace-pinned-tabs");
                 const realPinnedTabs = Array.from(gBrowser.tabs).filter(t => t.pinned && t.getAttribute('zen-workspace-id') === uuid);
                 realPinnedTabs.forEach(tab => {
                   const proxy = Array.from(pinnedContainer.querySelectorAll('.haven-tab')).find(t => t.tabEl && t.tabEl.getAttribute('id') === tab.getAttribute('id'));
                   if (proxy) pinnedContainer.appendChild(proxy);
                 });
                 // Regular
-                const regularContainer = workspaceEl.tabsContainer;
+                const regularContainer = workspaceEl.querySelector(".haven-workspace-regular-tabs");
                 const realRegularTabs = Array.from(gBrowser.tabs).filter(t => !t.pinned && t.getAttribute('zen-workspace-id') === uuid);
                 realRegularTabs.forEach(tab => {
                   const proxy = Array.from(regularContainer.querySelectorAll('.haven-tab')).find(t => t.tabEl && t.tabEl.getAttribute('id') === tab.getAttribute('id'));
@@ -957,7 +957,7 @@ export const workspacesSection = {
                   lastContainer = null; // We are no longer in a specific container
 
                   // Hide individual tab movements in the original workspace
-                  getAllTabProxies().forEach(tab => {
+                  sourceWorkspaceEl.querySelectorAll('.haven-tab').forEach(tab => {
                     if (tab !== dragTab) {
                       tab.style.transform = '';
                     }
@@ -969,31 +969,46 @@ export const workspacesSection = {
                   }
                   placeholder.style.display = '';
 
-                  // --- NEW INTRA-WORKSPACE LOGIC ---
+                  // --- NEW INTRA-WORKSPACE LOGIC (Robust) ---
+                  const currentSourceWorkspaceEl = innerContainer.querySelector(`.haven-workspace[data-uuid="${dragTab.dataset.workspaceUuid}"]`);
+                  if (!currentSourceWorkspaceEl) return;
+
+                  const sourceContentDiv = currentSourceWorkspaceEl.querySelector('.haven-workspace-content');
+                  if (!sourceContentDiv) return;
+
+                  const sourcePinnedContainer = currentSourceWorkspaceEl.querySelector('.haven-workspace-pinned-tabs');
+                  const sourceRegularContainer = currentSourceWorkspaceEl.querySelector('.haven-workspace-regular-tabs');
+
                   let currentTargetContainer = null;
-                  const contentDiv = pinnedTabsContainer.parentNode;
-                  const contentRect = contentDiv.getBoundingClientRect();
+                  const contentRect = sourceContentDiv.getBoundingClientRect();
 
-                  // Determine which container (pinned/regular) the cursor is over
+                  // Determine which container (pinned/regular) the cursor is over, only if inside content area
                   if (e.clientX >= contentRect.left && e.clientX <= contentRect.right && e.clientY >= contentRect.top && e.clientY <= contentRect.bottom) {
-                    const pinnedRect = pinnedTabsContainer.getBoundingClientRect();
-                    const regularRect = regularTabsContainer.getBoundingClientRect();
+                      let pinnedRect = sourcePinnedContainer ? sourcePinnedContainer.getBoundingClientRect() : null;
+                      let regularRect = sourceRegularContainer ? sourceRegularContainer.getBoundingClientRect() : null;
 
-                    // Prioritize the container the cursor is physically inside
-                    if (pinnedTabsContainer.hasChildNodes() && e.clientY >= pinnedRect.top && e.clientY <= pinnedRect.bottom) {
-                      currentTargetContainer = pinnedTabsContainer;
-                    } else if (regularTabsContainer.hasChildNodes() && e.clientY >= regularRect.top && e.clientY <= regularRect.bottom) {
-                      currentTargetContainer = regularTabsContainer;
-                    } else {
-                      // Fallback for empty space between containers
-                      if (pinnedTabsContainer.hasChildNodes() && e.clientY < regularRect.top) {
-                          currentTargetContainer = pinnedTabsContainer;
+                      // Prioritize the container the cursor is physically inside
+                      if (pinnedRect && e.clientY >= pinnedRect.top && e.clientY <= pinnedRect.bottom) {
+                          currentTargetContainer = sourcePinnedContainer;
+                      } else if (regularRect && e.clientY >= regularRect.top && e.clientY <= regularRect.bottom) {
+                          currentTargetContainer = sourceRegularContainer;
                       } else {
-                          currentTargetContainer = regularTabsContainer;
+                          // Fallback for empty space between containers
+                          if (sourcePinnedContainer && sourceRegularContainer) {
+                              // If cursor is above the start of regular container, it's pinned territory
+                              if (e.clientY < regularRect.top) {
+                                  currentTargetContainer = sourcePinnedContainer;
+                              } else {
+                                  currentTargetContainer = sourceRegularContainer;
+                              }
+                          } else if (sourcePinnedContainer) {
+                              currentTargetContainer = sourcePinnedContainer;
+                          } else if (sourceRegularContainer) {
+                              currentTargetContainer = sourceRegularContainer;
+                          }
                       }
-                    }
                   }
-                  
+
                   // If we found a valid container, position the placeholder there
                   if (currentTargetContainer) {
                       if (lastContainer !== currentTargetContainer) {
@@ -1008,33 +1023,35 @@ export const workspacesSection = {
                   }
 
                   // Animate other tabs in the placeholder's container to make space
-                  getAllTabProxies().forEach(tab => {
-                    if (tab === dragTab) return;
+                  getAllWorkspaces().forEach(ws => { 
+                      ws.querySelectorAll('.haven-tab').forEach(tab => {
+                        if (tab === dragTab) return;
 
-                    // Reset transform if tab is not in the same container as the placeholder
-                    if (tab.parentNode !== placeholder.parentNode) {
-                      tab.style.transform = '';
-                      return;
-                    }
+                        // Reset transform if tab is not in the same container as the placeholder
+                        if (!placeholder.parentNode || tab.parentNode !== placeholder.parentNode) {
+                          tab.style.transform = '';
+                          return;
+                        }
 
-                    const tabRect = tab.getBoundingClientRect();
-                    const placeholderRect = placeholder.getBoundingClientRect();
-                    const isTouching = !(placeholderRect.bottom < tabRect.top + 5 || placeholderRect.top > tabRect.bottom - 5);
-                    
-                    if (isTouching) {
-                      if (!tab.style.transition) {
-                        tab.style.transition = 'transform 0.15s cubic-bezier(.4,1.3,.5,1)';
-                      }
-                      if (tabRect.top < placeholderRect.top) { // tab is above placeholder
-                        const moveDistance = Math.min(15, Math.abs(tabRect.bottom - placeholderRect.top));
-                        tab.style.transform = `translateY(-${moveDistance}px)`;
-                      } else if (tabRect.top > placeholderRect.top) { // tab is below placeholder
-                        const moveDistance = Math.min(15, Math.abs(tabRect.top - placeholderRect.bottom));
-                        tab.style.transform = `translateY(${moveDistance}px)`;
-                      }
-                    } else {
-                      tab.style.transform = '';
-                    }
+                        const tabRect = tab.getBoundingClientRect();
+                        const placeholderRect = placeholder.getBoundingClientRect();
+                        const isTouching = !(placeholderRect.bottom < tabRect.top + 5 || placeholderRect.top > tabRect.bottom - 5);
+                        
+                        if (isTouching) {
+                          if (!tab.style.transition) {
+                            tab.style.transition = 'transform 0.15s cubic-bezier(.4,1.3,.5,1)';
+                          }
+                          if (tabRect.top < placeholderRect.top) { // tab is above placeholder
+                            const moveDistance = Math.min(15, Math.abs(tabRect.bottom - placeholderRect.top));
+                            tab.style.transform = `translateY(-${moveDistance}px)`;
+                          } else if (tabRect.top > placeholderRect.top) { // tab is below placeholder
+                            const moveDistance = Math.min(15, Math.abs(tabRect.top - placeholderRect.bottom));
+                            tab.style.transform = `translateY(${moveDistance}px)`;
+                          }
+                        } else {
+                          tab.style.transform = '';
+                        }
+                      });
                   });
                 }
               }
@@ -1056,10 +1073,30 @@ export const workspacesSection = {
                     currentDropTarget.classList.remove('tab-drop-target');
 
                     const elementUnderCursor = document.elementFromPoint(e.clientX, e.clientY);
-                    const targetPinnedContainer = elementUnderCursor ? elementUnderCursor.closest('.haven-workspace-pinned-tabs') : null;
-                    const shouldBePinned = !!targetPinnedContainer;
+                    const targetPinnedContainer = currentDropTarget.querySelector('.haven-workspace-pinned-tabs');
+                    const targetRegularContainer = currentDropTarget.querySelector('.haven-workspace-regular-tabs');
 
-                    currentDropTarget.classList.remove('tab-drop-target');
+                    let shouldBePinned = false;
+                    const isOverPinned = !!(elementUnderCursor && elementUnderCursor.closest('.haven-workspace-pinned-tabs'));
+                    const isOverRegular = !!(elementUnderCursor && elementUnderCursor.closest('.haven-workspace-regular-tabs'));
+
+                    if (isOverPinned) {
+                        shouldBePinned = true;
+                    } else if (isOverRegular) {
+                        shouldBePinned = false;
+                    } else {
+                        // Fallback for when not dropping directly on a container (e.g., workspace header)
+                        if (targetPinnedContainer && !targetRegularContainer) {
+                            shouldBePinned = true; // Only pinned exists, so must be pinned.
+                        } else if (targetPinnedContainer && targetRegularContainer) {
+                            const regularRect = targetRegularContainer.getBoundingClientRect();
+                            // If cursor is above the start of the regular container, it's pinned.
+                            shouldBePinned = (e.clientY < regularRect.top);
+                        } else {
+                            // Only regular exists or neither exist, so not pinned.
+                            shouldBePinned = false;
+                        }
+                    }
 
                     if (tabToMove && typeof gZenWorkspaces?.moveTabToWorkspace === 'function') {
                         try{
@@ -1277,4 +1314,3 @@ if (window.haven && typeof window.haven.destroyUI === 'function') {
     return originalDestroyUI.apply(this, args);
   };
 }
-
