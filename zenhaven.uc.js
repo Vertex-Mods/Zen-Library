@@ -269,16 +269,44 @@ import { historySection } from "./sections/history.js";
       if (existingExitButton) {
         existingExitButton.remove();
       }
+      // Remove existing settings button if it exists
+      const existingSettingsButton = this.elements.customToolbar.querySelector("#library-settings-button");
+      if (existingSettingsButton) {
+        existingSettingsButton.remove();
+      }
 
-      const exitButton = parseElement(`<div id="haven-exit-button">
-        <span style="display: flex; align-items: center; gap: 6px;">← Exit</span>
-      </div>`);
+      // Create a native XUL toolbarbutton for exit
+      const xulNS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
+      const exitButton = document.createElementNS(xulNS, "toolbarbutton");
+      exitButton.setAttribute("id", "library-exit-button");
+      exitButton.setAttribute("class", "toolbarbutton-1");
+      exitButton.setAttribute("tooltiptext", "Exit Library");
+      exitButton.setAttribute("style", `
+        --list-style-image: url('back.svg');
+      `);
 
       exitButton.addEventListener("click", () => {
         window.haven.closeHaven();
       });
 
       this.elements.customToolbar.appendChild(exitButton);
+
+      // Create a native XUL toolbarbutton for settings
+      const settingsButton = document.createElementNS(xulNS, "toolbarbutton");
+      settingsButton.setAttribute("id", "library-settings-button");
+      settingsButton.setAttribute("class", "toolbarbutton-1");
+      settingsButton.setAttribute("tooltiptext", "Library Settings");
+      settingsButton.setAttribute("style", `
+        --list-style-image: url('chrome://global/skin/icons/settings.svg');
+      `);
+
+      settingsButton.addEventListener("click", () => {
+        // Placeholder: open settings dialog or panel
+        alert("Library settings clicked!");
+      });
+
+      // Insert settings button after exit button
+      exitButton.after(settingsButton);
     }
 
     activateSection(id) {
