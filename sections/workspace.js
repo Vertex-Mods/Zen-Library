@@ -925,6 +925,7 @@ export const workspacesSection = {
                     const midpoint = sourceRect.right + (rightRect.left - sourceRect.right) / 2;
                     if (e.clientX > midpoint) {
                         newX = e.clientX - dragOffsetX; // Unsnap and follow mouse X
+                        //To-do: animate this, with somthing snappy
                     }
                 }
 
