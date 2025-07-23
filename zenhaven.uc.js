@@ -72,7 +72,7 @@ import { historySection } from "./sections/history.js";
       console.log("[ZenHaven] Setting up UI...");
       this.elements.toolbox = document.getElementById("navigator-toolbox");
       this.elements.navbar = document.getElementById("nav-bar");
-      
+
       if (!this.elements.toolbox) {
         console.log("[ZenHaven] Toolbox not found.");
         return;
@@ -81,7 +81,8 @@ import { historySection } from "./sections/history.js";
       console.log("[ZenHaven] Setting up Haven UI");
 
       // Create container for new UI elements
-      const customContainer = parseElement(`<div id="zen-library-sidebar" style="display: none;">
+      const customContainer =
+        parseElement(`<div id="zen-library-sidebar" style="display: none;">
             <div id="toolbar-header">
               <span class="header-text">Library</span>
             </div>
@@ -97,7 +98,7 @@ import { historySection } from "./sections/history.js";
       this.sections.forEach((section) => this.createNavButton(section));
 
       // Create exit button (always visible)
-      this.createExitButton();
+      this.createLibraryFooter();
 
       // Handle bottom buttons
       this.elements.bottomButtons = document.getElementById(
@@ -146,14 +147,14 @@ import { historySection } from "./sections/history.js";
       if (!this.uiInitialized) {
         this.initializeUI();
       }
-      
+
       if (this.isOpen) return;
-      
+
       console.log("[ZenHaven] Opening Haven");
-      
+
       // Add library attribute to body
       document.body.setAttribute("library", "true");
-      
+
       // Hide all children except the toolbox itself and our custom toolbar
       if (this.elements.toolbox) {
         Array.from(this.elements.toolbox.children).forEach((child) => {
@@ -162,26 +163,30 @@ import { historySection } from "./sections/history.js";
           }
         });
       }
-      
+
       // Show custom toolbar
       if (this.elements.customToolbar) {
-        this.elements.customToolbar.style.setProperty("display", "flex", "important");
+        this.elements.customToolbar.style.setProperty(
+          "display",
+          "flex",
+          "important"
+        );
       }
-      
+
       // Auto-open workspace section
       this.activateSection("workspaces");
-      
+
       this.isOpen = true;
     }
 
     closeHaven() {
       if (!this.isOpen) return;
-      
+
       console.log("[ZenHaven] Closing Haven");
-      
+
       // Remove library attribute from body
       document.body.removeAttribute("library");
-      
+
       // Show all original toolbox children
       if (this.elements.toolbox) {
         Array.from(this.elements.toolbox.children).forEach((child) => {
@@ -190,15 +195,19 @@ import { historySection } from "./sections/history.js";
           }
         });
       }
-      
+
       // Hide custom toolbar
       if (this.elements.customToolbar) {
-        this.elements.customToolbar.style.setProperty("display", "none", "important");
+        this.elements.customToolbar.style.setProperty(
+          "display",
+          "none",
+          "important"
+        );
       }
-      
+
       // Deactivate current section
       this.deactivateCurrentSection();
-      
+
       this.isOpen = false;
     }
 
@@ -263,50 +272,53 @@ import { historySection } from "./sections/history.js";
       this.elements.functionsContainer.appendChild(customDiv);
     }
 
-    createExitButton() {
+    createLibraryFooter() {
       // Remove existing exit button if it exists
-      const existingExitButton = this.elements.customToolbar.querySelector("#haven-exit-button");
+      const existingExitButton = this.elements.customToolbar.querySelector(
+        "#library-exit-button"
+      );
       if (existingExitButton) {
         existingExitButton.remove();
       }
       // Remove existing settings button if it exists
-      const existingSettingsButton = this.elements.customToolbar.querySelector("#library-settings-button");
+      const existingSettingsButton = this.elements.customToolbar.querySelector(
+        "#library-settings-button"
+      );
       if (existingSettingsButton) {
         existingSettingsButton.remove();
       }
 
-      // Create a native XUL toolbarbutton for exit
-      const xulNS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
-      const exitButton = document.createElementNS(xulNS, "toolbarbutton");
-      exitButton.setAttribute("id", "library-exit-button");
-      exitButton.setAttribute("class", "toolbarbutton-1");
-      exitButton.setAttribute("tooltiptext", "Exit Library");
-      exitButton.setAttribute("style", `
-        --list-style-image: url('back.svg');
-      `);
+      const toolbarFooterXML = parseElement(
+        `
+        <hbox id="library-sidebar-footer">
+          <toolbarbutton 
+            class="toolbarbutton-1"
+            id="library-exit-button"
+            tooltiptext="Exit Library"
+            image="chrome://browser/skin/zen-icons/back.svg"
+          />  
+          <toolbarbutton 
+            class="toolbarbutton-1"
+            id="library-settings-button"
+            tooltiptext="Library Settings"
+            image="chrome://browser/skin/zen-icons/settings.svg"
+          />
+        </hbox>`,
+        "xul"
+      );
 
-      exitButton.addEventListener("click", () => {
-        window.haven.closeHaven();
-      });
+      toolbarFooterXML
+        .querySelector("#library-exit-button")
+        .addEventListener("click", () => {
+          window.haven.closeHaven();
+        });
+      toolbarFooterXML
+        .querySelector("#library-settings-button")
+        .addEventListener("click", () => {
+          alert("Library settings clicked!");
+        });
 
-      this.elements.customToolbar.appendChild(exitButton);
-
-      // Create a native XUL toolbarbutton for settings
-      const settingsButton = document.createElementNS(xulNS, "toolbarbutton");
-      settingsButton.setAttribute("id", "library-settings-button");
-      settingsButton.setAttribute("class", "toolbarbutton-1");
-      settingsButton.setAttribute("tooltiptext", "Library Settings");
-      settingsButton.setAttribute("style", `
-        --list-style-image: url('chrome://global/skin/icons/settings.svg');
-      `);
-
-      settingsButton.addEventListener("click", () => {
-        // Placeholder: open settings dialog or panel
-        alert("Library settings clicked!");
-      });
-
-      // Insert settings button after exit button
-      exitButton.after(settingsButton);
+      this.elements.customToolbar.appendChild(toolbarFooterXML);
     }
 
     activateSection(id) {
@@ -357,8 +369,6 @@ import { historySection } from "./sections/history.js";
         delete oldSection.contentElement;
       }
 
-
-
       Array.from(this.elements.havenContainer.attributes)
         .filter((attr) => attr.name.startsWith("haven-"))
         .forEach((attr) =>
@@ -406,8 +416,6 @@ import { historySection } from "./sections/history.js";
     };
     UC_API.Utils.createWidget(widget);
   }
-
-
 
   function startup() {
     console.log("[ZenHaven] Startup sequence initiated.");

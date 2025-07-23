@@ -81,44 +81,28 @@ body[library="true"] {
   flex-direction: column;
   box-shadow: 4px 0 4px -2px rgba(0, 0, 0, 0.35);
 
-  #library-exit-button {
-    list-style-image: url("chrome://browser/skin/zen-icons/back.svg") !important;
-    height: fit-content;
-    width: fit-content;
-    padding: 7px !important;
-    border-radius: 5px !important;
+  #library-sidebar-footer {
     display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    font-size: 12px;
-    color: var(--toolbar-color) !important;
-    transition: background-color 0.2s !important;
-    margin-bottom: 5px !important;
-    -moz-appearance: none !important;
+    flex-direction: row;
+    justify-content: space-between;
+    .toolbarbutton-1 {
+      height: fit-content;
+      width: fit-content;
+      padding: 7px !important;
+      border-radius: 5px !important;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 12px;
+      color: var(--toolbar-color) !important;
+      transition: background-color 0.2s !important;
+      margin-bottom: 5px !important;
+      -moz-appearance: none !important;
 
-    &:hover {
-      background: var(--toolbar-bgcolor);
-    }
-  }
-  #library-settings-button {
-    list-style-image: url("chrome://browser/skin/zen-icons/back.svg") !important;
-    height: fit-content;
-    width: fit-content;
-    padding: 7px !important;
-    border-radius: 5px !important;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    font-size: 12px;
-    color: var(--toolbar-color) !important;
-    transition: background-color 0.2s !important;
-    margin-bottom: 5px !important;
-    -moz-appearance: none !important;
-
-    &:hover {
-      background: var(--toolbar-bgcolor);
+      &:hover {
+        background: var(--toolbar-bgcolor);
+      }
     }
   }
 }
