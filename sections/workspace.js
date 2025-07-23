@@ -908,27 +908,28 @@ export const workspacesSection = {
 
               function onDragMove(e) {
                 if (!isDragging || !dragTab) return;
+
                 // Move the tab visually with the mouse
                 const newY = e.clientY - dragMouseOffset;
                 const newX = e.clientX - dragOffsetX;
                 dragTab.style.top = `${newY}px`;
                 dragTab.style.left = `${newX}px`;
-              
-                // Check for dragging over a different workspace
+
                 const elementUnderCursor = document.elementFromPoint(e.clientX, e.clientY);
                 const hoveredWorkspaceEl = elementUnderCursor ? elementUnderCursor.closest('.haven-workspace') : null;
-              
+
                 // Clean up previous target highlight
                 const previousTarget = innerContainer.querySelector('.tab-drop-target');
                 if (previousTarget && previousTarget !== hoveredWorkspaceEl) {
                   previousTarget.classList.remove('tab-drop-target');
                 }
-              
+
                 if (hoveredWorkspaceEl && hoveredWorkspaceEl.dataset.uuid !== dragTab.dataset.workspaceUuid) {
                   // We are over a different workspace. Highlight it and hide the placeholder.
                   hoveredWorkspaceEl.classList.add('tab-drop-target');
                   placeholder.style.display = 'none';
-              
+                  lastContainer = null; // We are no longer in a specific container
+
                   // Hide individual tab movements in the original workspace
                   getAllTabProxies().forEach(tab => {
                     if (tab !== dragTab) {
@@ -936,67 +937,72 @@ export const workspacesSection = {
                     }
                   });
                 } else {
-                  // We are over the original workspace (or nothing). Show placeholder and do reordering.
+                  // We are over the original workspace (or empty space). Show placeholder and do reordering.
                   if (hoveredWorkspaceEl) {
                     hoveredWorkspaceEl.classList.remove('tab-drop-target');
                   }
                   placeholder.style.display = '';
-              
-                  // --- Original intra-workspace drag logic ---
-                  const section = dragTab._dragSection;
-                  const sectionContainer = section === 'pinned' ? pinnedTabsContainer : regularTabsContainer;
-                  const otherTabs = Array.from(sectionContainer.querySelectorAll('.haven-tab')).filter(tab => tab !== dragTab);
-              
-                  let insertBefore = null;
-                  for (const tab of otherTabs) {
-                    const tabRect = tab.getBoundingClientRect();
-                    const draggedRect = dragTab.getBoundingClientRect();
-                    const overlapThreshold = 5;
-                    const isTouching = !(draggedRect.bottom < tabRect.top + overlapThreshold ||
-                      draggedRect.top > tabRect.bottom - overlapThreshold);
-              
-                    if (isTouching) {
-                      const draggedCenter = draggedRect.top + draggedRect.height / 2;
-                      const tabCenter = tabRect.top + tabRect.height / 2;
-              
-                      if (draggedCenter < tabCenter) {
-                        insertBefore = tab;
-                        break;
+
+                  // --- NEW INTRA-WORKSPACE LOGIC ---
+                  let currentTargetContainer = null;
+                  const contentDiv = pinnedTabsContainer.parentNode;
+                  const contentRect = contentDiv.getBoundingClientRect();
+
+                  // Determine which container (pinned/regular) the cursor is over
+                  if (e.clientX >= contentRect.left && e.clientX <= contentRect.right && e.clientY >= contentRect.top && e.clientY <= contentRect.bottom) {
+                    const pinnedRect = pinnedTabsContainer.getBoundingClientRect();
+                    const regularRect = regularTabsContainer.getBoundingClientRect();
+
+                    // Prioritize the container the cursor is physically inside
+                    if (pinnedTabsContainer.hasChildNodes() && e.clientY >= pinnedRect.top && e.clientY <= pinnedRect.bottom) {
+                      currentTargetContainer = pinnedTabsContainer;
+                    } else if (regularTabsContainer.hasChildNodes() && e.clientY >= regularRect.top && e.clientY <= regularRect.bottom) {
+                      currentTargetContainer = regularTabsContainer;
+                    } else {
+                      // Fallback for empty space between containers
+                      if (pinnedTabsContainer.hasChildNodes() && e.clientY < regularRect.top) {
+                          currentTargetContainer = pinnedTabsContainer;
                       } else {
-                        insertBefore = tab.nextElementSibling;
+                          currentTargetContainer = regularTabsContainer;
                       }
                     }
                   }
-              
-                  if (insertBefore) {
-                    sectionContainer.insertBefore(placeholder, insertBefore);
-                  } else {
-                    sectionContainer.appendChild(placeholder);
+                  
+                  // If we found a valid container, position the placeholder there
+                  if (currentTargetContainer) {
+                      if (lastContainer !== currentTargetContainer) {
+                          lastContainer = currentTargetContainer;
+                      }
+                      const afterElement = getTabAfterElement(currentTargetContainer, e.clientY);
+                      if (afterElement) {
+                          currentTargetContainer.insertBefore(placeholder, afterElement);
+                      } else {
+                          currentTargetContainer.appendChild(placeholder);
+                      }
                   }
-              
-                  // Animate other tabs in the same container to make space
+
+                  // Animate other tabs in the placeholder's container to make space
                   getAllTabProxies().forEach(tab => {
                     if (tab === dragTab) return;
-              
+
+                    // Reset transform if tab is not in the same container as the placeholder
                     if (tab.parentNode !== placeholder.parentNode) {
                       tab.style.transform = '';
                       return;
                     }
-              
+
                     const tabRect = tab.getBoundingClientRect();
                     const placeholderRect = placeholder.getBoundingClientRect();
-                    const overlapThreshold = 5;
-                    const isTouching = !(placeholderRect.bottom < tabRect.top + overlapThreshold ||
-                      placeholderRect.top > tabRect.bottom - overlapThreshold);
-              
+                    const isTouching = !(placeholderRect.bottom < tabRect.top + 5 || placeholderRect.top > tabRect.bottom - 5);
+                    
                     if (isTouching) {
                       if (!tab.style.transition) {
                         tab.style.transition = 'transform 0.15s cubic-bezier(.4,1.3,.5,1)';
                       }
-                      if (tabRect.top < placeholderRect.top) {
+                      if (tabRect.top < placeholderRect.top) { // tab is above placeholder
                         const moveDistance = Math.min(15, Math.abs(tabRect.bottom - placeholderRect.top));
                         tab.style.transform = `translateY(-${moveDistance}px)`;
-                      } else if (tabRect.top > placeholderRect.top) {
+                      } else if (tabRect.top > placeholderRect.top) { // tab is below placeholder
                         const moveDistance = Math.min(15, Math.abs(tabRect.top - placeholderRect.bottom));
                         tab.style.transform = `translateY(${moveDistance}px)`;
                       }
