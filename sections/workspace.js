@@ -909,9 +909,35 @@ export const workspacesSection = {
               function onDragMove(e) {
                 if (!isDragging || !dragTab) return;
 
-                // Move the tab visually with the mouse
-                const newY = e.clientY - dragMouseOffset;
-                const newX = e.clientX - dragOffsetX;
+                const sourceWorkspaceEl = innerContainer.querySelector(`.haven-workspace[data-uuid="${dragTab.dataset.workspaceUuid}"]`);
+                const allWorkspacesList = getAllWorkspaces();
+                const sourceIndex = allWorkspacesList.findIndex(ws => ws === sourceWorkspaceEl);
+                const leftNeighbor = sourceIndex > 0 ? allWorkspacesList[sourceIndex - 1] : null;
+                const rightNeighbor = sourceIndex < allWorkspacesList.length - 1 ? allWorkspacesList[sourceIndex + 1] : null;
+
+                let newX = dragStartX; // Snap to original X position by default
+                const newY = e.clientY - dragMouseOffset; // Y axis always follows mouse
+
+                // Check for crossing the 50% threshold to a neighbor workspace
+                if (rightNeighbor) {
+                    const sourceRect = sourceWorkspaceEl.getBoundingClientRect();
+                    const rightRect = rightNeighbor.getBoundingClientRect();
+                    const midpoint = sourceRect.right + (rightRect.left - sourceRect.right) / 2;
+                    if (e.clientX > midpoint) {
+                        newX = e.clientX - dragOffsetX; // Unsnap and follow mouse X
+                    }
+                }
+
+                if (leftNeighbor) {
+                    const sourceRect = sourceWorkspaceEl.getBoundingClientRect();
+                    const leftRect = leftNeighbor.getBoundingClientRect();
+                    const midpoint = leftRect.right + (sourceRect.left - leftRect.right) / 2;
+                    if (e.clientX < midpoint) {
+                        newX = e.clientX - dragOffsetX; // Unsnap and follow mouse X
+                    }
+                }
+                
+                // Move the tab visually
                 dragTab.style.top = `${newY}px`;
                 dragTab.style.left = `${newX}px`;
 
