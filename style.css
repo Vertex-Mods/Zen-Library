@@ -240,7 +240,6 @@ body[library="true"] {
 
 :root:has(#navigator-toolbox) {
   #zen-haven-container {
-    min-width: 60vw !important;
     flex: 1 0 !important;
     height: unset !important;
     overflow: hidden;

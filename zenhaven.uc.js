@@ -8,6 +8,8 @@ import { parseElement } from "./utils/parse.js";
 import { downloadsSection } from "./sections/download.js";
 import { workspacesSection } from "./sections/workspace.js";
 import { historySection } from "./sections/history.js";
+import("./utils/motion.sys.mjs");
+
 // import { notesSection } from "./sections/notes.js";
 
 (function () {
@@ -19,7 +21,23 @@ import { historySection } from "./sections/history.js";
   console.log("[ZenHaven] Script loaded");
 
   class ZenHaven {
-    constructor() {
+    Motion = window.Motion;
+
+    topLevelAnimation = {
+      entry: {
+        initial: { width: "0px" },
+        animate: { minwidth: "0" },
+        transition: { duration: 0.3 },
+      },
+      exit: {
+        initial: { width: "60vw" },
+        animate: { width: "0px" },
+        transition: { duration: 0.3 },
+      },
+    };
+
+    constructor(globalWindow) {
+      this.globalWindow = globalWindow;
       this.sections = new Map();
       this.activeSectionId = null;
       this.uiInitialized = false;
@@ -119,7 +137,7 @@ import { historySection } from "./sections/history.js";
       const sidebarSplitter = document.getElementById("zen-sidebar-splitter");
       if (sidebarSplitter) {
         const sidebarContainer = parseElement(
-          `<div id="zen-haven-container" style="height: 100%; width: 60vw; position: relative; display: none; flex-direction: column;"></div>`
+          `<div id="zen-haven-container"></div>`
         );
         this.elements.havenContainer = sidebarContainer;
         const tabbox = document.getElementById("tabbrowser-tabbox");
@@ -143,10 +161,33 @@ import { historySection } from "./sections/history.js";
       console.log("[ZenHaven] UI setup complete");
     }
 
+    showHaven() {
+      const el = this.elements.havenContainer;
+      if (!this.Motion || !el) return;
+
+      el.style.display = "flex";
+      this.Motion.animate(
+        el,
+        this.topLevelAnimation.entry.animate,
+        this.topLevelAnimation.entry.transition
+      );
+    }
+
+    hideHaven() {
+      const el = this.elements.havenContainer;
+      if (!this.Motion || !el) return;
+
+      this.Motion.animate(el, this.topLevelAnimation.exit.animate, {
+        ...this.topLevelAnimation.exit.transition,
+        complete: () => (el.style.display = "none"),
+      });
+    }
+
     openHaven() {
       if (!this.uiInitialized) {
         this.initializeUI();
       }
+      this.showHaven();
 
       if (this.isOpen) return;
 
@@ -174,6 +215,9 @@ import { historySection } from "./sections/history.js";
       }
 
       // Auto-open workspace section
+      console.log("Showing Library");
+      this.showHaven();
+      console.log("animation played.");
       this.activateSection("workspaces");
 
       this.isOpen = true;
@@ -207,46 +251,10 @@ import { historySection } from "./sections/history.js";
 
       // Deactivate current section
       this.deactivateCurrentSection();
-
+      console.log("Hiding Library");
+      this.hideHaven();
+      console.log("animation played.");
       this.isOpen = false;
-    }
-
-    destroyUI() {
-      console.log("[ZenHaven] Destroying UI");
-
-      // Restore bottom buttons
-      if (this.elements.bottomButtons && this.elements.mediaToolbar) {
-        this.elements.mediaToolbar.parentNode.insertBefore(
-          this.elements.bottomButtons,
-          this.elements.mediaToolbar.nextSibling
-        );
-        const workspacesButton = this.elements.bottomButtons.querySelector(
-          "#zen-workspaces-button"
-        );
-        if (workspacesButton) {
-          workspacesButton.style.display = "";
-        }
-        console.log("[ZenHaven] Bottom buttons restored after media controls");
-      }
-
-      // Show all original toolbox children
-      if (this.elements.toolbox) {
-        Array.from(this.elements.toolbox.children).forEach((child) => {
-          if (child.id !== "zen-library-sidebar") {
-            child.style.display = "";
-          }
-        });
-      }
-
-      // Remove our custom elements
-      this.elements.customToolbar?.remove();
-      this.elements.havenContainer?.remove();
-
-      // Reset state
-      this.activeSectionId = null;
-      this.uiInitialized = false;
-      this.isOpen = false;
-      Object.keys(this.elements).forEach((key) => (this.elements[key] = null));
     }
 
     createNavButton(section) {
@@ -344,7 +352,6 @@ import { historySection } from "./sections/history.js";
 
         this.elements.havenContainer.setAttribute(`haven-${id}`, "");
         this.elements.havenContainer.appendChild(contentElement);
-        this.elements.havenContainer.style.display = "flex";
 
         document.getElementById(`haven-${id}-button`)?.classList.add("active");
         this.activeSectionId = id;
@@ -375,7 +382,6 @@ import { historySection } from "./sections/history.js";
           this.elements.havenContainer.removeAttribute(attr.name)
         );
 
-      this.elements.havenContainer.style.display = "none";
 
       document
         .getElementById(`haven-${this.activeSectionId}-button`)
