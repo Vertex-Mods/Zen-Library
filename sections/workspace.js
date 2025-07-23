@@ -1019,13 +1019,22 @@ export const workspacesSection = {
 
                 if (dropOnNewWorkspace) {
                     // --- Dropped on a new workspace ---
-                    const tabToMove = dragTab.tabEl;
+                    const tabToMove = tabEl;
                     const targetUuid = currentDropTarget.dataset.uuid;
+                    currentDropTarget.classList.remove('tab-drop-target');
+
+                    const elementUnderCursor = document.elementFromPoint(e.clientX, e.clientY);
+                    const targetPinnedContainer = elementUnderCursor ? elementUnderCursor.closest('.haven-workspace-pinned-tabs') : null;
+                    const shouldBePinned = !!targetPinnedContainer;
 
                     currentDropTarget.classList.remove('tab-drop-target');
 
                     if (tabToMove && typeof gZenWorkspaces?.moveTabToWorkspace === 'function') {
-                        gZenWorkspaces.moveTabToWorkspace(tabToMove, targetUuid);
+                        try{
+                          tabEl.setProperty('pinned', shouldBePinned)
+                          tabEl.pinned = shouldBePinned
+                        }catch(e){ console.error(e) }
+                        gZenWorkspaces.moveTabToWorkspace(tabEl, targetUuid);
 
                         // Restore tab's styles before moving the DOM proxy
                         dragTab.style.position = '';
@@ -1041,10 +1050,9 @@ export const workspacesSection = {
                         dragTab.style.transform = '';
 
                         // Find or create the correct container and append the tab proxy
-                        const isPinned = tabToMove.hasAttribute('pinned');
                         const contentDiv = currentDropTarget.querySelector('.haven-workspace-content');
                         let newContainer;
-                        if (isPinned) {
+                        if (shouldBePinned) {
                             newContainer = currentDropTarget.querySelector('.haven-workspace-pinned-tabs');
                             if (!newContainer) {
                                 newContainer = parseElement(`<div class="haven-workspace-pinned-tabs"></div>`);
@@ -1072,11 +1080,6 @@ export const workspacesSection = {
                         tab.style.transition = '';
                         tab.style.transform = '';
                     }));
-                    isDragging = false;
-                    dragTab = null;
-                    placeholder = null;
-                    window.removeEventListener('mousemove', onDragMove);
-                    window.removeEventListener('mouseup', onDragEnd);
 
                 } else {
                     // --- Dropped within the same workspace (original logic) ---
@@ -1197,12 +1200,12 @@ export const workspacesSection = {
                     });
                     // --- Always sync the custom UI with the real tab order after a move ---
                     setTimeout(syncCustomUIWithRealTabs, 0);
-                    isDragging = false;
-                    dragTab = null;
-                    placeholder = null;
-                    window.removeEventListener('mousemove', onDragMove);
-                    window.removeEventListener('mouseup', onDragEnd);
                 }
+                isDragging = false;
+                dragTab = null;
+                placeholder = null;
+                window.removeEventListener('mousemove', onDragMove);
+                window.removeEventListener('mouseup', onDragEnd);
               }
               // --- End custom drag-and-drop logic ---
               if (tabEl.hasAttribute("pinned")) {
