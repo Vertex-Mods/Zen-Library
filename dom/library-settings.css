@@ -1,0 +1,34 @@
+@namespace html 'http://www.w3.org/1999/xhtml';
+@namespace xul 'http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul';
+
+#main-content {
+  background: var(--zen-themed-toolbar-bg-transparent);
+  appearance: -moz-window-titlebar;
+
+  user-select: none;
+  touch-action: none;
+  pointer-events: auto;
+
+  width: 100%;
+  height: 100%;
+
+  overflow-x: hidden;
+  overflow-y: auto;
+
+  gap: 2rem;
+  padding: 1rem;
+}
+
+.section {
+  width: 100%;
+  position: relative;
+  gap: 0.6rem;
+
+  .section-content {
+    width: 100%;
+    background: var(--zen-toolbar-element-bg);
+    border-radius: 6px;
+    padding: 1em;
+    font-size: 1.1em;
+  }
+}

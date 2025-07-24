@@ -312,10 +312,20 @@ import { historySection } from "./sections/history.js";
         .addEventListener("click", () => {
           window.haven.closeHaven();
         });
+
+      function openBlankWindow() {
+        window.openDialog(
+          "chrome://userscripts/content/zen-library/dom/library-settings.xhtml",
+          "Library Settings",
+          "centerscreen,chrome,dialog=no,resizable=no,titlebar"
+        );
+      }
+      
       toolbarFooterXML
         .querySelector("#library-settings-button")
         .addEventListener("click", () => {
-          alert("Library settings clicked!");
+          openBlankWindow();
+          console.log("Blank window opened via button click");
         });
 
       this.elements.customToolbar.appendChild(toolbarFooterXML);
