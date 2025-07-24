@@ -75,6 +75,25 @@ body[library="true"] {
   }
 }
 
+.haven-tab-group .haven-tab-group-header {
+  cursor: pointer;
+}
+
+.haven-tab-group .haven-tab-group-collapse-icon {
+  transition: transform 0.2s ease-in-out;
+  display: inline-flex;
+  align-items: center;
+  margin-right: 4px; 
+}
+
+.haven-tab-group.collapsed .haven-tab-group-collapse-icon {
+  transform: rotate(-90deg);
+}
+
+.haven-tab-group.collapsed .haven-tab-group-tabs {
+  display: none;
+}
+
 #zen-library-sidebar {
   padding-inline: 5px !important;
   height: 100vh;

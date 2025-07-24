@@ -628,12 +628,25 @@ export const workspacesSection = {
         
                     const groupProxy = parseElement(`
                         <div class="haven-tab-group">
-                            <div class="haven-tab-group-header" style="${groupColor ? `border-left-color: var(--identity-color-${groupColor});` : ''}">
+                            <div class="haven-tab-group-header" style="${groupColor ? `border-left-color: var(--identity-color-${groupColor});` : ''}" title="Click to collapse/expand">
+                                <span class="haven-tab-group-collapse-icon">
+                                    <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M12.78 5.22a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L3.22 6.28a.75.75 0 0 1 1.06-1.06L8 8.94l3.72-3.72a.75.75 0 0 1 1.06 0Z"/></svg>
+                                </span>
                                 <span class="haven-tab-group-name">${groupName}</span>
                             </div>
                             <div class="haven-tab-group-tabs"></div>
                         </div>
                     `);
+
+                    const groupHeader = groupProxy.querySelector('.haven-tab-group-header');
+                    groupHeader.addEventListener('click', (e) => {
+                        if (window.getSelection().toString()) {
+                            return;
+                        }
+                        e.stopPropagation();
+                        groupProxy.classList.toggle('collapsed');
+                    });
+                    
                     const groupTabsContainer = groupProxy.querySelector('.haven-tab-group-tabs');
                     
                     for (const tabEl of groupEl.tabs) {
