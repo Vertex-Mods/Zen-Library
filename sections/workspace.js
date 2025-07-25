@@ -303,18 +303,8 @@ export const workspacesSection = {
             <path d="M8 3V13M3 8H13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
           </svg></div>`);
     addWorkspaceButton.addEventListener("click", () => {
-      try {
-        if (typeof gZenWorkspaces?.openWorkspaceCreation === "function") {
-          window.haven.destroyUI();
+          window.haven.closeHaven();
           gZenWorkspaces.openWorkspaceCreation();
-        } else {
-          throw new Error(
-            "gZenWorkspaces.openWorkspaceCreation is not available",
-          );
-        }
-      } catch (error) {
-        console.error("[ZenHaven] Error opening workspace dialog:", error);
-      }
     });
 
     if (typeof gZenWorkspaces === "undefined") {
@@ -585,7 +575,7 @@ export const workspacesSection = {
           // Proxy switch workspace
           menuPopup.querySelector(".switch").addEventListener("click", async () => {
             await gZenWorkspaces.changeWorkspaceWithID(uuid);
-            window.haven.destroyUI();
+            window.haven.closeHaven();
           });
 
           // Proxy delete workspace
@@ -1302,16 +1292,3 @@ export const workspacesSection = {
     return container;
   },
 };
-
-// Hook into UI destroy/cleanup (example, adapt to your actual destroy logic)
-if (window.haven && typeof window.haven.destroyUI === 'function') {
-  const originalDestroyUI = window.haven.destroyUI;
-  window.haven.destroyUI = function(...args) {
-    // Find the workspaces container and call cleanup
-    const container = document.getElementById('haven-workspace-outer-container')?.parentNode;
-    if (container && typeof container._restoreZenWorkspaces === 'function') {
-      container._restoreZenWorkspaces();
-    }
-    return originalDestroyUI.apply(this, args);
-  };
-}
