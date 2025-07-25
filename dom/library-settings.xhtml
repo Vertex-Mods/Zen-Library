@@ -17,18 +17,16 @@
   </head>
 
   <html:body xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
-    <hbox flex="1">
+    <hbox flex="1" id="main-container" class="main-container">
       <!-- Sidebar -->
       <vbox id="sidebar" >
         <html:h3 data-l10n-id="library-settings-sidebar-title" />
-        <richlistbox id="sidebar-sections" flex="1">
-          <richlistitem label="General" value="section-general"/>
-          <richlistitem label="Modules" value="section-modules"/>
-        </richlistbox>
+          <toolbarbutton class="toolbarbutton-1 sidebar-tabbuton" id="general-sidebar-tabbutton" label="General" tooltip="General Settings"/>
+          <toolbarbutton class="toolbarbutton-1 sidebar-tabbuton" id="modules-sidebar-tabbutton" label="Modules" tooltip="Modules Settings"/>
       </vbox>
 
       <!-- Main Content Area -->
-      <vbox id="main-content" flex="1">
+      <vbox id="settings-content" flex="1">
         <vbox id="section-general" class="section">
           <html:h2 data-l10n-id="pane-general-title"/>
           <vbox class="section-content">

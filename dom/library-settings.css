@@ -1,34 +1,37 @@
-@namespace html 'http://www.w3.org/1999/xhtml';
-@namespace xul 'http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul';
-
-#main-content {
-  background: var(--zen-themed-toolbar-bg-transparent);
-  appearance: -moz-window-titlebar;
-
-  user-select: none;
-  touch-action: none;
-  pointer-events: auto;
-
-  width: 100%;
-  height: 100%;
-
-  overflow-x: hidden;
-  overflow-y: auto;
-
-  gap: 2rem;
-  padding: 1rem;
-}
-
-.section {
-  width: 100%;
-  position: relative;
-  gap: 0.6rem;
-
-  .section-content {
+@namespace html "http://www.w3.org/1999/xhtml";
+@namespace xul "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
+body {
+  margin: 0 !important;
+  width: 100vw;
+  height: 100vh;
+  #main-container {
+    color: white;
+    font-size: 12px;
     width: 100%;
-    background: var(--zen-toolbar-element-bg);
-    border-radius: 6px;
-    padding: 1em;
-    font-size: 1.1em;
+    height: 100%;
+    display: flex;
+    flex-direction: row;
+    background-color: var(--zen-main-browser-background);
+
+    #sidebar {
+      height: 100%;
+      width: 25%;
+      overflow-y: auto;
+      background-color: black;
+      border-right: 1px solid white;
+      padding: 40px 10px 40px 10px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: flex-start;
+      .sidebar-tabbuton {
+        margin: auto 10px auto 0;
+      }
+    }
+    #settings-content {
+      display: flex;
+      flex-direction: column;
+      padding: 15px;
+    }
   }
 }
