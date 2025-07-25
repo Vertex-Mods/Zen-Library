@@ -13,7 +13,7 @@ An Optimistic To-Do list for Zen Librat
 - [x] Tab Groups are Displayed in Haven
 - [x] Copy Link Button
 - [ ] intigration with other userChrome.js mods like [Tab Sorters](https://github.com/Darsh-A/Ai-TabGroups-ZenBrowser)
-- [ x More Workspace Control Like Deltion, Creation, Renaming, etc.
+- [x] More Workspace Control Like Deltion, Creation, Renaming, etc.
 ### History
 - [x] Functioning Search
 - [x] Filter History by date
