@@ -9,7 +9,6 @@ import { downloadsSection } from "./sections/download.js";
 import { workspacesSection } from "./sections/workspace.js";
 import { historySection } from "./sections/history.js";
 import("./utils/motion.sys.mjs");
-
 // import { notesSection } from "./sections/notes.js";
 
 (function () {
@@ -162,24 +161,31 @@ import("./utils/motion.sys.mjs");
     }
 
     showHaven() {
+      console.log("[ZenHaven] Motion object:", this.Motion);
+
       const el = this.elements.havenContainer;
       if (!this.Motion || !el) return;
 
       el.style.display = "flex";
       this.Motion.animate(
         el,
+        this.topLevelAnimation.entry,
         this.topLevelAnimation.entry.animate,
         this.topLevelAnimation.entry.transition
       );
     }
 
     hideHaven() {
+      console.log("[ZenHaven] Motion object:", this.Motion);
       const el = this.elements.havenContainer;
       if (!this.Motion || !el) return;
 
-      this.Motion.animate(el, this.topLevelAnimation.exit.animate, {
-        ...this.topLevelAnimation.exit.transition,
-        complete: () => (el.style.display = "none"),
+      this.Motion.animate(el, {
+        ...this.topLevelAnimation.exit,
+        transition: {
+          ...this.topLevelAnimation.exit.transition,
+          complete: () => (el.style.display = "none"),
+        },
       });
     }
 
@@ -381,7 +387,6 @@ import("./utils/motion.sys.mjs");
         .forEach((attr) =>
           this.elements.havenContainer.removeAttribute(attr.name)
         );
-
 
       document
         .getElementById(`haven-${this.activeSectionId}-button`)
