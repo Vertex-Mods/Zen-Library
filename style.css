@@ -239,7 +239,7 @@ body[library="true"] {
 }
 
 :root:has(#navigator-toolbox) {
-  #zen-haven-container {
+  #zen-library-container {
     min-width: 60vw !important;
     flex: 1 0 !important;
     height: unset !important;
@@ -367,7 +367,7 @@ body[library="true"] {
   color: var(--toolbar-color);
 }
 
-#zen-haven-container[haven-workspaces] .haven-workspace {
+#zen-library-container[haven-workspaces] .haven-workspace {
   display: block;
 }
 
@@ -1207,7 +1207,7 @@ body[library="true"] {
 }
 
 /* --- Notes --- */
-#zen-haven-container[haven-notes] {
+#zen-library-container[haven-notes] {
   flex-direction: column !important;
   overflow: hidden;
   width: 100%;

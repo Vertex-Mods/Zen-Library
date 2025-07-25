@@ -119,7 +119,7 @@ import { historySection } from "./sections/history.js";
       const sidebarSplitter = document.getElementById("zen-sidebar-splitter");
       if (sidebarSplitter) {
         const sidebarContainer = parseElement(
-          `<div id="zen-haven-container" style="height: 100%; width: 60vw; position: relative; display: none; flex-direction: column;"></div>`
+          `<div id="zen-library-container" style="height: 100%; width: 60vw; position: relative; display: none; flex-direction: column;"></div>`
         );
         this.elements.havenContainer = sidebarContainer;
         const tabbox = document.getElementById("tabbrowser-tabbox");
