@@ -7,11 +7,11 @@ export const historySection = {
         <path fill-rule="evenodd" clip-rule="evenodd" d="M1 1.06567H14.9613V4.0144H1L1 1.06567ZM0 1.06567C0 0.513389 0.447715 0.0656738 1 0.0656738H14.9613C15.5136 0.0656738 15.9613 0.513389 15.9613 1.06567V4.0144C15.9613 4.55603 15.5307 4.99708 14.9932 5.01391V5.02686V13C14.9932 14.6569 13.65 16 11.9932 16H3.96814C2.31129 16 0.96814 14.6569 0.96814 13V5.02686V5.01391C0.430599 4.99708 0 4.55603 0 4.0144V1.06567ZM13.9932 5.02686H1.96814V13C1.96814 14.1046 2.86357 15 3.96814 15H11.9932C13.0977 15 13.9932 14.1046 13.9932 13V5.02686ZM9.95154 8.07495H6.01318V7.07495H9.95154V8.07495Z" fill="currentColor"/>
       </svg>`,
   init: function() {
-    console.log("[ZenHaven] History init triggered");
+    console.log("[Zenlibrary] History init triggered");
 
     // Create main container with loading message
     const historyContainer = parseElement(
-      `<div class="haven-history">
+      `<div class="library-history">
           <div class="history-search-container">
             <div class="search-input-wrapper">
               <input type="text" class="history-search-input" placeholder="Search history...">
@@ -24,7 +24,7 @@ export const historySection = {
               </svg>
             </button>
           </div>
-          <div class="haven-history-loading-initial" style="text-align: center; padding: 20px;">
+          <div class="library-history-loading-initial" style="text-align: center; padding: 20px;">
             <div class="loading-spinner"></div>
             <div>Loading history...</div>
           </div>
@@ -32,17 +32,17 @@ export const historySection = {
     );
 
     const loadingIndicator = parseElement(
-      `<div class="haven-history-loading" style="display: none; text-align: center; padding: 20px;">
+      `<div class="library-history-loading" style="display: none; text-align: center; padding: 20px;">
           <div class="loading-spinner"></div>
           <div>Loading more history...</div>
         </div>`,
     );
 
     // Create filter menupopup (XUL, then inject HTML slider)
-    console.log('[ZenHaven] Creating filter menupopup...');
+    console.log('[Zenlibrary] Creating filter menupopup...');
     const filterPopup = parseElement(`<menupopup id="history-filter-popup" width="340"></menupopup>`, "xul");
     document.getElementById("mainPopupSet")?.appendChild(filterPopup);
-    console.log('[ZenHaven] Filter menupopup appended:', filterPopup);
+    console.log('[Zenlibrary] Filter menupopup appended:', filterPopup);
 
     // Helper to append HTML into XUL
     const appendXUL = (parentElement, htmlString, insertBefore = null) => {
@@ -122,9 +122,9 @@ export const historySection = {
 
     // Fetch and render history for the current slider range
     async function renderFilteredHistory() {
-      const historyContent = historyContainer.querySelector('.haven-history-content') || historyContainer;
+      const historyContent = historyContainer.querySelector('.library-history-content') || historyContainer;
       const searchContainer = historyContainer.querySelector('.history-search-container');
-      const loadingIndicator = historyContainer.querySelector('.haven-history-loading');
+      const loadingIndicator = historyContainer.querySelector('.library-history-loading');
       Array.from(historyContent.children).forEach(child => {
         if (child !== searchContainer && child !== loadingIndicator) {
           child.remove();
@@ -240,7 +240,7 @@ export const historySection = {
         }
         root.containerOpen = false;
       } catch (e) {
-        console.error('[ZenHaven] Failed to get earliest history date:', e);
+        console.error('[Zenlibrary] Failed to get earliest history date:', e);
         earliestHistoryDate = daysAgoToDate(365);
         maxDays = 365;
       }
@@ -292,7 +292,7 @@ export const historySection = {
     // Slider input event listeners
     let sliderDragTimeout = null;
     function onSliderInput() {
-      console.log('[ZenHaven] Slider input event');
+      console.log('[Zenlibrary] Slider input event');
       if (sliderDragTimeout) clearTimeout(sliderDragTimeout);
       updateSliderUI(); // Update visuals immediately
       sliderDragTimeout = setTimeout(onSliderDragEnd, 300);
@@ -309,9 +309,9 @@ export const historySection = {
       isLoading = false;
       noMoreHistory = false;
       // Clear current items except search/filter UI
-      const historyContent = historyContainer.querySelector('.haven-history-content') || historyContainer;
+      const historyContent = historyContainer.querySelector('.library-history-content') || historyContainer;
       const searchContainer = historyContainer.querySelector('.history-search-container');
-      const loadingIndicator = historyContainer.querySelector('.haven-history-loading');
+      const loadingIndicator = historyContainer.querySelector('.library-history-loading');
       Array.from(historyContent.children).forEach(child => {
         if (child !== searchContainer && child !== loadingIndicator) {
           child.remove();
@@ -356,7 +356,7 @@ export const historySection = {
       const time = new Date(node.time / 1000);
       const timeStr = time.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
       const dateStr = formatDateDMY(time);
-      const item = parseElement(`        <div class="haven-history-item">
+      const item = parseElement(`        <div class="library-history-item">
           <img class="history-icon" src="https://www.google.com/s2/favicons?sz=32&domain_url=${encodeURIComponent(url)}">
           <div class="history-item-content">
             <div class="history-title">${title}</div>
@@ -425,10 +425,10 @@ export const historySection = {
         gBrowser.selectedTab = gBrowser.addTab(url, {
           triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
         });
-        // Close Haven sidebar
+        // Close library sidebar
         const toolbox = document.getElementById("navigator-toolbox");
-        if (toolbox && toolbox.hasAttribute("haven")) {
-          toolbox.removeAttribute("haven");
+        if (toolbox && toolbox.hasAttribute("library")) {
+          toolbox.removeAttribute("library");
         }
       });
 
@@ -458,7 +458,7 @@ export const historySection = {
           });
           await PlacesUtils.history.remove(visits.map(v => v.uri));
           // Remove all matching items from the UI
-          document.querySelectorAll('.haven-history-item').forEach(el => {
+          document.querySelectorAll('.library-history-item').forEach(el => {
             const elUrl = el.querySelector('.history-url')?.textContent;
             if (elUrl && (new URL(elUrl)).hostname === domain) {
               el.remove();
@@ -483,7 +483,7 @@ export const historySection = {
           query.beginTime = startDate.getTime() * 1000;
           query.endTime = endDate.getTime() * 1000;
           
-          console.log(`[ZenHaven] Loading history from ${startDate.toISOString()} to ${endDate.toISOString()}`);
+          console.log(`[Zenlibrary] Loading history from ${startDate.toISOString()} to ${endDate.toISOString()}`);
           
           const options = PlacesUtils.history.getNewQueryOptions();
           options.sortingMode = options.SORT_BY_DATE_DESCENDING;
@@ -497,10 +497,10 @@ export const historySection = {
             items.push(node);
           }
           root.containerOpen = false;
-          console.log(`[ZenHaven] Loaded ${items.length} items`);
+          console.log(`[Zenlibrary] Loaded ${items.length} items`);
           resolve(items);
         } catch (error) {
-          console.error("[ZenHaven] Error loading history batch:", error);
+          console.error("[Zenlibrary] Error loading history batch:", error);
           reject(error);
         }
       });
@@ -531,9 +531,9 @@ export const historySection = {
       searchQuery = searchInput.value;
       
       // Clear current display
-      const historyContent = historyContainer.querySelector('.haven-history-content') || historyContainer;
+      const historyContent = historyContainer.querySelector('.library-history-content') || historyContainer;
       const searchContainer = historyContainer.querySelector('.history-search-container');
-      const loadingIndicator = historyContainer.querySelector('.haven-history-loading');
+      const loadingIndicator = historyContainer.querySelector('.library-history-loading');
       
       // Remove all content except search container and loading indicator
       Array.from(historyContent.children).forEach(child => {
@@ -624,14 +624,14 @@ export const historySection = {
     function loadMoreHistory() {
       if (isLoading || noMoreHistory) return;
       isLoading = true;
-      const loadingIndicator = historyContainer.querySelector('.haven-history-loading');
+      const loadingIndicator = historyContainer.querySelector('.library-history-loading');
       if (loadingIndicator) loadingIndicator.style.display = 'block';
 
       let nextBatchStart = new Date(currentBatchEnd);
       nextBatchStart.setDate(nextBatchStart.getDate() - DAYS_PER_BATCH);
       if (nextBatchStart < batchStartDate) nextBatchStart = new Date(batchStartDate);
 
-      console.log(`[ZenHaven] Loading history from ${nextBatchStart.toISOString()} to ${currentBatchEnd.toISOString()}`);
+      console.log(`[Zenlibrary] Loading history from ${nextBatchStart.toISOString()} to ${currentBatchEnd.toISOString()}`);
       loadHistoryBatch(nextBatchStart, currentBatchEnd)
         .then((nodes) => {
           // Filter nodes to be strictly within [batchStartDate, batchEndDate]
@@ -643,7 +643,7 @@ export const historySection = {
             noMoreHistory = true;
             if (loadingIndicator) loadingIndicator.style.display = 'none';
             const endMessage = parseElement(
-              `<div class="haven-history-end-message">No more history available</div>`,
+              `<div class="library-history-end-message">No more history available</div>`,
             );
             historyContainer.appendChild(endMessage);
             return;
@@ -658,18 +658,18 @@ export const historySection = {
           if (filtered.length > 0) {
             const first = new Date(filtered[0].time / 1000);
             const last = new Date(filtered[filtered.length - 1].time / 1000);
-            console.log('[ZenHaven] Batch contains history from', first, 'to', last);
+            console.log('[Zenlibrary] Batch contains history from', first, 'to', last);
           }
           isLoading = false;
           currentBatchEnd = new Date(nextBatchStart);
-          console.log('[ZenHaven] Updated currentBatchEnd to', currentBatchEnd.toISOString(), 'batchStartDate is', batchStartDate.toISOString());
+          console.log('[Zenlibrary] Updated currentBatchEnd to', currentBatchEnd.toISOString(), 'batchStartDate is', batchStartDate.toISOString());
           if (currentBatchEnd <= batchStartDate) {
             noMoreHistory = true;
           }
           if (loadingIndicator) loadingIndicator.style.display = 'none';
         })
         .catch((error) => {
-          console.error("[ZenHaven] Error loading more history:", error);
+          console.error("[Zenlibrary] Error loading more history:", error);
           isLoading = false;
           if (loadingIndicator) {
             loadingIndicator.innerHTML = `
@@ -778,14 +778,14 @@ export const historySection = {
             }, 500);
           })
           .catch((error) => {
-            console.error("[ZenHaven] Error initializing history:", error);
+            console.error("[Zenlibrary] Error initializing history:", error);
             const errorMessage = parseElement(
               '<div style="text-align: center; padding: 20px;">Error loading history</div>'
             );
             historyContainer.appendChild(errorMessage);
           });
       } catch (error) {
-        console.error("[ZenHaven] Error setting up history view:", error);
+        console.error("[Zenlibrary] Error setting up history view:", error);
         const errorMessage = parseElement(
           '<div style="text-align: center; padding: 20px;">Error loading history</div>'
         );

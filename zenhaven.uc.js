@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Custom Toolbox UI (Safe Mode)
-// @description Only injects UI when #navigator-toolbox has [haven]
+// @description Only injects UI when #navigator-toolbox has [library]
 // @include     main
 // ==/UserScript==
 
@@ -12,13 +12,13 @@ import { historySection } from "./sections/history.js";
 
 (function () {
   const { document } = window;
-  if (window.haven) {
-    console.log("[ZenHaven] Already initialized. Aborting.");
+  if (window.library) {
+    console.log("[Zenlibrary] Already initialized. Aborting.");
     return;
   }
-  console.log("[ZenHaven] Script loaded");
+  console.log("[Zenlibrary] Script loaded");
 
-  class ZenHaven {
+  class Zenlibrary {
     constructor() {
       this.sections = new Map();
       this.activeSectionId = null;
@@ -28,12 +28,12 @@ import { historySection } from "./sections/history.js";
         toolbox: null,
         customToolbar: null,
         functionsContainer: null,
-        havenContainer: null,
+        libraryContainer: null,
         bottomButtons: null,
         mediaToolbar: null,
         navbar: null,
       };
-      console.log("[ZenHaven] Core object created");
+      console.log("[Zenlibrary] Core object created");
     }
 
     addSection(config) {
@@ -44,14 +44,14 @@ import { historySection } from "./sections/history.js";
         typeof config.init !== "function"
       ) {
         console.error(
-          "[ZenHaven] Invalid section config: id, label, icon, and init function are required.",
+          "[Zenlibrary] Invalid section config: id, label, icon, and init function are required.",
           config
         );
         return;
       }
       if (this.sections.has(config.id)) {
         console.warn(
-          `[ZenHaven] Section with id "${config.id}" already exists. Overwriting.`
+          `[Zenlibrary] Section with id "${config.id}" already exists. Overwriting.`
         );
       }
 
@@ -60,25 +60,25 @@ import { historySection } from "./sections/history.js";
         (typeof config.condition === "function" && config.condition());
       if (conditionMet) {
         this.sections.set(config.id, config);
-        console.log(`[ZenHaven] Section "${config.id}" registered.`);
+        console.log(`[Zenlibrary] Section "${config.id}" registered.`);
       } else {
         console.log(
-          `[ZenHaven] Condition not met for section "${config.id}". Skipping registration.`
+          `[Zenlibrary] Condition not met for section "${config.id}". Skipping registration.`
         );
       }
     }
 
     initializeUI() {
-      console.log("[ZenHaven] Setting up UI...");
+      console.log("[Zenlibrary] Setting up UI...");
       this.elements.toolbox = document.getElementById("navigator-toolbox");
       this.elements.navbar = document.getElementById("nav-bar");
 
       if (!this.elements.toolbox) {
-        console.log("[ZenHaven] Toolbox not found.");
+        console.log("[Zenlibrary] Toolbox not found.");
         return;
       }
 
-      console.log("[ZenHaven] Setting up Haven UI");
+      console.log("[Zenlibrary] Setting up library UI");
 
       // Create container for new UI elements
       const customContainer =
@@ -121,12 +121,12 @@ import { historySection } from "./sections/history.js";
         const sidebarContainer = parseElement(
           `<div id="zen-library-container" style="height: 100%; width: 60vw; position: relative; display: none; flex-direction: column;"></div>`
         );
-        this.elements.havenContainer = sidebarContainer;
+        this.elements.libraryContainer = sidebarContainer;
         const tabbox = document.getElementById("tabbrowser-tabbox");
         if (tabbox) {
           tabbox.parentNode.insertBefore(sidebarContainer, tabbox);
           console.log(
-            "[ZenHaven] Sidebar container added before tabbrowser-tabbox"
+            "[Zenlibrary] Sidebar container added before tabbrowser-tabbox"
           );
         } else {
           sidebarSplitter.parentNode.insertBefore(
@@ -134,23 +134,23 @@ import { historySection } from "./sections/history.js";
             sidebarSplitter.nextSibling
           );
           console.log(
-            "[ZenHaven] Tabbox not found, sidebar container added after splitter"
+            "[Zenlibrary] Tabbox not found, sidebar container added after splitter"
           );
         }
       }
 
       this.uiInitialized = true;
-      console.log("[ZenHaven] UI setup complete");
+      console.log("[Zenlibrary] UI setup complete");
     }
 
-    openHaven() {
+    openlibrary() {
       if (!this.uiInitialized) {
         this.initializeUI();
       }
 
       if (this.isOpen) return;
 
-      console.log("[ZenHaven] Opening Haven");
+      console.log("[Zenlibrary] Opening library");
 
       // Add library attribute to body
       document.body.setAttribute("library", "true");
@@ -179,10 +179,10 @@ import { historySection } from "./sections/history.js";
       this.isOpen = true;
     }
 
-    closeHaven() {
+    closelibrary() {
       if (!this.isOpen) return;
 
-      console.log("[ZenHaven] Closing Haven");
+      console.log("[Zenlibrary] Closing library");
 
       // Remove library attribute from body
       document.body.removeAttribute("library");
@@ -212,7 +212,7 @@ import { historySection } from "./sections/history.js";
     }
 
     destroyUI() {
-      console.log("[ZenHaven] Destroying UI");
+      console.log("[Zenlibrary] Destroying UI");
 
       // Restore bottom buttons
       if (this.elements.bottomButtons && this.elements.mediaToolbar) {
@@ -226,7 +226,7 @@ import { historySection } from "./sections/history.js";
         if (workspacesButton) {
           workspacesButton.style.display = "";
         }
-        console.log("[ZenHaven] Bottom buttons restored after media controls");
+        console.log("[Zenlibrary] Bottom buttons restored after media controls");
       }
 
       // Show all original toolbox children
@@ -240,7 +240,7 @@ import { historySection } from "./sections/history.js";
 
       // Remove our custom elements
       this.elements.customToolbar?.remove();
-      this.elements.havenContainer?.remove();
+      this.elements.libraryContainer?.remove();
 
       // Reset state
       this.activeSectionId = null;
@@ -251,7 +251,7 @@ import { historySection } from "./sections/history.js";
 
     createNavButton(section) {
       const customDiv =
-        parseElement(`<div class="custom-button" id="haven-${section.id}-button">
+        parseElement(`<div class="custom-button" id="library-${section.id}-button">
             <span class="icon">${section.icon}</span>
             <span class="label">${section.label}</span>
           </div>`);
@@ -310,7 +310,7 @@ import { historySection } from "./sections/history.js";
       toolbarFooterXML
         .querySelector("#library-exit-button")
         .addEventListener("click", () => {
-          window.haven.closeHaven();
+          window.library.closelibrary();
         });
       toolbarFooterXML
         .querySelector("#library-settings-button")
@@ -333,24 +333,24 @@ import { historySection } from "./sections/history.js";
 
       const section = this.sections.get(id);
       if (!section) {
-        console.error(`[ZenHaven] No section found for id: ${id}`);
+        console.error(`[Zenlibrary] No section found for id: ${id}`);
         return;
       }
 
-      console.log(`[ZenHaven] Activating section: ${id}`);
+      console.log(`[Zenlibrary] Activating section: ${id}`);
       const contentElement = section.init();
       if (contentElement instanceof HTMLElement) {
         section.contentElement = contentElement;
 
-        this.elements.havenContainer.setAttribute(`haven-${id}`, "");
-        this.elements.havenContainer.appendChild(contentElement);
-        this.elements.havenContainer.style.display = "flex";
+        this.elements.libraryContainer.setAttribute(`library-${id}`, "");
+        this.elements.libraryContainer.appendChild(contentElement);
+        this.elements.libraryContainer.style.display = "flex";
 
-        document.getElementById(`haven-${id}-button`)?.classList.add("active");
+        document.getElementById(`library-${id}-button`)?.classList.add("active");
         this.activeSectionId = id;
       } else {
         console.error(
-          `[ZenHaven] Section "${id}" init() did not return a valid DOM element.`
+          `[Zenlibrary] Section "${id}" init() did not return a valid DOM element.`
         );
       }
     }
@@ -369,67 +369,67 @@ import { historySection } from "./sections/history.js";
         delete oldSection.contentElement;
       }
 
-      Array.from(this.elements.havenContainer.attributes)
-        .filter((attr) => attr.name.startsWith("haven-"))
+      Array.from(this.elements.libraryContainer.attributes)
+        .filter((attr) => attr.name.startsWith("library-"))
         .forEach((attr) =>
-          this.elements.havenContainer.removeAttribute(attr.name)
+          this.elements.libraryContainer.removeAttribute(attr.name)
         );
 
-      this.elements.havenContainer.style.display = "none";
+      this.elements.libraryContainer.style.display = "none";
 
       document
-        .getElementById(`haven-${this.activeSectionId}-button`)
+        .getElementById(`library-${this.activeSectionId}-button`)
         ?.classList.remove("active");
       this.activeSectionId = null;
     }
   }
 
-  window.haven = new ZenHaven();
+  window.library = new Zenlibrary();
 
   // --- SECTION DEFINITIONS ---
 
-  window.haven.addSection(downloadsSection);
-  window.haven.addSection(workspacesSection);
-  window.haven.addSection(historySection);
-  //  window.haven.addSection(notesSection);
+  window.library.addSection(downloadsSection);
+  window.library.addSection(workspacesSection);
+  window.library.addSection(historySection);
+  //  window.library.addSection(notesSection);
 
   // --- INITIALIZATION LOGIC ---
 
-  function createHavenToggle() {
+  function createlibraryToggle() {
     // Use local icon for theming
-    const toggleHaven = () => {
-      if (window.haven.isOpen) {
-        window.haven.closeHaven();
+    const togglelibrary = () => {
+      if (window.library.isOpen) {
+        window.library.closelibrary();
       } else {
-        window.haven.openHaven();
+        window.library.openlibrary();
       }
     };
 
-    console.log("[ZenHaven] Toggle button added to sidebar bottom buttons");
+    console.log("[Zenlibrary] Toggle button added to sidebar bottom buttons");
     const widget = {
       id: "zen-library",
       type: "toolbarbutton",
       label: "Zen Library",
       tooltip: "Toggle Library",
       class: "toolbarbutton-1",
-      callback: toggleHaven,
+      callback: togglelibrary,
     };
     UC_API.Utils.createWidget(widget);
   }
 
   function startup() {
-    console.log("[ZenHaven] Startup sequence initiated.");
-    createHavenToggle();
+    console.log("[Zenlibrary] Startup sequence initiated.");
+    createlibraryToggle();
   }
 
   if (gBrowserInit.delayedStartupFinished) {
-    console.log("[ZenHaven] Browser already started");
+    console.log("[Zenlibrary] Browser already started");
     startup();
   } else {
-    console.log("[ZenHaven] Waiting for browser startup");
+    console.log("[Zenlibrary] Waiting for browser startup");
     let observer = new MutationObserver(() => {
       if (gBrowserInit.delayedStartupFinished) {
-        console.log("[ZenHaven] Browser startup detected");
+        console.log("[Zenlibrary] Browser startup detected");
         observer.disconnect();
         startup();
       }

@@ -38,7 +38,6 @@ function restoreZenWorkspace(uuid) {
       info.parent.appendChild(zenWorkspaceEl);
     }
     zenWorkspaceOriginalParents.delete(uuid);
-    console.log(`[ZenHaven] Restored zen-workspace element for uuid: ${uuid} to its original parent.`);
   }
 }
 
@@ -81,10 +80,10 @@ export const workspacesSection = {
       });
     }
     const container = parseElement(
-      `<div id="haven-workspace-outer-container"><div id = "haven-workspace-inner-container" ></div></div>`,
+      `<div id="library-workspace-outer-container"><div id = "library-workspace-inner-container" ></div></div>`,
     );
     const innerContainer = container.querySelector(
-      "#haven-workspace-inner-container",
+      "#library-workspace-inner-container",
     );
 
     // Workspace drag and drop variables
@@ -100,7 +99,7 @@ export const workspacesSection = {
 
     function getWorkspaceAfterElement(container, x) {
       const draggableWorkspaces = [
-        ...container.querySelectorAll(".haven-workspace:not(.dragging-workspace)"),
+        ...container.querySelectorAll(".library-workspace:not(.dragging-workspace)"),
       ];
 
       return draggableWorkspaces.reduce(
@@ -118,7 +117,7 @@ export const workspacesSection = {
     }
 
     function getAllWorkspaces() {
-      return Array.from(innerContainer.querySelectorAll('.haven-workspace'));
+      return Array.from(innerContainer.querySelectorAll('.library-workspace'));
     }
 
     function onWorkspaceDragMove(e) {
@@ -138,7 +137,7 @@ export const workspacesSection = {
       dragWorkspace.style.top = `${newY}px`;
       
       // Get the add button to prevent dragging past it
-      const addButton = innerContainer.querySelector('.haven-workspace-add-button');
+      const addButton = innerContainer.querySelector('.library-workspace-add-button');
       const addButtonRect = addButton ? addButton.getBoundingClientRect() : null;
       
       // Check if we're trying to drag past the add button
@@ -299,16 +298,16 @@ export const workspacesSection = {
     // innerContainer.addEventListener("drop", async (e) => { ... });
 
     const addWorkspaceButton =
-      parseElement(`<div class="haven-workspace-add-button"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+      parseElement(`<div class="library-workspace-add-button"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M8 3V13M3 8H13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
           </svg></div>`);
     addWorkspaceButton.addEventListener("click", () => {
-          window.haven.closeHaven();
+          window.library.closelibrary();
           gZenWorkspaces.openWorkspaceCreation();
     });
 
     if (typeof gZenWorkspaces === "undefined") {
-      console.error("[ZenHaven] gZenWorkspaces is not available.");
+      console.error("[Zenlibrary] gZenWorkspaces is not available.");
       innerContainer.appendChild(addWorkspaceButton);
       return container;
     }
@@ -321,8 +320,8 @@ export const workspacesSection = {
           const { uuid, theme, name, icon } = workspace;
           // Build a proxy UI for each workspace
           const workspaceDiv = parseElement(
-            `<div class="haven-workspace">
-                  <div class="haven-workspace-header">
+            `<div class="library-workspace">
+                  <div class="library-workspace-header">
                     <span class="workspace-icon">${icon}</span>
                     <span class="workspace-name">${name}</span>
                   </div>
@@ -381,7 +380,7 @@ export const workspacesSection = {
               
               // Create placeholder
               workspacePlaceholder = document.createElement('div');
-              workspacePlaceholder.className = 'haven-workspace workspace-placeholder';
+              workspacePlaceholder.className = 'library-workspace workspace-placeholder';
               workspacePlaceholder.style.height = `${workspaceDiv.offsetHeight}px`;
               workspacePlaceholder.style.width = `${workspaceDiv.offsetWidth}px`;
               workspacePlaceholder.style.opacity = '0.3';
@@ -460,8 +459,8 @@ export const workspacesSection = {
               if (workspaceEl && !workspaceEl.hasAttribute('active')) {
                 // Switch to the workspace in the background
                 await gZenWorkspaces.changeWorkspaceWithID(uuid);
-                if (window.haven && typeof window.haven.initializeUI === 'function' && !window.haven.uiInitialized) {
-                  window.haven.initializeUI();
+                if (window.library && typeof window.library.initializeUI === 'function' && !window.library.uiInitialized) {
+                  window.library.initializeUI();
                 }
               }
             }, 200); // 200ms delay before switching
@@ -476,12 +475,12 @@ export const workspacesSection = {
           });
 
           // Proxy menu and actions
-          const header = workspaceDiv.querySelector(".haven-workspace-header");
+          const header = workspaceDiv.querySelector(".library-workspace-header");
           const popupOpenButton = parseElement(
             `
               <toolbarbutton 
                 class="toolbarbutton-1
-                haven-workspace-options"
+                library-workspace-options"
                 tooltiptext="Workspace options"
                 image="chrome://browser/skin/zen-icons/menu-bar.svg"
               />`,
@@ -489,7 +488,7 @@ export const workspacesSection = {
           );
           const menuPopup = parseElement(
             `
-              <menupopup class="haven-workspace-actions-popup">
+              <menupopup class="library-workspace-actions-popup">
                 <menuitem class="rename" label="Rename" tooltiptext="Rename" />
                 <menuitem class="change-icon" label="Change Icon" tooltiptext="Change workspace icon" />
                 <menuitem class="switch" label="Go to workspace" tooltiptext="switch to this workspace"/>
@@ -575,7 +574,7 @@ export const workspacesSection = {
           // Proxy switch workspace
           menuPopup.querySelector(".switch").addEventListener("click", async () => {
             await gZenWorkspaces.changeWorkspaceWithID(uuid);
-            window.haven.closeHaven();
+            window.library.closelibrary();
           });
 
           // Proxy delete workspace
@@ -590,7 +589,7 @@ export const workspacesSection = {
           menuPopup.querySelector(".change-theme").addEventListener("click", async (event) => {
             try {
               await gZenWorkspaces.changeWorkspaceWithID(uuid);
-              let anchor = workspaceDiv.querySelector('.haven-workspace-header');
+              let anchor = workspaceDiv.querySelector('.library-workspace-header');
               if (!anchor) anchor = popupOpenButton;
               if (typeof PanelMultiView !== "undefined" && gZenThemePicker?.panel) {
                 PanelMultiView.openPopup(gZenThemePicker.panel, anchor, {
@@ -605,9 +604,9 @@ export const workspacesSection = {
           });
 
           // Proxy tab list (visual only)
-          const contentDiv = parseElement(`<div class="haven-workspace-content"></div>`);
-          const pinnedTabsContainer = parseElement(`<div class="haven-workspace-pinned-tabs"></div>`);
-          const regularTabsContainer = parseElement(`<div class="haven-workspace-regular-tabs"></div>`);
+          const contentDiv = parseElement(`<div class="library-workspace-content"></div>`);
+          const pinnedTabsContainer = parseElement(`<div class="library-workspace-pinned-tabs"></div>`);
+          const regularTabsContainer = parseElement(`<div class="library-workspace-regular-tabs"></div>`);
           allTabs
             .filter(
               (tabEl) =>
@@ -625,7 +624,7 @@ export const workspacesSection = {
               }
               // HTML part (tabProxy)
               const tabProxy = parseElement(`
-                <div class="haven-tab" draggable="true">
+                <div class="library-tab" draggable="true">
                   <span class="tab-icon">
                     ${faviconUrl ? `<img src="${faviconUrl}" style="width:16px;height:16px;vertical-align:middle;">` : ''}
                   </span>
@@ -662,7 +661,7 @@ export const workspacesSection = {
               });
               tabProxy.querySelector('.copy-link').addEventListener('click', (e) => {
                 e.stopPropagation();
-                console.log(`[ZenHaven] Copying URL for tab: ${tabTitle} (${tabUrl})`);
+                console.log(`[Zenlibrary] Copying URL for tab: ${tabTitle} (${tabUrl})`);
                 if (tabUrl) {
                   // Try modern clipboard API first
                   if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -672,10 +671,10 @@ export const workspacesSection = {
                       }
                     }).catch(() => {
                       // Fallback if clipboard API fails
-                      console.error(`[ZenHaven] Clipboard API failed, falling back to execCommand for tab: ${tabTitle} (${tabUrl})`);
+                      console.error(`[Zenlibrary] Clipboard API failed, falling back to execCommand for tab: ${tabTitle} (${tabUrl})`);
                     });
                   } else {
-                    console.error(`[ZenHaven] Clipboard API failed, falling back to execCommand for tab: ${tabTitle} (${tabUrl})`);
+                    console.error(`[Zenlibrary] Clipboard API failed, falling back to execCommand for tab: ${tabTitle} (${tabUrl})`);
                   }
                 }
               });
@@ -699,7 +698,7 @@ export const workspacesSection = {
               });
               tabProxy.addEventListener('dragend', (e) => {
                 tabProxy.classList.remove('dragging');
-                document.querySelectorAll('.haven-workspace-pinned-tabs, .haven-workspace-regular-tabs').forEach(c => c.classList.remove('drag-over', 'drag-source'));
+                document.querySelectorAll('.library-workspace-pinned-tabs, .library-workspace-regular-tabs').forEach(c => c.classList.remove('drag-over', 'drag-source'));
                 contentDiv.classList.remove('tab-drag-context');
                 // If not in a valid container, restore to original position
                 const validContainers = [pinnedTabsContainer, regularTabsContainer];
@@ -738,7 +737,7 @@ export const workspacesSection = {
                   if (!contentDiv.classList.contains('tab-drag-context')) return;
                   e.preventDefault();
                   container.classList.remove('drag-over');
-                  const dragging = container.querySelector('.dragging') || document.querySelector('.haven-tab.dragging');
+                  const dragging = container.querySelector('.dragging') || document.querySelector('.library-tab.dragging');
                   if (!dragging) return;
                   // Only allow drop if the tab belongs to this workspace
                   if (dragging.dataset.workspaceUuid !== uuid) return;
@@ -768,7 +767,7 @@ export const workspacesSection = {
               });
               // Helper for reordering within container
               function getTabAfterElement(container, y) {
-                const draggableTabs = [...container.querySelectorAll('.haven-tab:not(.dragging)')];
+                const draggableTabs = [...container.querySelectorAll('.library-tab:not(.dragging)')];
                 return draggableTabs.reduce((closest, child) => {
                   const box = child.getBoundingClientRect();
                   const offset = y - box.top - box.height / 2;
@@ -783,8 +782,8 @@ export const workspacesSection = {
               // --- Custom drag-and-drop logic for vertical tabs ---
               function getAllTabProxies() {
                 return [
-                  ...pinnedTabsContainer.querySelectorAll('.haven-tab'),
-                  ...regularTabsContainer.querySelectorAll('.haven-tab'),
+                  ...pinnedTabsContainer.querySelectorAll('.library-tab'),
+                  ...regularTabsContainer.querySelectorAll('.library-tab'),
                 ];
               }
 
@@ -837,7 +836,7 @@ export const workspacesSection = {
                   dragTab._dragSection = isPinned ? 'pinned' : 'regular';
                   // --- Insert placeholder BEFORE moving tab out of DOM ---
                   placeholder = document.createElement('div');
-                  placeholder.className = 'haven-tab drag-placeholder';
+                  placeholder.className = 'library-tab drag-placeholder';
                   placeholder.style.height = `${tabProxy.offsetHeight}px`;
                   placeholder.style.width = `${tabProxy.offsetWidth}px`;
                   tabProxy.parentNode.insertBefore(placeholder, tabProxy);
@@ -856,7 +855,7 @@ export const workspacesSection = {
                   document.body.appendChild(tabProxy);
                   document.body.style.userSelect = 'none';
                   getAllWorkspaces().forEach(ws => { 
-                      ws.querySelectorAll('.haven-tab').forEach(tab => {
+                      ws.querySelectorAll('.library-tab').forEach(tab => {
                         if (tab !== dragTab) {
                           tab.style.transition = 'transform 0.18s cubic-bezier(.4,1.3,.5,1)';
                         }
@@ -881,17 +880,17 @@ export const workspacesSection = {
                 const workspaceEl = gZenWorkspaces.workspaceElement(uuid);
                 if (!workspaceEl) return;
                 // Pinned
-                const pinnedContainer = workspaceEl.querySelector(".haven-workspace-pinned-tabs");
+                const pinnedContainer = workspaceEl.querySelector(".library-workspace-pinned-tabs");
                 const realPinnedTabs = Array.from(gBrowser.tabs).filter(t => t.pinned && t.getAttribute('zen-workspace-id') === uuid);
                 realPinnedTabs.forEach(tab => {
-                  const proxy = Array.from(pinnedContainer.querySelectorAll('.haven-tab')).find(t => t.tabEl && t.tabEl.getAttribute('id') === tab.getAttribute('id'));
+                  const proxy = Array.from(pinnedContainer.querySelectorAll('.library-tab')).find(t => t.tabEl && t.tabEl.getAttribute('id') === tab.getAttribute('id'));
                   if (proxy) pinnedContainer.appendChild(proxy);
                 });
                 // Regular
-                const regularContainer = workspaceEl.querySelector(".haven-workspace-regular-tabs");
+                const regularContainer = workspaceEl.querySelector(".library-workspace-regular-tabs");
                 const realRegularTabs = Array.from(gBrowser.tabs).filter(t => !t.pinned && t.getAttribute('zen-workspace-id') === uuid);
                 realRegularTabs.forEach(tab => {
-                  const proxy = Array.from(regularContainer.querySelectorAll('.haven-tab')).find(t => t.tabEl && t.tabEl.getAttribute('id') === tab.getAttribute('id'));
+                  const proxy = Array.from(regularContainer.querySelectorAll('.library-tab')).find(t => t.tabEl && t.tabEl.getAttribute('id') === tab.getAttribute('id'));
                   if (proxy) regularContainer.appendChild(proxy);
                 });
               }
@@ -899,7 +898,7 @@ export const workspacesSection = {
               function onDragMove(e) {
                 if (!isDragging || !dragTab) return;
 
-                const sourceWorkspaceEl = innerContainer.querySelector(`.haven-workspace[data-uuid="${dragTab.dataset.workspaceUuid}"]`);
+                const sourceWorkspaceEl = innerContainer.querySelector(`.library-workspace[data-uuid="${dragTab.dataset.workspaceUuid}"]`);
                 const allWorkspacesList = getAllWorkspaces();
                 const sourceIndex = allWorkspacesList.findIndex(ws => ws === sourceWorkspaceEl);
                 const leftNeighbor = sourceIndex > 0 ? allWorkspacesList[sourceIndex - 1] : null;
@@ -933,7 +932,7 @@ export const workspacesSection = {
                 dragTab.style.left = `${newX}px`;
 
                 const elementUnderCursor = document.elementFromPoint(e.clientX, e.clientY);
-                const hoveredWorkspaceEl = elementUnderCursor ? elementUnderCursor.closest('.haven-workspace') : null;
+                const hoveredWorkspaceEl = elementUnderCursor ? elementUnderCursor.closest('.library-workspace') : null;
 
                 // Clean up previous target highlight
                 const previousTarget = innerContainer.querySelector('.tab-drop-target');
@@ -948,7 +947,7 @@ export const workspacesSection = {
                   lastContainer = null; // We are no longer in a specific container
 
                   // Hide individual tab movements in the original workspace
-                  sourceWorkspaceEl.querySelectorAll('.haven-tab').forEach(tab => {
+                  sourceWorkspaceEl.querySelectorAll('.library-tab').forEach(tab => {
                     if (tab !== dragTab) {
                       tab.style.transform = '';
                     }
@@ -961,14 +960,14 @@ export const workspacesSection = {
                   placeholder.style.display = '';
 
                   // --- NEW INTRA-WORKSPACE LOGIC (Robust) ---
-                  const currentSourceWorkspaceEl = innerContainer.querySelector(`.haven-workspace[data-uuid="${dragTab.dataset.workspaceUuid}"]`);
+                  const currentSourceWorkspaceEl = innerContainer.querySelector(`.library-workspace[data-uuid="${dragTab.dataset.workspaceUuid}"]`);
                   if (!currentSourceWorkspaceEl) return;
 
-                  const sourceContentDiv = currentSourceWorkspaceEl.querySelector('.haven-workspace-content');
+                  const sourceContentDiv = currentSourceWorkspaceEl.querySelector('.library-workspace-content');
                   if (!sourceContentDiv) return;
 
-                  const sourcePinnedContainer = currentSourceWorkspaceEl.querySelector('.haven-workspace-pinned-tabs');
-                  const sourceRegularContainer = currentSourceWorkspaceEl.querySelector('.haven-workspace-regular-tabs');
+                  const sourcePinnedContainer = currentSourceWorkspaceEl.querySelector('.library-workspace-pinned-tabs');
+                  const sourceRegularContainer = currentSourceWorkspaceEl.querySelector('.library-workspace-regular-tabs');
 
                   let currentTargetContainer = null;
                   const contentRect = sourceContentDiv.getBoundingClientRect();
@@ -1015,7 +1014,7 @@ export const workspacesSection = {
 
                   // Animate other tabs in the placeholder's container to make space
                   getAllWorkspaces().forEach(ws => { 
-                      ws.querySelectorAll('.haven-tab').forEach(tab => {
+                      ws.querySelectorAll('.library-tab').forEach(tab => {
                         if (tab === dragTab) return;
 
                         // Reset transform if tab is not in the same container as the placeholder
@@ -1064,12 +1063,12 @@ export const workspacesSection = {
                     currentDropTarget.classList.remove('tab-drop-target');
 
                     const elementUnderCursor = document.elementFromPoint(e.clientX, e.clientY);
-                    const targetPinnedContainer = currentDropTarget.querySelector('.haven-workspace-pinned-tabs');
-                    const targetRegularContainer = currentDropTarget.querySelector('.haven-workspace-regular-tabs');
+                    const targetPinnedContainer = currentDropTarget.querySelector('.library-workspace-pinned-tabs');
+                    const targetRegularContainer = currentDropTarget.querySelector('.library-workspace-regular-tabs');
 
                     let shouldBePinned = false;
-                    const isOverPinned = !!(elementUnderCursor && elementUnderCursor.closest('.haven-workspace-pinned-tabs'));
-                    const isOverRegular = !!(elementUnderCursor && elementUnderCursor.closest('.haven-workspace-regular-tabs'));
+                    const isOverPinned = !!(elementUnderCursor && elementUnderCursor.closest('.library-workspace-pinned-tabs'));
+                    const isOverRegular = !!(elementUnderCursor && elementUnderCursor.closest('.library-workspace-regular-tabs'));
 
                     if (isOverPinned) {
                         shouldBePinned = true;
@@ -1110,18 +1109,18 @@ export const workspacesSection = {
                         dragTab.style.transform = '';
 
                         // Find or create the correct container and append the tab proxy
-                        const contentDiv = currentDropTarget.querySelector('.haven-workspace-content');
+                        const contentDiv = currentDropTarget.querySelector('.library-workspace-content');
                         let newContainer;
                         if (shouldBePinned) {
-                            newContainer = currentDropTarget.querySelector('.haven-workspace-pinned-tabs');
+                            newContainer = currentDropTarget.querySelector('.library-workspace-pinned-tabs');
                             if (!newContainer) {
-                                newContainer = parseElement(`<div class="haven-workspace-pinned-tabs"></div>`);
+                                newContainer = parseElement(`<div class="library-workspace-pinned-tabs"></div>`);
                                 contentDiv.insertBefore(newContainer, contentDiv.firstChild);
                             }
                         } else {
-                            newContainer = currentDropTarget.querySelector('.haven-workspace-regular-tabs');
+                            newContainer = currentDropTarget.querySelector('.library-workspace-regular-tabs');
                             if (!newContainer) {
-                                newContainer = parseElement(`<div class="haven-workspace-regular-tabs"></div>`);
+                                newContainer = parseElement(`<div class="library-workspace-regular-tabs"></div>`);
                                 contentDiv.appendChild(newContainer);
                             }
                         }
@@ -1136,7 +1135,7 @@ export const workspacesSection = {
                     // Common cleanup for cross-workspace drop
                     document.body.style.userSelect = '';
                     if (placeholder && placeholder.parentNode) placeholder.parentNode.removeChild(placeholder);
-                    getAllWorkspaces().forEach(ws => ws.querySelectorAll('.haven-tab').forEach(tab => {
+                    getAllWorkspaces().forEach(ws => ws.querySelectorAll('.library-tab').forEach(tab => {
                         tab.style.transition = '';
                         tab.style.transform = '';
                     }));
@@ -1176,7 +1175,7 @@ export const workspacesSection = {
                     // --- Update the underlying tab order in the workspace ---
                     // Always use the real tab's id for matching
                     function getTabIdList(container) {
-                      return Array.from(container.querySelectorAll('.haven-tab')).map(t => t.tabEl && t.tabEl.getAttribute('id')).filter(Boolean);
+                      return Array.from(container.querySelectorAll('.library-tab')).map(t => t.tabEl && t.tabEl.getAttribute('id')).filter(Boolean);
                     }
                     // Only update the order within the section
                     let order, section;
@@ -1188,34 +1187,34 @@ export const workspacesSection = {
                       section = 'regular';
                     }
                     // Debug log for tab order
-                    console.log('[ZenHaven] New', section, 'tab order:', order);
+                    console.log('[Zenlibrary] New', section, 'tab order:', order);
                     // --- Update the real Firefox tab order using gBrowser.moveTabTo ---
                     // Note: Pinned tab order is global, not per workspace!
                     function reorderFirefoxPinnedTabs(order) {
                       // Get all real pinned tabs (global, not per workspace)
                       const allTabs = Array.from(gBrowser.tabs);
                       let pinnedTabs = allTabs.filter(t => t.pinned);
-                      console.log('[ZenHaven] Real pinned tabs before reorder:', pinnedTabs.map(t => t.getAttribute('id')));
+                      console.log('[Zenlibrary] Real pinned tabs before reorder:', pinnedTabs.map(t => t.getAttribute('id')));
                       // For each tab in the new order, move it to the correct index among pinned tabs
                       for (let i = 0; i < order.length; i++) {
                         // Always match by the real tab's id
                         const tab = allTabs.find(t => t.getAttribute('id') === order[i]);
                         if (tab && !tab.pinned) {
-                          console.log(`[ZenHaven] Pinning tab ${tab.getAttribute('id')}`);
+                          console.log(`[Zenlibrary] Pinning tab ${tab.getAttribute('id')}`);
                           gBrowser.pinTab(tab);
                         }
                         // Always move to index i among pinned tabs
                         if (tab && pinnedTabs[i] !== tab) {
-                          console.log(`[ZenHaven] Moving tab ${tab.getAttribute('id')} to pinned index ${i}`);
+                          console.log(`[Zenlibrary] Moving tab ${tab.getAttribute('id')} to pinned index ${i}`);
                           gBrowser.moveTabTo(tab, i);
                           // After move, update pinnedTabs to reflect the new order
                           pinnedTabs = Array.from(gBrowser.tabs).filter(t => t.pinned);
-                          console.log('[ZenHaven] Real pinned tabs after move:', pinnedTabs.map(t => t.getAttribute('id')));
+                          console.log('[Zenlibrary] Real pinned tabs after move:', pinnedTabs.map(t => t.getAttribute('id')));
                         }
                       }
                       // Final pinned tab order
                       pinnedTabs = Array.from(gBrowser.tabs).filter(t => t.pinned);
-                      console.log('[ZenHaven] Final real pinned tab order:', pinnedTabs.map(t => t.getAttribute('id')));
+                      console.log('[Zenlibrary] Final real pinned tab order:', pinnedTabs.map(t => t.getAttribute('id')));
                     }
                     function reorderFirefoxRegularTabs(order) {
                       const allTabs = Array.from(gBrowser.tabs);
@@ -1287,7 +1286,7 @@ export const workspacesSection = {
         innerContainer.appendChild(addWorkspaceButton);
       })
       .catch((error) => {
-        console.error("[ZenHaven] Error building workspaces section:", error);
+        console.error("[Zenlibrary] Error building workspaces section:", error);
       });
     return container;
   },
