@@ -1,7 +1,7 @@
-# Zen-Haven
+# Zen Library
 A new way to organize Zen [(PR](https://github.com/zen-browser/desktop/pull/7550))
 ## To-Do
-An Optimistic To-Do list for Zen Haven
+An Optimistic To-Do list for Zen Librat
 ### Downloads
 - [x] Functioning search
 - [ ] Image Preview
@@ -22,3 +22,4 @@ An Optimistic To-Do list for Zen Haven
 - [x] Delete History Items
 ### Integration
 - [ ] Create addon section
+- [ ] Create PR to zen-browser/desktop to add a native version of Library
