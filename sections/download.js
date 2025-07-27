@@ -8,7 +8,7 @@ export const downloadsSection = {
       </svg>`,
   init: function() {
     const downloadsViewContainer = parseElement(
-      `<div class="haven-downloads-container"></div>`,
+      `<div class="library-downloads-container"></div>`,
     );
 
     // --- Data Store and State ---
@@ -181,22 +181,22 @@ export const downloadsSection = {
       const IMAGES_SVG = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M21 15L17.914 11.914C17.5389 11.5391 17.0303 11.3284 16.5 11.3284C15.9697 11.3284 15.4611 11.5391 15.086 11.914L6 21M5 3H19C20.1046 3 21 3.89543 21 5V19C21 20.1046 20.1046 21 19 21H5C3.89543 21 3 20.1046 3 19V5C3 3.89543 3.89543 3 5 3ZM11 9C11 10.1046 10.1046 11 9 11C7.89543 11 7 10.1046 7 9C7 7.89543 7.89543 7 9 7C10.1046 7 11 7.89543 11 9Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
       const MEDIA_SVG = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 10V13M6 6V17M10 3V21M14 8V15M18 5V18M22 10V13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 
-      const header = parseElement(`<div class="haven-dl-header">
-              <div class="haven-dl-title-section">
-                <h1 class="haven-dl-title-text">Downloads</h1>
+      const header = parseElement(`<div class="library-dl-header">
+              <div class="library-dl-title-section">
+                <h1 class="library-dl-title-text">Downloads</h1>
               </div>
             </div>`);
 
-      const controls = parseElement(`<div class="haven-dl-controls"></div>`);
+      const controls = parseElement(`<div class="library-dl-controls"></div>`);
       const searchFilterRow = parseElement(
-        `<div class="haven-dl-search-filter-row"></div>`,
+        `<div class="library-dl-search-filter-row"></div>`,
       );
 
-      const searchBox = parseElement(`<div class="haven-dl-search-box">
-              <span class="haven-dl-search-icon-placeholder">${SEARCH_SVG}</span>
-              <input type="text" class="haven-dl-search-input" placeholder="Search downloads..." value="${currentSearchTerm}">
+      const searchBox = parseElement(`<div class="library-dl-search-box">
+              <span class="library-dl-search-icon-placeholder">${SEARCH_SVG}</span>
+              <input type="text" class="library-dl-search-input" placeholder="Search downloads..." value="${currentSearchTerm}">
             </div>`);
-      // const searchInput = searchBox.querySelector(".haven-dl-search-input");
+      // const searchInput = searchBox.querySelector(".library-dl-search-input");
       searchFilterRow.appendChild(searchBox);
 
       const optionsHTML = ["all", "completed", "paused", "failed", "deleted"]
@@ -212,15 +212,15 @@ export const downloadsSection = {
         )
         .join("");
       const statusFilter = parseElement(
-        `<select class="haven-dl-filter-dropdown" id="statusFilter">${optionsHTML}</select>`,
+        `<select class="library-dl-filter-dropdown" id="statusFilter">${optionsHTML}</select>`,
       );
       searchFilterRow.appendChild(statusFilter);
 
       // Remove view toggle and related logic
-      // const viewToggle = parseElement(`<div class="haven-dl-view-toggle">
-      //         <button class="haven-dl-view-btn ${currentViewMode === "recent" ? "active" : ""}"
+      // const viewToggle = parseElement(`<div class="library-dl-view-toggle">
+      //         <button class="library-dl-view-btn ${currentViewMode === "recent" ? "active" : ""}"
       //   data-view="recent" title="Recent Downloads">Recent</button>
-      //         <button class="haven-dl-view-btn ${currentViewMode === "history" ? "active" : ""}"
+      //         <button class="library-dl-view-btn ${currentViewMode === "history" ? "active" : ""}"
       //   data-view="history" title="Download History">History</button>
       //       </div>`);
       // searchFilterRow.appendChild(viewToggle);
@@ -235,26 +235,26 @@ export const downloadsSection = {
       const categoriesHTML = categories
         .map(
           (cat) =>
-            `<button class="haven-dl-category-tab ${currentCategoryFilter === cat.id ? "active" : ""
+            `<button class="library-dl-category-tab ${currentCategoryFilter === cat.id ? "active" : ""
             }" data-category="${cat.id}">
-                <span class="haven-dl-tab-icon">${cat.svg}</span>
+                <span class="library-dl-tab-icon">${cat.svg}</span>
                 <span>${cat.text}</span>
               </button>`,
         )
         .join("");
       const categoryTabsContainer =
-        parseElement(`<div class="haven-dl-category-tabs-container">
-              <div class="haven-dl-category-active-indicator"></div>
+        parseElement(`<div class="library-dl-category-tabs-container">
+              <div class="library-dl-category-active-indicator"></div>
               ${categoriesHTML}
             </div>`);
       categoryActiveIndicatorEl = categoryTabsContainer.querySelector(
-        ".haven-dl-category-active-indicator",
+        ".library-dl-category-active-indicator",
       );
       controls.appendChild(categoryTabsContainer);
 
-      const stats = parseElement(`<div class="haven-dl-stats-bar">
-              <div class="haven-dl-stats-counts">Total: <strong id="totalCount">0</strong> Active: <strong id="activeCount">0</strong> Completed: <strong id="completedCount">0</strong></div>
-              <div class="haven-dl-view-info" id="viewInfoText">All downloads grouped by date</div>
+      const stats = parseElement(`<div class="library-dl-stats-bar">
+              <div class="library-dl-stats-counts">Total: <strong id="totalCount">0</strong> Active: <strong id="activeCount">0</strong> Completed: <strong id="completedCount">0</strong></div>
+              <div class="library-dl-view-info" id="viewInfoText">All downloads grouped by date</div>
             </div>`);
 
       downloadsViewContainer.appendChild(header);
@@ -262,7 +262,7 @@ export const downloadsSection = {
       downloadsViewContainer.appendChild(stats);
 
       const listContainer = parseElement(
-        `<div class="haven-dl-list-container" id="downloadsListArea"></div>`,
+        `<div class="library-dl-list-container" id="downloadsListArea"></div>`,
       );
       downloadsViewContainer.appendChild(listContainer);
 
@@ -270,7 +270,7 @@ export const downloadsSection = {
       attachEventListeners();
 
       const initialActiveTab = categoryTabsContainer.querySelector(
-        `.haven-dl-category-tab[data-category="${currentCategoryFilter}"]`,
+        `.library-dl-category-tab[data-category="${currentCategoryFilter}"]`,
       );
       if (initialActiveTab) {
         requestAnimationFrame(() =>
@@ -320,8 +320,8 @@ export const downloadsSection = {
       if (viewInfoTextEl)
         viewInfoTextEl.textContent = "All downloads grouped by date";
       if (filteredDisplayDownloads.length === 0) {
-        const emptyState = parseElement(`<div class="haven-dl-empty-state">
-                <span class="haven-dl-empty-icon-placeholder">📥</span>
+        const emptyState = parseElement(`<div class="library-dl-empty-state">
+                <span class="library-dl-empty-icon-placeholder">📥</span>
                 <p>No downloads found.</p>
               </div>`);
         listArea.appendChild(emptyState);
@@ -347,7 +347,7 @@ export const downloadsSection = {
           })
           .forEach((dateKey) => {
             const dateSeparator = parseElement(
-              `<div class="haven-dl-date-separator">${dateKey}</div>`,
+              `<div class="library-dl-date-separator">${dateKey}</div>`,
             );
             listArea.appendChild(dateSeparator);
             groupedByDate[dateKey]
@@ -453,24 +453,24 @@ export const downloadsSection = {
         }
       }
       // NOTE: If you want previews to persist even if the file is deleted, you must cache a thumbnail at download time.
-      const el = parseElement(`<div class="haven-dl-item ${item.status === "failed" ? "failed-item" : ""}
+      const el = parseElement(`<div class="library-dl-item ${item.status === "failed" ? "failed-item" : ""}
         ${item.status === "paused" ? "paused-item" : ""} ${item.status === "deleted" ? "deleted-item" : ""}">
-              <div class="haven-dl-item-icon ${iconDetails.className}">${iconHtml}</div>
-              <div class="haven-dl-item-info">
-                <div class="haven-dl-item-name" title="${item.filename || "Unknown Filename"}
+              <div class="library-dl-item-icon ${iconDetails.className}">${iconHtml}</div>
+              <div class="library-dl-item-info">
+                <div class="library-dl-item-name" title="${item.filename || "Unknown Filename"}
         ${item.url || "Unknown URL"}">${item.filename || "Unknown Filename"}</div>
-                <div class="haven-dl-item-details">
+                <div class="library-dl-item-details">
                   <span>${formatBytes(item.totalBytes)}</span>
                   <span>•</span>
                   <span>${timeAgo(new Date(item.timestamp))}</span>
-                  <span class="haven-dl-item-url" title="${item.url || "Unknown URL"}">${item.url || "Unknown URL"}</span>
+                  <span class="library-dl-item-url" title="${item.url || "Unknown URL"}">${item.url || "Unknown URL"}</span>
                 </div>
               </div>
-              <div class="haven-dl-item-status-section">
-                <div class="haven-dl-item-progress-bar">
-                  <div class="haven-dl-item-progress-fill ${statusInfo.className}" style="width: ${progressPercent}%;"></div>
+              <div class="library-dl-item-status-section">
+                <div class="library-dl-item-progress-bar">
+                  <div class="library-dl-item-progress-fill ${statusInfo.className}" style="width: ${progressPercent}%;"></div>
                 </div>
-                <div class="haven-dl-item-status-text ${statusInfo.className}">${item.status === "deleted" ? "Deleted" : statusInfo.text}</div>
+                <div class="library-dl-item-status-text ${statusInfo.className}">${item.status === "deleted" ? "Deleted" : statusInfo.text}</div>
               </div>
             </div>`);
 
@@ -480,7 +480,7 @@ export const downloadsSection = {
         showXULContextMenu(item, e.screenX, e.screenY);
       });
       // Double-click to open file if completed
-      el.querySelector(".haven-dl-item-info").addEventListener("dblclick", (e) => {
+      el.querySelector(".library-dl-item-info").addEventListener("dblclick", (e) => {
         if (item.status === "completed") handleItemAction(item, "open", e);
       });
       return el;
@@ -494,7 +494,7 @@ export const downloadsSection = {
       }
       function createActionButton(action, title, svgPathD) {
         const button = document.createElement("button");
-        button.className = "haven-dl-action-btn";
+        button.className = "library-dl-action-btn";
         button.dataset.action = action;
         button.title = title;
         button.appendChild(createSVGIcon(svgPathD));
@@ -769,10 +769,10 @@ export const downloadsSection = {
                       renderUI();
                     } catch (err) {
                       console.error(
-                        "[ZenHaven Downloads] Error fetching or processing download history:",
+                        "[Zenlibrary Downloads] Error fetching or processing download history:",
                         err,
                       );
-                      downloadsViewContainer.innerHTML = `<div class="haven-dl-empty-state"><p>Error loading download history.</p><pre>${err.message}\n${err.stack}</pre></div>`;
+                      downloadsViewContainer.innerHTML = `<div class="library-dl-empty-state"><p>Error loading download history.</p><pre>${err.message}\n${err.stack}</pre></div>`;
                     }
                   })();
                 }
@@ -822,7 +822,7 @@ export const downloadsSection = {
     }
     function attachEventListeners() {
       const searchInputEl = downloadsViewContainer.querySelector(
-        ".haven-dl-search-input",
+        ".library-dl-search-input",
       );
       if (searchInputEl)
         searchInputEl.addEventListener("input", (e) => {
@@ -838,28 +838,28 @@ export const downloadsSection = {
         });
       // Remove all currentViewMode logic and state
       // downloadsViewContainer
-      //   .querySelectorAll(".haven-dl-view-btn")
+      //   .querySelectorAll(".library-dl-view-btn")
       //   .forEach((btn) => {
       //     btn.addEventListener("click", (e) => {
       //       currentViewMode = e.currentTarget.dataset.view;
       //       downloadsViewContainer
-      //         .querySelectorAll(".haven-dl-view-btn")
+      //         .querySelectorAll(".library-dl-view-btn")
       //         .forEach((b) => b.classList.remove("active"));
       //       e.currentTarget.classList.add("active");
       //       updateAndRenderDownloadsList();
       //     });
       //   });
       const categoryTabsContainerEl = downloadsViewContainer.querySelector(
-        ".haven-dl-category-tabs-container",
+        ".library-dl-category-tabs-container",
       );
       categoryTabsContainerEl
-        .querySelectorAll(".haven-dl-category-tab")
+        .querySelectorAll(".library-dl-category-tab")
         .forEach((tab) => {
           tab.addEventListener("click", (e) => {
             const clickedTab = e.currentTarget;
             currentCategoryFilter = clickedTab.dataset.category;
             categoryTabsContainerEl
-              .querySelectorAll(".haven-dl-category-tab")
+              .querySelectorAll(".library-dl-category-tab")
               .forEach((t) => t.classList.remove("active"));
             clickedTab.classList.add("active");
             updateCategoryIndicatorPosition(clickedTab);
@@ -867,7 +867,7 @@ export const downloadsSection = {
           });
         });
       const initialActiveCatTab = categoryTabsContainerEl.querySelector(
-        `.haven-dl-category-tab[data-category="${currentCategoryFilter}"]`,
+        `.library-dl-category-tab[data-category="${currentCategoryFilter}"]`,
       );
       if (initialActiveCatTab) {
         updateCategoryIndicatorPosition(initialActiveCatTab);
@@ -1020,7 +1020,7 @@ export const downloadsSection = {
           renderUI();
         }
       } catch (err) {
-        console.error("[ZenHaven Downloads] Error polling downloads:", err);
+        console.error("[Zenlibrary Downloads] Error polling downloads:", err);
       }
     }
 
@@ -1073,7 +1073,7 @@ export const downloadsSection = {
                 }
               } catch (e) {
                 console.warn(
-                  "[ZenHaven Downloads] Error creating nsIFile or getting leafName from path:",
+                  "[Zenlibrary Downloads] Error creating nsIFile or getting leafName from path:",
                   d.target.path,
                   e,
                 );
@@ -1106,7 +1106,7 @@ export const downloadsSection = {
                 }
               } catch (e) {
                 console.warn(
-                  "[ZenHaven Downloads] Error extracting filename from URL:",
+                  "[Zenlibrary Downloads] Error extracting filename from URL:",
                   d.source.url,
                   e,
                 );
@@ -1180,16 +1180,16 @@ export const downloadsSection = {
           .filter((d) => d.timestamp);
 
         console.log(
-          "[ZenHaven Downloads] Processed Download Items:",
+          "[Zenlibrary Downloads] Processed Download Items:",
           allFetchedDownloads.length,
         );
         renderUI();
       } catch (err) {
         console.error(
-          "[ZenHaven Downloads] Error fetching or processing download history:",
+          "[Zenlibrary Downloads] Error fetching or processing download history:",
           err,
         );
-        downloadsViewContainer.innerHTML = `<div class="haven-dl-empty-state"><p>Error loading download history.</p><pre>${err.message}\n${err.stack}</pre></div>`;
+        downloadsViewContainer.innerHTML = `<div class="library-dl-empty-state"><p>Error loading download history.</p><pre>${err.message}\n${err.stack}</pre></div>`;
       }
     })();
 
@@ -1199,7 +1199,7 @@ export const downloadsSection = {
     function ensureXULContextMenu() {
       if (xulContextMenu) return xulContextMenu;
       const menuXML = `
-        <menupopup id="haven-dl-xul-context-menu">
+        <menupopup id="library-dl-xul-context-menu">
           <menuitem label="Rename" id="dl-menu-rename"/>
           <menuitem label="Open in Folder" id="dl-menu-open-folder"/>
           <menuitem label="Open Download Link in New Tab" id="dl-menu-open-url"/>
@@ -1245,10 +1245,10 @@ export const downloadsSection = {
     // --- Rename Dialog ---
     function showRenameDialog(item) {
       // Remove any existing dialog
-      const existing = document.getElementById('haven-dl-rename-dialog');
+      const existing = document.getElementById('library-dl-rename-dialog');
       if (existing) existing.remove();
       const overlay = parseElement(`
-        <div id="haven-dl-rename-dialog">
+        <div id="library-dl-rename-dialog">
           <div class="rename-dialog">
             <div class="rename-title">Rename File</div>
             <input type="text" class="rename-input" />

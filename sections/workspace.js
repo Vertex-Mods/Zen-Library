@@ -38,7 +38,6 @@ function restoreZenWorkspace(uuid) {
       info.parent.appendChild(zenWorkspaceEl);
     }
     zenWorkspaceOriginalParents.delete(uuid);
-    console.log(`[ZenHaven] Restored zen-workspace element for uuid: ${uuid} to its original parent.`);
   }
 }
 
@@ -81,10 +80,10 @@ export const workspacesSection = {
       });
     }
     const container = parseElement(
-      `<div id="haven-workspace-outer-container"><div id = "haven-workspace-inner-container" ></div></div>`,
+      `<div id="library-workspace-outer-container"><div id = "library-workspace-inner-container" ></div></div>`,
     );
     const innerContainer = container.querySelector(
-      "#haven-workspace-inner-container",
+      "#library-workspace-inner-container",
     );
 
     // Workspace drag and drop variables
@@ -100,7 +99,7 @@ export const workspacesSection = {
 
     function getWorkspaceAfterElement(container, x) {
       const draggableWorkspaces = [
-        ...container.querySelectorAll(".haven-workspace:not(.dragging-workspace)"),
+        ...container.querySelectorAll(".library-workspace:not(.dragging-workspace)"),
       ];
 
       return draggableWorkspaces.reduce(
@@ -118,7 +117,7 @@ export const workspacesSection = {
     }
 
     function getAllWorkspaces() {
-      return Array.from(innerContainer.querySelectorAll('.haven-workspace'));
+      return Array.from(innerContainer.querySelectorAll('.library-workspace'));
     }
 
     function onWorkspaceDragMove(e) {
@@ -138,7 +137,7 @@ export const workspacesSection = {
       dragWorkspace.style.top = `${newY}px`;
       
       // Get the add button to prevent dragging past it
-      const addButton = innerContainer.querySelector('.haven-workspace-add-button');
+      const addButton = innerContainer.querySelector('.library-workspace-add-button');
       const addButtonRect = addButton ? addButton.getBoundingClientRect() : null;
       
       // Check if we're trying to drag past the add button
@@ -299,26 +298,16 @@ export const workspacesSection = {
     // innerContainer.addEventListener("drop", async (e) => { ... });
 
     const addWorkspaceButton =
-      parseElement(`<div class="haven-workspace-add-button"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+      parseElement(`<div class="library-workspace-add-button"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M8 3V13M3 8H13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
           </svg></div>`);
     addWorkspaceButton.addEventListener("click", () => {
-      try {
-        if (typeof gZenWorkspaces?.openWorkspaceCreation === "function") {
-          window.haven.destroyUI();
+          window.library.closelibrary();
           gZenWorkspaces.openWorkspaceCreation();
-        } else {
-          throw new Error(
-            "gZenWorkspaces.openWorkspaceCreation is not available",
-          );
-        }
-      } catch (error) {
-        console.error("[ZenHaven] Error opening workspace dialog:", error);
-      }
     });
 
     if (typeof gZenWorkspaces === "undefined") {
-      console.error("[ZenHaven] gZenWorkspaces is not available.");
+      console.error("[Zenlibrary] gZenWorkspaces is not available.");
       innerContainer.appendChild(addWorkspaceButton);
       return container;
     }
@@ -331,8 +320,8 @@ export const workspacesSection = {
           const { uuid, theme, name, icon } = workspace;
           // Build a proxy UI for each workspace
           const workspaceDiv = parseElement(
-            `<div class="haven-workspace">
-                  <div class="haven-workspace-header">
+            `<div class="library-workspace">
+                  <div class="library-workspace-header">
                     <span class="workspace-icon">${icon}</span>
                     <span class="workspace-name">${name}</span>
                   </div>
@@ -391,7 +380,7 @@ export const workspacesSection = {
               
               // Create placeholder
               workspacePlaceholder = document.createElement('div');
-              workspacePlaceholder.className = 'haven-workspace workspace-placeholder';
+              workspacePlaceholder.className = 'library-workspace workspace-placeholder';
               workspacePlaceholder.style.height = `${workspaceDiv.offsetHeight}px`;
               workspacePlaceholder.style.width = `${workspaceDiv.offsetWidth}px`;
               workspacePlaceholder.style.opacity = '0.3';
@@ -470,8 +459,8 @@ export const workspacesSection = {
               if (workspaceEl && !workspaceEl.hasAttribute('active')) {
                 // Switch to the workspace in the background
                 await gZenWorkspaces.changeWorkspaceWithID(uuid);
-                if (window.haven && typeof window.haven.initializeUI === 'function' && !window.haven.uiInitialized) {
-                  window.haven.initializeUI();
+                if (window.library && typeof window.library.initializeUI === 'function' && !window.library.uiInitialized) {
+                  window.library.initializeUI();
                 }
               }
             }, 200); // 200ms delay before switching
@@ -486,12 +475,12 @@ export const workspacesSection = {
           });
 
           // Proxy menu and actions
-          const header = workspaceDiv.querySelector(".haven-workspace-header");
+          const header = workspaceDiv.querySelector(".library-workspace-header");
           const popupOpenButton = parseElement(
             `
               <toolbarbutton 
                 class="toolbarbutton-1
-                haven-workspace-options"
+                library-workspace-options"
                 tooltiptext="Workspace options"
                 image="chrome://browser/skin/zen-icons/menu-bar.svg"
               />`,
@@ -499,7 +488,7 @@ export const workspacesSection = {
           );
           const menuPopup = parseElement(
             `
-              <menupopup class="haven-workspace-actions-popup">
+              <menupopup class="library-workspace-actions-popup">
                 <menuitem class="rename" label="Rename" tooltiptext="Rename" />
                 <menuitem class="change-icon" label="Change Icon" tooltiptext="Change workspace icon" />
                 <menuitem class="switch" label="Go to workspace" tooltiptext="switch to this workspace"/>
@@ -585,7 +574,7 @@ export const workspacesSection = {
           // Proxy switch workspace
           menuPopup.querySelector(".switch").addEventListener("click", async () => {
             await gZenWorkspaces.changeWorkspaceWithID(uuid);
-            window.haven.destroyUI();
+            window.library.closelibrary();
           });
 
           // Proxy delete workspace
@@ -600,7 +589,7 @@ export const workspacesSection = {
           menuPopup.querySelector(".change-theme").addEventListener("click", async (event) => {
             try {
               await gZenWorkspaces.changeWorkspaceWithID(uuid);
-              let anchor = workspaceDiv.querySelector('.haven-workspace-header');
+              let anchor = workspaceDiv.querySelector('.library-workspace-header');
               if (!anchor) anchor = popupOpenButton;
               if (typeof PanelMultiView !== "undefined" && gZenThemePicker?.panel) {
                 PanelMultiView.openPopup(gZenThemePicker.panel, anchor, {
@@ -615,9 +604,9 @@ export const workspacesSection = {
           });
 
           // Proxy tab list (visual only)
-          const contentDiv = parseElement(`<div class="haven-workspace-content"></div>`);
-          const pinnedTabsContainer = parseElement(`<div class="haven-workspace-pinned-tabs"></div>`);
-          const regularTabsContainer = parseElement(`<div class="haven-workspace-regular-tabs"></div>`);
+          const contentDiv = parseElement(`<div class="library-workspace-content"></div>`);
+          const pinnedTabsContainer = parseElement(`<div class="library-workspace-pinned-tabs"></div>`);
+          const regularTabsContainer = parseElement(`<div class="library-workspace-regular-tabs"></div>`);
           allTabs
             .filter(
               (tabEl) =>
@@ -635,7 +624,7 @@ export const workspacesSection = {
               }
               // HTML part (tabProxy)
               const tabProxy = parseElement(`
-                <div class="haven-tab" draggable="true">
+                <div class="library-tab" draggable="true">
                   <span class="tab-icon">
                     ${faviconUrl ? `<img src="${faviconUrl}" style="width:16px;height:16px;vertical-align:middle;">` : ''}
                   </span>
@@ -672,7 +661,7 @@ export const workspacesSection = {
               });
               tabProxy.querySelector('.copy-link').addEventListener('click', (e) => {
                 e.stopPropagation();
-                console.log(`[ZenHaven] Copying URL for tab: ${tabTitle} (${tabUrl})`);
+                console.log(`[Zenlibrary] Copying URL for tab: ${tabTitle} (${tabUrl})`);
                 if (tabUrl) {
                   // Try modern clipboard API first
                   if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -682,10 +671,10 @@ export const workspacesSection = {
                       }
                     }).catch(() => {
                       // Fallback if clipboard API fails
-                      console.error(`[ZenHaven] Clipboard API failed, falling back to execCommand for tab: ${tabTitle} (${tabUrl})`);
+                      console.error(`[Zenlibrary] Clipboard API failed, falling back to execCommand for tab: ${tabTitle} (${tabUrl})`);
                     });
                   } else {
-                    console.error(`[ZenHaven] Clipboard API failed, falling back to execCommand for tab: ${tabTitle} (${tabUrl})`);
+                    console.error(`[Zenlibrary] Clipboard API failed, falling back to execCommand for tab: ${tabTitle} (${tabUrl})`);
                   }
                 }
               });
@@ -709,7 +698,7 @@ export const workspacesSection = {
               });
               tabProxy.addEventListener('dragend', (e) => {
                 tabProxy.classList.remove('dragging');
-                document.querySelectorAll('.haven-workspace-pinned-tabs, .haven-workspace-regular-tabs').forEach(c => c.classList.remove('drag-over', 'drag-source'));
+                document.querySelectorAll('.library-workspace-pinned-tabs, .library-workspace-regular-tabs').forEach(c => c.classList.remove('drag-over', 'drag-source'));
                 contentDiv.classList.remove('tab-drag-context');
                 // If not in a valid container, restore to original position
                 const validContainers = [pinnedTabsContainer, regularTabsContainer];
@@ -748,7 +737,7 @@ export const workspacesSection = {
                   if (!contentDiv.classList.contains('tab-drag-context')) return;
                   e.preventDefault();
                   container.classList.remove('drag-over');
-                  const dragging = container.querySelector('.dragging') || document.querySelector('.haven-tab.dragging');
+                  const dragging = container.querySelector('.dragging') || document.querySelector('.library-tab.dragging');
                   if (!dragging) return;
                   // Only allow drop if the tab belongs to this workspace
                   if (dragging.dataset.workspaceUuid !== uuid) return;
@@ -778,7 +767,7 @@ export const workspacesSection = {
               });
               // Helper for reordering within container
               function getTabAfterElement(container, y) {
-                const draggableTabs = [...container.querySelectorAll('.haven-tab:not(.dragging)')];
+                const draggableTabs = [...container.querySelectorAll('.library-tab:not(.dragging)')];
                 return draggableTabs.reduce((closest, child) => {
                   const box = child.getBoundingClientRect();
                   const offset = y - box.top - box.height / 2;
@@ -793,8 +782,8 @@ export const workspacesSection = {
               // --- Custom drag-and-drop logic for vertical tabs ---
               function getAllTabProxies() {
                 return [
-                  ...pinnedTabsContainer.querySelectorAll('.haven-tab'),
-                  ...regularTabsContainer.querySelectorAll('.haven-tab'),
+                  ...pinnedTabsContainer.querySelectorAll('.library-tab'),
+                  ...regularTabsContainer.querySelectorAll('.library-tab'),
                 ];
               }
 
@@ -847,7 +836,7 @@ export const workspacesSection = {
                   dragTab._dragSection = isPinned ? 'pinned' : 'regular';
                   // --- Insert placeholder BEFORE moving tab out of DOM ---
                   placeholder = document.createElement('div');
-                  placeholder.className = 'haven-tab drag-placeholder';
+                  placeholder.className = 'library-tab drag-placeholder';
                   placeholder.style.height = `${tabProxy.offsetHeight}px`;
                   placeholder.style.width = `${tabProxy.offsetWidth}px`;
                   tabProxy.parentNode.insertBefore(placeholder, tabProxy);
@@ -865,10 +854,12 @@ export const workspacesSection = {
                   tabProxy.classList.add('dragging-tab');
                   document.body.appendChild(tabProxy);
                   document.body.style.userSelect = 'none';
-                  getAllTabProxies().forEach(tab => {
-                    if (tab !== dragTab) {
-                      tab.style.transition = 'transform 0.18s cubic-bezier(.4,1.3,.5,1)';
-                    }
+                  getAllWorkspaces().forEach(ws => { 
+                      ws.querySelectorAll('.library-tab').forEach(tab => {
+                        if (tab !== dragTab) {
+                          tab.style.transition = 'transform 0.18s cubic-bezier(.4,1.3,.5,1)';
+                        }
+                      });
                   });
                   window.addEventListener('mousemove', onDragMove);
                   window.addEventListener('mouseup', onDragEnd);
@@ -889,143 +880,170 @@ export const workspacesSection = {
                 const workspaceEl = gZenWorkspaces.workspaceElement(uuid);
                 if (!workspaceEl) return;
                 // Pinned
-                const pinnedContainer = workspaceEl.pinnedTabsContainer;
+                const pinnedContainer = workspaceEl.querySelector(".library-workspace-pinned-tabs");
                 const realPinnedTabs = Array.from(gBrowser.tabs).filter(t => t.pinned && t.getAttribute('zen-workspace-id') === uuid);
                 realPinnedTabs.forEach(tab => {
-                  const proxy = Array.from(pinnedContainer.querySelectorAll('.haven-tab')).find(t => t.tabEl && t.tabEl.getAttribute('id') === tab.getAttribute('id'));
+                  const proxy = Array.from(pinnedContainer.querySelectorAll('.library-tab')).find(t => t.tabEl && t.tabEl.getAttribute('id') === tab.getAttribute('id'));
                   if (proxy) pinnedContainer.appendChild(proxy);
                 });
                 // Regular
-                const regularContainer = workspaceEl.tabsContainer;
+                const regularContainer = workspaceEl.querySelector(".library-workspace-regular-tabs");
                 const realRegularTabs = Array.from(gBrowser.tabs).filter(t => !t.pinned && t.getAttribute('zen-workspace-id') === uuid);
                 realRegularTabs.forEach(tab => {
-                  const proxy = Array.from(regularContainer.querySelectorAll('.haven-tab')).find(t => t.tabEl && t.tabEl.getAttribute('id') === tab.getAttribute('id'));
+                  const proxy = Array.from(regularContainer.querySelectorAll('.library-tab')).find(t => t.tabEl && t.tabEl.getAttribute('id') === tab.getAttribute('id'));
                   if (proxy) regularContainer.appendChild(proxy);
                 });
               }
 
               function onDragMove(e) {
                 if (!isDragging || !dragTab) return;
-                // Move the tab visually with the mouse
-                const newY = e.clientY - dragMouseOffset;
-                const newX = dragStartX; // lock X axis
+
+                const sourceWorkspaceEl = innerContainer.querySelector(`.library-workspace[data-uuid="${dragTab.dataset.workspaceUuid}"]`);
+                const allWorkspacesList = getAllWorkspaces();
+                const sourceIndex = allWorkspacesList.findIndex(ws => ws === sourceWorkspaceEl);
+                const leftNeighbor = sourceIndex > 0 ? allWorkspacesList[sourceIndex - 1] : null;
+                const rightNeighbor = sourceIndex < allWorkspacesList.length - 1 ? allWorkspacesList[sourceIndex + 1] : null;
+
+                let newX = dragStartX; // Snap to original X position by default
+                const newY = e.clientY - dragMouseOffset; // Y axis always follows mouse
+
+                // Check for crossing the 50% threshold to a neighbor workspace
+                if (rightNeighbor) {
+                    const sourceRect = sourceWorkspaceEl.getBoundingClientRect();
+                    const rightRect = rightNeighbor.getBoundingClientRect();
+                    const midpoint = sourceRect.right + (rightRect.left - sourceRect.right) / 2;
+                    if (e.clientX > midpoint) {
+                        newX = e.clientX - dragOffsetX; // Unsnap and follow mouse X
+                        //To-do: animate this, with somthing snappy
+                    }
+                }
+
+                if (leftNeighbor) {
+                    const sourceRect = sourceWorkspaceEl.getBoundingClientRect();
+                    const leftRect = leftNeighbor.getBoundingClientRect();
+                    const midpoint = leftRect.right + (sourceRect.left - leftRect.right) / 2;
+                    if (e.clientX < midpoint) {
+                        newX = e.clientX - dragOffsetX; // Unsnap and follow mouse X
+                    }
+                }
+                
+                // Move the tab visually
                 dragTab.style.top = `${newY}px`;
                 dragTab.style.left = `${newX}px`;
-                // --- Restrict drag to section ---
-                const section = dragTab._dragSection;
-                const sectionContainer = section === 'pinned' ? pinnedTabsContainer : regularTabsContainer;
-                
-                // Get all non-dragging tabs in the same section
-                const otherTabs = Array.from(sectionContainer.querySelectorAll('.haven-tab')).filter(tab => tab !== dragTab);
-                
-                // Find the tab that the dragged tab is touching
-                let targetTab = null;
-                let insertBefore = null;
-                
-                for (const tab of otherTabs) {
-                  const tabRect = tab.getBoundingClientRect();
-                  const draggedRect = dragTab.getBoundingClientRect();
-                  
-                  // Check if the dragged tab is touching this tab
-                  // Use a small overlap threshold for more responsive behavior
-                  const overlapThreshold = 5; // pixels of overlap required
-                  const isTouching = !(draggedRect.bottom < tabRect.top + overlapThreshold || 
-                                     draggedRect.top > tabRect.bottom - overlapThreshold);
-                  
-                  if (isTouching) {
-                    // Determine if we should insert before or after this tab
-                    const draggedCenter = draggedRect.top + draggedRect.height / 2;
-                    const tabCenter = tabRect.top + tabRect.height / 2;
-                    
-                    if (draggedCenter < tabCenter) {
-                      // Insert before this tab
-                      insertBefore = tab;
-                      break;
-                    } else {
-                      // Insert after this tab, but continue checking for better position
-                      insertBefore = tab.nextElementSibling;
-                      targetTab = tab;
-                    }
-                  }
+
+                const elementUnderCursor = document.elementFromPoint(e.clientX, e.clientY);
+                const hoveredWorkspaceEl = elementUnderCursor ? elementUnderCursor.closest('.library-workspace') : null;
+
+                // Clean up previous target highlight
+                const previousTarget = innerContainer.querySelector('.tab-drop-target');
+                if (previousTarget && previousTarget !== hoveredWorkspaceEl) {
+                  previousTarget.classList.remove('tab-drop-target');
                 }
-                
-                // If no specific tab is being touched, determine position based on mouse position
-                if (!insertBefore) {
-                  // Use the original getTabAfterElement logic as fallback
-                  let insertBeforeFallback = null;
-                  for (const tab of sectionContainer.querySelectorAll('.haven-tab')) {
-                    if (tab === dragTab) continue;
-                    const rect = tab.getBoundingClientRect();
-                    if (e.clientY < rect.top + rect.height / 2 - 2) {
-                      insertBeforeFallback = tab;
-                      break;
+
+                if (hoveredWorkspaceEl && hoveredWorkspaceEl.dataset.uuid !== dragTab.dataset.workspaceUuid) {
+                  // We are over a different workspace. Highlight it and hide the placeholder.
+                  hoveredWorkspaceEl.classList.add('tab-drop-target');
+                  placeholder.style.display = 'none';
+                  lastContainer = null; // We are no longer in a specific container
+
+                  // Hide individual tab movements in the original workspace
+                  sourceWorkspaceEl.querySelectorAll('.library-tab').forEach(tab => {
+                    if (tab !== dragTab) {
+                      tab.style.transform = '';
                     }
-                  }
-                  insertBefore = insertBeforeFallback;
-                }
-                
-                // Move placeholder to correct position within section
-                if (section === 'pinned') {
-                  if (insertBefore == null) {
-                    // Always insert before the last pinned tab (not after)
-                    const pinnedTabs = Array.from(pinnedTabsContainer.querySelectorAll('.haven-tab'));
-                    if (placeholder !== pinnedTabs[pinnedTabs.length - 1]) {
-                      pinnedTabsContainer.insertBefore(placeholder, pinnedTabs[pinnedTabs.length - 1]);
-                    }
-                  } else {
-                    if (placeholder !== insertBefore) {
-                      pinnedTabsContainer.insertBefore(placeholder, insertBefore);
-                    }
-                  }
+                  });
                 } else {
-                  // Regular tabs logic
-                  if (insertBefore) {
-                    if (placeholder !== insertBefore) {
-                      regularTabsContainer.insertBefore(placeholder, insertBefore);
-                    }
-                  } else {
-                    if (placeholder !== regularTabsContainer.lastChild) {
-                      regularTabsContainer.appendChild(placeholder);
-                    }
+                  // We are over the original workspace (or empty space). Show placeholder and do reordering.
+                  if (hoveredWorkspaceEl) {
+                    hoveredWorkspaceEl.classList.remove('tab-drop-target');
                   }
+                  placeholder.style.display = '';
+
+                  // --- NEW INTRA-WORKSPACE LOGIC (Robust) ---
+                  const currentSourceWorkspaceEl = innerContainer.querySelector(`.library-workspace[data-uuid="${dragTab.dataset.workspaceUuid}"]`);
+                  if (!currentSourceWorkspaceEl) return;
+
+                  const sourceContentDiv = currentSourceWorkspaceEl.querySelector('.library-workspace-content');
+                  if (!sourceContentDiv) return;
+
+                  const sourcePinnedContainer = currentSourceWorkspaceEl.querySelector('.library-workspace-pinned-tabs');
+                  const sourceRegularContainer = currentSourceWorkspaceEl.querySelector('.library-workspace-regular-tabs');
+
+                  let currentTargetContainer = null;
+                  const contentRect = sourceContentDiv.getBoundingClientRect();
+
+                  // Determine which container (pinned/regular) the cursor is over, only if inside content area
+                  if (e.clientX >= contentRect.left && e.clientX <= contentRect.right && e.clientY >= contentRect.top && e.clientY <= contentRect.bottom) {
+                      let pinnedRect = sourcePinnedContainer ? sourcePinnedContainer.getBoundingClientRect() : null;
+                      let regularRect = sourceRegularContainer ? sourceRegularContainer.getBoundingClientRect() : null;
+
+                      // Prioritize the container the cursor is physically inside
+                      if (pinnedRect && e.clientY >= pinnedRect.top && e.clientY <= pinnedRect.bottom) {
+                          currentTargetContainer = sourcePinnedContainer;
+                      } else if (regularRect && e.clientY >= regularRect.top && e.clientY <= regularRect.bottom) {
+                          currentTargetContainer = sourceRegularContainer;
+                      } else {
+                          // Fallback for empty space between containers
+                          if (sourcePinnedContainer && sourceRegularContainer) {
+                              // If cursor is above the start of regular container, it's pinned territory
+                              if (e.clientY < regularRect.top) {
+                                  currentTargetContainer = sourcePinnedContainer;
+                              } else {
+                                  currentTargetContainer = sourceRegularContainer;
+                              }
+                          } else if (sourcePinnedContainer) {
+                              currentTargetContainer = sourcePinnedContainer;
+                          } else if (sourceRegularContainer) {
+                              currentTargetContainer = sourceRegularContainer;
+                          }
+                      }
+                  }
+
+                  // If we found a valid container, position the placeholder there
+                  if (currentTargetContainer) {
+                      if (lastContainer !== currentTargetContainer) {
+                          lastContainer = currentTargetContainer;
+                      }
+                      const afterElement = getTabAfterElement(currentTargetContainer, e.clientY);
+                      if (afterElement) {
+                          currentTargetContainer.insertBefore(placeholder, afterElement);
+                      } else {
+                          currentTargetContainer.appendChild(placeholder);
+                      }
+                  }
+
+                  // Animate other tabs in the placeholder's container to make space
+                  getAllWorkspaces().forEach(ws => { 
+                      ws.querySelectorAll('.library-tab').forEach(tab => {
+                        if (tab === dragTab) return;
+
+                        // Reset transform if tab is not in the same container as the placeholder
+                        if (!placeholder.parentNode || tab.parentNode !== placeholder.parentNode) {
+                          tab.style.transform = '';
+                          return;
+                        }
+
+                        const tabRect = tab.getBoundingClientRect();
+                        const placeholderRect = placeholder.getBoundingClientRect();
+                        const isTouching = !(placeholderRect.bottom < tabRect.top + 5 || placeholderRect.top > tabRect.bottom - 5);
+                        
+                        if (isTouching) {
+                          if (!tab.style.transition) {
+                            tab.style.transition = 'transform 0.15s cubic-bezier(.4,1.3,.5,1)';
+                          }
+                          if (tabRect.top < placeholderRect.top) { // tab is above placeholder
+                            const moveDistance = Math.min(15, Math.abs(tabRect.bottom - placeholderRect.top));
+                            tab.style.transform = `translateY(-${moveDistance}px)`;
+                          } else if (tabRect.top > placeholderRect.top) { // tab is below placeholder
+                            const moveDistance = Math.min(15, Math.abs(tabRect.top - placeholderRect.bottom));
+                            tab.style.transform = `translateY(${moveDistance}px)`;
+                          }
+                        } else {
+                          tab.style.transform = '';
+                        }
+                      });
+                  });
                 }
-                
-                // Only move tabs that are actually being touched by the dragged tab
-                getAllTabProxies().forEach(tab => {
-                  if (tab === dragTab) return;
-                  
-                  const tabRect = tab.getBoundingClientRect();
-                  const draggedRect = dragTab.getBoundingClientRect();
-                  
-                  // Check if this tab is being touched by the dragged tab
-                  const overlapThreshold = 5;
-                  const isTouching = !(draggedRect.bottom < tabRect.top + overlapThreshold || 
-                                     draggedRect.top > tabRect.bottom - overlapThreshold);
-                  
-                  if (isTouching) {
-                    // Add transition for smooth movement only when touching
-                    if (!tab.style.transition) {
-                      tab.style.transition = 'transform 0.15s cubic-bezier(.4,1.3,.5,1)';
-                    }
-                    
-                    const placeholderRect = placeholder.getBoundingClientRect();
-                    
-                    // Move tab slightly to make room for the dragged tab
-                    if (tabRect.top < placeholderRect.top) {
-                      // Tab is above placeholder, move it slightly up
-                      const moveDistance = Math.min(15, Math.abs(tabRect.bottom - placeholderRect.top));
-                      tab.style.transform = `translateY(-${moveDistance}px)`;
-                    } else if (tabRect.top > placeholderRect.top) {
-                      // Tab is below placeholder, move it slightly down
-                      const moveDistance = Math.min(15, Math.abs(tabRect.top - placeholderRect.bottom));
-                      tab.style.transform = `translateY(${moveDistance}px)`;
-                    }
-                  } else {
-                    // Reset transform if not touching
-                    tab.style.transform = '';
-                    tab.style.transition = '';
-                  }
-                });
               }
 
               function onDragEnd(e) {
@@ -1034,121 +1052,214 @@ export const workspacesSection = {
                   dragHoldTimeout = null;
                 }
                 if (!isDragging || !dragTab) return;
-                // Insert tab at placeholder
-                placeholder.parentNode.insertBefore(dragTab, placeholder);
-                // Restore tab's styles
-                dragTab.style.position = '';
-                dragTab.style.top = '';
-                dragTab.style.left = '';
-                dragTab.style.width = '';
-                dragTab.style.height = '';
-                dragTab.style.zIndex = '';
-                dragTab.style.pointerEvents = '';
-                dragTab.style.transition = '';
-                dragTab.classList.remove('dragging-tab');
-                dragTab.removeAttribute('drag-tab');
-                dragTab.style.transform = '';
-                // Update pin state if moved between containers (should never happen now)
-                const isPinnedTarget = placeholder.parentNode === pinnedTabsContainer;
-                const tabEl = dragTab.tabEl;
-                // --- Ensure tabEl has a unique id ---
-                if (tabEl && !tabEl.getAttribute('id')) {
-                  tabEl.setAttribute('id', 'zen-tab-' + Math.random().toString(36).slice(2));
-                }
-                if (tabEl) {
-                  if (isPinnedTarget) {
-                    tabEl.setAttribute('pinned', 'true');
-                  } else {
-                    tabEl.removeAttribute('pinned');
-                  }
-                }
-                // --- Update the underlying tab order in the workspace ---
-                // Always use the real tab's id for matching
-                function getTabIdList(container) {
-                  return Array.from(container.querySelectorAll('.haven-tab')).map(t => t.tabEl && t.tabEl.getAttribute('id')).filter(Boolean);
-                }
-                // Only update the order within the section
-                let order, section;
-                if (isPinnedTarget) {
-                  order = getTabIdList(pinnedTabsContainer);
-                  section = 'pinned';
-                } else {
-                  order = getTabIdList(regularTabsContainer);
-                  section = 'regular';
-                }
-                // Debug log for tab order
-                console.log('[ZenHaven] New', section, 'tab order:', order);
-                // --- Update the real Firefox tab order using gBrowser.moveTabTo ---
-                // Note: Pinned tab order is global, not per workspace!
-                function reorderFirefoxPinnedTabs(order) {
-                  // Get all real pinned tabs (global, not per workspace)
-                  const allTabs = Array.from(gBrowser.tabs);
-                  let pinnedTabs = allTabs.filter(t => t.pinned);
-                  console.log('[ZenHaven] Real pinned tabs before reorder:', pinnedTabs.map(t => t.getAttribute('id')));
-                  // For each tab in the new order, move it to the correct index among pinned tabs
-                  for (let i = 0; i < order.length; i++) {
-                    // Always match by the real tab's id
-                    const tab = allTabs.find(t => t.getAttribute('id') === order[i]);
-                    if (tab && !tab.pinned) {
-                      console.log(`[ZenHaven] Pinning tab ${tab.getAttribute('id')}`);
-                      gBrowser.pinTab(tab);
+
+                const currentDropTarget = innerContainer.querySelector('.tab-drop-target');
+                const dropOnNewWorkspace = currentDropTarget && currentDropTarget.dataset.uuid !== dragTab.dataset.workspaceUuid;
+
+                if (dropOnNewWorkspace) {
+                    // --- Dropped on a new workspace ---
+                    const tabToMove = tabEl;
+                    const targetUuid = currentDropTarget.dataset.uuid;
+                    currentDropTarget.classList.remove('tab-drop-target');
+
+                    const elementUnderCursor = document.elementFromPoint(e.clientX, e.clientY);
+                    const targetPinnedContainer = currentDropTarget.querySelector('.library-workspace-pinned-tabs');
+                    const targetRegularContainer = currentDropTarget.querySelector('.library-workspace-regular-tabs');
+
+                    let shouldBePinned = false;
+                    const isOverPinned = !!(elementUnderCursor && elementUnderCursor.closest('.library-workspace-pinned-tabs'));
+                    const isOverRegular = !!(elementUnderCursor && elementUnderCursor.closest('.library-workspace-regular-tabs'));
+
+                    if (isOverPinned) {
+                        shouldBePinned = true;
+                    } else if (isOverRegular) {
+                        shouldBePinned = false;
+                    } else {
+                        // Fallback for when not dropping directly on a container (e.g., workspace header)
+                        if (targetPinnedContainer && !targetRegularContainer) {
+                            shouldBePinned = true; // Only pinned exists, so must be pinned.
+                        } else if (targetPinnedContainer && targetRegularContainer) {
+                            const regularRect = targetRegularContainer.getBoundingClientRect();
+                            // If cursor is above the start of the regular container, it's pinned.
+                            shouldBePinned = (e.clientY < regularRect.top);
+                        } else {
+                            // Only regular exists or neither exist, so not pinned.
+                            shouldBePinned = false;
+                        }
                     }
-                    // Always move to index i among pinned tabs
-                    if (tab && pinnedTabs[i] !== tab) {
-                      console.log(`[ZenHaven] Moving tab ${tab.getAttribute('id')} to pinned index ${i}`);
-                      gBrowser.moveTabTo(tab, i);
-                      // After move, update pinnedTabs to reflect the new order
+
+                    if (tabToMove && typeof gZenWorkspaces?.moveTabToWorkspace === 'function') {
+                        try{
+                          tabEl.setProperty('pinned', shouldBePinned)
+                          tabEl.pinned = shouldBePinned
+                        }catch(e){ console.error(e) }
+                        gZenWorkspaces.moveTabToWorkspace(tabEl, targetUuid);
+
+                        // Restore tab's styles before moving the DOM proxy
+                        dragTab.style.position = '';
+                        dragTab.style.top = '';
+                        dragTab.style.left = '';
+                        dragTab.style.width = '';
+                        dragTab.style.height = '';
+                        dragTab.style.zIndex = '';
+                        dragTab.style.pointerEvents = '';
+                        dragTab.style.transition = '';
+                        dragTab.classList.remove('dragging-tab');
+                        dragTab.removeAttribute('drag-tab');
+                        dragTab.style.transform = '';
+
+                        // Find or create the correct container and append the tab proxy
+                        const contentDiv = currentDropTarget.querySelector('.library-workspace-content');
+                        let newContainer;
+                        if (shouldBePinned) {
+                            newContainer = currentDropTarget.querySelector('.library-workspace-pinned-tabs');
+                            if (!newContainer) {
+                                newContainer = parseElement(`<div class="library-workspace-pinned-tabs"></div>`);
+                                contentDiv.insertBefore(newContainer, contentDiv.firstChild);
+                            }
+                        } else {
+                            newContainer = currentDropTarget.querySelector('.library-workspace-regular-tabs');
+                            if (!newContainer) {
+                                newContainer = parseElement(`<div class="library-workspace-regular-tabs"></div>`);
+                                contentDiv.appendChild(newContainer);
+                            }
+                        }
+                        newContainer.appendChild(dragTab);
+                        dragTab.dataset.workspaceUuid = targetUuid; // Update the proxy's workspace ID
+
+                    } else {
+                        // Failsafe: if move function fails, just remove the proxy
+                        dragTab.remove();
+                    }
+
+                    // Common cleanup for cross-workspace drop
+                    document.body.style.userSelect = '';
+                    if (placeholder && placeholder.parentNode) placeholder.parentNode.removeChild(placeholder);
+                    getAllWorkspaces().forEach(ws => ws.querySelectorAll('.library-tab').forEach(tab => {
+                        tab.style.transition = '';
+                        tab.style.transform = '';
+                    }));
+
+                } else {
+                    // --- Dropped within the same workspace (original logic) ---
+                    if(currentDropTarget) currentDropTarget.classList.remove('tab-drop-target');
+
+                    // Insert tab at placeholder
+                    placeholder.parentNode.insertBefore(dragTab, placeholder);
+                    // Restore tab's styles
+                    dragTab.style.position = '';
+                    dragTab.style.top = '';
+                    dragTab.style.left = '';
+                    dragTab.style.width = '';
+                    dragTab.style.height = '';
+                    dragTab.style.zIndex = '';
+                    dragTab.style.pointerEvents = '';
+                    dragTab.style.transition = '';
+                    dragTab.classList.remove('dragging-tab');
+                    dragTab.removeAttribute('drag-tab');
+                    dragTab.style.transform = '';
+                    // Update pin state if moved between containers (should never happen now)
+                    const isPinnedTarget = placeholder.parentNode === pinnedTabsContainer;
+                    const tabEl = dragTab.tabEl;
+                    // --- Ensure tabEl has a unique id ---
+                    if (tabEl && !tabEl.getAttribute('id')) {
+                      tabEl.setAttribute('id', 'zen-tab-' + Math.random().toString(36).slice(2));
+                    }
+                    if (tabEl) {
+                      if (isPinnedTarget) {
+                        tabEl.setAttribute('pinned', 'true');
+                      } else {
+                        tabEl.removeAttribute('pinned');
+                      }
+                    }
+                    // --- Update the underlying tab order in the workspace ---
+                    // Always use the real tab's id for matching
+                    function getTabIdList(container) {
+                      return Array.from(container.querySelectorAll('.library-tab')).map(t => t.tabEl && t.tabEl.getAttribute('id')).filter(Boolean);
+                    }
+                    // Only update the order within the section
+                    let order, section;
+                    if (isPinnedTarget) {
+                      order = getTabIdList(pinnedTabsContainer);
+                      section = 'pinned';
+                    } else {
+                      order = getTabIdList(regularTabsContainer);
+                      section = 'regular';
+                    }
+                    // Debug log for tab order
+                    console.log('[Zenlibrary] New', section, 'tab order:', order);
+                    // --- Update the real Firefox tab order using gBrowser.moveTabTo ---
+                    // Note: Pinned tab order is global, not per workspace!
+                    function reorderFirefoxPinnedTabs(order) {
+                      // Get all real pinned tabs (global, not per workspace)
+                      const allTabs = Array.from(gBrowser.tabs);
+                      let pinnedTabs = allTabs.filter(t => t.pinned);
+                      console.log('[Zenlibrary] Real pinned tabs before reorder:', pinnedTabs.map(t => t.getAttribute('id')));
+                      // For each tab in the new order, move it to the correct index among pinned tabs
+                      for (let i = 0; i < order.length; i++) {
+                        // Always match by the real tab's id
+                        const tab = allTabs.find(t => t.getAttribute('id') === order[i]);
+                        if (tab && !tab.pinned) {
+                          console.log(`[Zenlibrary] Pinning tab ${tab.getAttribute('id')}`);
+                          gBrowser.pinTab(tab);
+                        }
+                        // Always move to index i among pinned tabs
+                        if (tab && pinnedTabs[i] !== tab) {
+                          console.log(`[Zenlibrary] Moving tab ${tab.getAttribute('id')} to pinned index ${i}`);
+                          gBrowser.moveTabTo(tab, i);
+                          // After move, update pinnedTabs to reflect the new order
+                          pinnedTabs = Array.from(gBrowser.tabs).filter(t => t.pinned);
+                          console.log('[Zenlibrary] Real pinned tabs after move:', pinnedTabs.map(t => t.getAttribute('id')));
+                        }
+                      }
+                      // Final pinned tab order
                       pinnedTabs = Array.from(gBrowser.tabs).filter(t => t.pinned);
-                      console.log('[ZenHaven] Real pinned tabs after move:', pinnedTabs.map(t => t.getAttribute('id')));
+                      console.log('[Zenlibrary] Final real pinned tab order:', pinnedTabs.map(t => t.getAttribute('id')));
                     }
-                  }
-                  // Final pinned tab order
-                  pinnedTabs = Array.from(gBrowser.tabs).filter(t => t.pinned);
-                  console.log('[ZenHaven] Final real pinned tab order:', pinnedTabs.map(t => t.getAttribute('id')));
+                    function reorderFirefoxRegularTabs(order) {
+                      const allTabs = Array.from(gBrowser.tabs);
+                      const pinnedCount = gBrowser.tabs.filter(t => t.pinned).length;
+                      for (let i = 0; i < order.length; i++) {
+                        // Always match by the real tab's id
+                        const tab = allTabs.find(t => t.getAttribute('id') === order[i]);
+                        if (tab && tab.pinned) gBrowser.unpinTab(tab);
+                        if (tab) gBrowser.moveTabTo(tab, pinnedCount + i);
+                      }
+                    }
+                    if (section === 'pinned') {
+                      // Update the workspace's pinned tab order in the data model
+                      if (typeof gZenWorkspaces?.updateWorkspacePinnedOrder === 'function') {
+                        gZenWorkspaces.updateWorkspacePinnedOrder(uuid, order);
+                      }
+                      // If this workspace is active, also update the real tab strip
+                      const workspaceEl = gZenWorkspaces.workspaceElement(uuid);
+                      if (workspaceEl && workspaceEl.hasAttribute('active')) {
+                        reorderFirefoxPinnedTabs(order);
+                      }
+                    } else {
+                      reorderFirefoxRegularTabs(order);
+                    }
+                    // --- End Firefox tab order update ---
+                    if (typeof gZenWorkspaces?.reorderTabsInWorkspace === 'function') {
+                      if (isPinnedTarget) {
+                        gZenWorkspaces.reorderTabsInWorkspace(uuid, order, getTabIdList(regularTabsContainer));
+                      } else {
+                        gZenWorkspaces.reorderTabsInWorkspace(uuid, getTabIdList(pinnedTabsContainer), order);
+                      }
+                    } else if (typeof gZenWorkspaces?.reorderTab === 'function') {
+                      const newIndex = Array.from(placeholder.parentNode.children).indexOf(dragTab);
+                      gZenWorkspaces.reorderTab(tabEl, newIndex, isPinnedTarget);
+                    }
+                    document.body.style.userSelect = '';
+                    if (placeholder && placeholder.parentNode) placeholder.parentNode.removeChild(placeholder);
+                    // After drop, reset all transforms and transitions immediately
+                    getAllTabProxies().forEach(tab => {
+                      tab.style.transition = '';
+                      tab.style.transform = '';
+                    });
+                    // --- Always sync the custom UI with the real tab order after a move ---
+                    setTimeout(syncCustomUIWithRealTabs, 0);
                 }
-                function reorderFirefoxRegularTabs(order) {
-                  const allTabs = Array.from(gBrowser.tabs);
-                  const pinnedCount = gBrowser.tabs.filter(t => t.pinned).length;
-                  for (let i = 0; i < order.length; i++) {
-                    // Always match by the real tab's id
-                    const tab = allTabs.find(t => t.getAttribute('id') === order[i]);
-                    if (tab && tab.pinned) gBrowser.unpinTab(tab);
-                    if (tab) gBrowser.moveTabTo(tab, pinnedCount + i);
-                  }
-                }
-                if (section === 'pinned') {
-                  // Update the workspace's pinned tab order in the data model
-                  if (typeof gZenWorkspaces?.updateWorkspacePinnedOrder === 'function') {
-                    gZenWorkspaces.updateWorkspacePinnedOrder(uuid, order);
-                  }
-                  // If this workspace is active, also update the real tab strip
-                  const workspaceEl = gZenWorkspaces.workspaceElement(uuid);
-                  if (workspaceEl && workspaceEl.hasAttribute('active')) {
-                    reorderFirefoxPinnedTabs(order);
-                  }
-                } else {
-                  reorderFirefoxRegularTabs(order);
-                }
-                // --- End Firefox tab order update ---
-                if (typeof gZenWorkspaces?.reorderTabsInWorkspace === 'function') {
-                  if (isPinnedTarget) {
-                    gZenWorkspaces.reorderTabsInWorkspace(uuid, order, getTabIdList(regularTabsContainer));
-                  } else {
-                    gZenWorkspaces.reorderTabsInWorkspace(uuid, getTabIdList(pinnedTabsContainer), order);
-                  }
-                } else if (typeof gZenWorkspaces?.reorderTab === 'function') {
-                  const newIndex = Array.from(placeholder.parentNode.children).indexOf(dragTab);
-                  gZenWorkspaces.reorderTab(tabEl, newIndex, isPinnedTarget);
-                }
-                document.body.style.userSelect = '';
-                if (placeholder && placeholder.parentNode) placeholder.parentNode.removeChild(placeholder);
-                // After drop, reset all transforms and transitions immediately
-                getAllTabProxies().forEach(tab => {
-                  tab.style.transition = '';
-                  tab.style.transform = '';
-                });
-                // --- Always sync the custom UI with the real tab order after a move ---
-                setTimeout(syncCustomUIWithRealTabs, 0);
                 isDragging = false;
                 dragTab = null;
                 placeholder = null;
@@ -1175,22 +1286,8 @@ export const workspacesSection = {
         innerContainer.appendChild(addWorkspaceButton);
       })
       .catch((error) => {
-        console.error("[ZenHaven] Error building workspaces section:", error);
+        console.error("[Zenlibrary] Error building workspaces section:", error);
       });
     return container;
   },
 };
-
-// Hook into UI destroy/cleanup (example, adapt to your actual destroy logic)
-if (window.haven && typeof window.haven.destroyUI === 'function') {
-  const originalDestroyUI = window.haven.destroyUI;
-  window.haven.destroyUI = function(...args) {
-    // Find the workspaces container and call cleanup
-    const container = document.getElementById('haven-workspace-outer-container')?.parentNode;
-    if (container && typeof container._restoreZenWorkspaces === 'function') {
-      container._restoreZenWorkspaces();
-    }
-    return originalDestroyUI.apply(this, args);
-  };
-}
- 
