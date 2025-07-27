@@ -1,8 +1,10 @@
 <?xml version="1.0"?>
-<html xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
-      xmlns:html="http://www.w3.org/1999/xhtml"
-      id="library-settings-window"
-      style="min-width: 35em; max-width: 35em; min-height: 40em;">
+<html
+  xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+  xmlns:html="http://www.w3.org/1999/xhtml"
+  id="library-settings-window"
+  style="min-width: 35em; max-width: 35em; min-height: 40em"
+>
   <head>
     <linkset>
       <html:link
@@ -16,29 +18,48 @@
     </linkset>
   </head>
 
-  <html:body xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+  <html:body
+    xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+  >
     <hbox flex="1" id="main-container" class="main-container">
       <!-- Sidebar -->
-      <vbox id="sidebar" >
+      <vbox id="sidebar">
         <html:h3 data-l10n-id="library-settings-sidebar-title" />
-          <toolbarbutton class="toolbarbutton-1 sidebar-tabbuton" id="general-sidebar-tabbutton" label="General" tooltip="General Settings"/>
-          <toolbarbutton class="toolbarbutton-1 sidebar-tabbuton" id="modules-sidebar-tabbutton" label="Modules" tooltip="Modules Settings"/>
+        <toolbarbutton
+          class="toolbarbutton-1 sidebar-tabbuton"
+          id="general-sidebar-tabbutton"
+          label="General"
+          tooltip="General Settings"
+        />
+        <toolbarbutton
+          class="toolbarbutton-1 sidebar-tabbuton"
+          id="modules-sidebar-tabbutton"
+          label="Modules"
+          tooltip="Modules Settings"
+        />
+        <toolbarbutton
+          class="toolbarbutton-1 sidebar-tabbuton"
+          id="advanced-sidebar-tabbutton"
+          label="Advanced"
+          tooltip="Advanced Settings"
+        />
       </vbox>
 
       <!-- Main Content Area -->
       <vbox id="settings-content" flex="1">
         <vbox id="section-general" class="section">
-          <html:h2 data-l10n-id="pane-general-title"/>
-          <vbox class="section-content">
-            General settings go here.
-          </vbox>
+          <html:h2 data-l10n-id="pane-general-title" />
+          <vbox class="section-content"> General settings go here. </vbox>
         </vbox>
 
         <vbox id="section-modules" class="section">
-          <html:h2 data-l10n-id="pane-modules-title"/>
-          <vbox class="section-content">
-            Module settings go here.
-          </vbox>
+          <html:h2 data-l10n-id="pane-modules-title" />
+          <vbox class="section-content"> Module settings go here. </vbox>
+        </vbox>
+
+        <vbox id="section-advanced" class="section">
+          <html:h2 data-l10n-id="pane-modules-title" />
+          <vbox class="section-content"> Advanced settings go here. </vbox>
         </vbox>
       </vbox>
     </hbox>

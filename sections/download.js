@@ -1,5 +1,14 @@
 import { parseElement } from "../utils/parse.js";
 
+// Prefs for the settings menu/window thingy.
+const getFileCategories = UC_API.Prefs.get("zen.library.downloads.file-catagories").value;
+const showFileStatus = UC_API.Prefs.get("zen.library.downloads.show-file-status").value;
+const showFileSize = UC_API.Prefs.get("zen.library.downloads.show-file-size").value;
+const showFileTime = UC_API.Prefs.get("zen.library.downloads.show-file-time").value;
+const showFileUrl = UC_API.Prefs.get("zen.library.downloads.show-file-url").value;
+const showDownloadInfo = UC_API.Prefs.get("zen.library.downloads.show-download-info").value;
+const DoubleClickToOpen = UC_API.Prefs.get("zen.library.downloads.double-click-to-open").value;
+
 export const downloadsSection = {
   id: "downloads",
   label: "Downloads",
