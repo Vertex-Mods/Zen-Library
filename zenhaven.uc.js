@@ -4,6 +4,7 @@
 // @include     main
 // ==/UserScript==
 
+import * as UC_API from "chrome://userchromejs/content/uc_api.sys.mjs";
 import { parseElement } from "./utils/parse.js";
 import { downloadsSection } from "./sections/download.js";
 import { workspacesSection } from "./sections/workspace.js";
